@@ -1,0 +1,49 @@
+{
+  "$schema": "../../../schemas/skill-evals.schema.json",
+  "version": 1,
+  "skill": "novel-creation",
+  "trigger_queries": [
+    {
+      "query": "帮我初始化一个长篇玄幻小说仓库，先把设定目录、正文创作区和项目 AGENTS.md 搭起来。",
+      "should_trigger": true,
+      "notes": "命中从零启动小说工作区与流程化创作管理。"
+    },
+    {
+      "query": "继续写这本小说的下一场戏，但先把主角时间线、当前情节线和冲突候选检索给我。",
+      "should_trigger": true,
+      "notes": "命中续写前检索最小上下文包和一致性检查。"
+    },
+    {
+      "query": "帮我写一段赛博朋克小说开场，越酷越好，不需要项目文件。",
+      "should_trigger": false,
+      "notes": "纯即时写作，不需要长期工作区和知识库流程。"
+    },
+    {
+      "query": "解释一下什么是成长型主角和弧光设计。",
+      "should_trigger": false,
+      "notes": "属于概念讨论，不属于小说项目流程执行。"
+    }
+  ],
+  "output_cases": [
+    {
+      "id": "context-pack-before-draft",
+      "prompt": "在一个已有几十万字的小说仓库里继续写下一场戏，先生成主角、地点、情节线和最近冲突候选的最小上下文包，再说明哪些 gate 已通过。",
+      "comparison_mode": "with-vs-without-skill",
+      "success_criteria": [
+        "输出明确区分当前阶段与下一步动作。",
+        "检索结果带文件路径和 scene_id/chapter_id 等来源定位。",
+        "说明是否需要先运行 sync 或 check，而不是直接续写。"
+      ]
+    },
+    {
+      "id": "archive-ready-scenes",
+      "prompt": "把正文创作区前面连续三个 ready 场景归档成一章，并检查伏笔回收引用有没有断裂。",
+      "comparison_mode": "with-vs-without-skill",
+      "success_criteria": [
+        "只归档前部连续 ready 场景，不误动后续未完成场景。",
+        "输出章节归档结果、更新后的阶段状态和一致性检查结果。",
+        "明确需要更新哪些真源和哪些索引产物。"
+      ]
+    }
+  ]
+}

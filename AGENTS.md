@@ -144,11 +144,11 @@ metadata:
 
 ## 3. 工作流
 
-1. 先收集真实高频 prompt。
-2. 不要先拍脑袋造 skill。
-3. 从真实任务里选择 pilot。
-4. pilot 至少横跨开发、研究整理、知识写作三个方向。
-5. 只有任务会重复出现时，才创建正式 skill。
+1. 优先收集真实高频 prompt。
+2. 没有历史 prompt 时，可以先写具体且可信的代表性 prompt，再设计 pilot 或正式 skill。
+3. 不要先拍脑袋造 skill，代表性 prompt 必须能映射到明确工作流和交付物。
+4. pilot 优先覆盖开发、研究整理、知识写作等不同方向，但允许按单一高价值场景先落首个正式 skill。
+5. 只有任务会重复出现，或已经明确会成为长期工作流时，才创建正式 skill。
 6. 先写 `SKILL.md`、`LICENSE.txt`、`evals/evals.json`。
 7. 再按需补 `scripts/`、`references/`、`assets/`。
 8. 完成后运行结构校验。
@@ -168,7 +168,7 @@ metadata:
 - 不要实现仓库私有安装器或镜像安装层。
 - 不要提交缺少 `LICENSE.txt` 的 skill。
 - 不要提交缺少 `evals/evals.json` 的 skill。
-- 没有真实 prompt 时，只更新规范和模板。
+- 没有历史 prompt 时，允许使用代表性 prompt，但不要提交空泛描述、模板占位值或无法执行的 eval。
 - 不要在 v1 中引入客户端私有扩展字段。
 - 不要在 v1 中使用 `allowed-tools`。
 - 不要让模板占位值进入正式 skill。

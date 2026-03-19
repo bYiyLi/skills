@@ -1,0 +1,53 @@
+---
+record_id: project-agents
+record_type: project-agents
+status: active
+summary: 当前项目协作约束
+tags:
+  - project
+  - agents
+refs: []
+updated_at: 2026-03-19
+stage: bootstrap
+active_plotlines:
+  - plot-main-001
+frozen_rules: []
+retrieval_priority:
+  - novelctl report context-pack --scene <scene_id>
+  - novelctl retrieve fact "<query>"
+archive_rules:
+  - 只归档正文前部连续 ready 场景
+---
+
+# 小说项目 AGENTS.md
+
+## 当前阶段
+
+- stage: bootstrap
+- last-sync: pending
+- last-check: pending
+
+## 活跃情节线
+
+- plot-main-001
+
+## 冻结设定与禁改项
+
+- 暂无
+
+## 当前创作约束
+
+- 先补齐设定，再进入正文创作。
+- 正文与结构化字段必须写在同一个文件里。
+- 结构化字段更新后，正文也要同步体现。
+
+## 检索优先路径
+
+- 续写前先运行 `novelctl report context-pack --scene <scene_id>`。
+- 查事实时优先用 `novelctl retrieve fact "<query>"`。
+- 查角色、地点、势力时优先用 `novelctl retrieve entity "<query>"`。
+
+## 归档规则
+
+- 只归档正文前部连续 `ready` 场景。
+- 归档后重新运行 `novelctl sync` 与 `novelctl check`。
