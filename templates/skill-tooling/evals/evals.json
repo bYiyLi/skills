@@ -1,0 +1,45 @@
+{
+  "$schema": "../../../schemas/skill-evals.schema.json",
+  "version": 1,
+  "skill": "your-skill-name",
+  "trigger_queries": [
+    {
+      "query": "Replace with a real prompt that requires using a specific tool, CLI, SDK, or API.",
+      "should_trigger": true,
+      "notes": "Should trigger because the task depends on a concrete tool path."
+    },
+    {
+      "query": "Replace with another prompt that asks for a repeatable tool operation under this skill.",
+      "should_trigger": true
+    },
+    {
+      "query": "Replace with a neighboring prompt that asks for general conceptual advice, not tool execution.",
+      "should_trigger": false,
+      "notes": "Should not trigger because no concrete tool usage is required."
+    },
+    {
+      "query": "Replace with another prompt that belongs to a different tool or environment.",
+      "should_trigger": false
+    }
+  ],
+  "output_cases": [
+    {
+      "id": "case-1",
+      "prompt": "Replace with a real prompt that should exercise the standard happy path for this tool.",
+      "comparison_mode": "with-vs-without-skill",
+      "success_criteria": [
+        "Chooses the correct tool path and key parameters.",
+        "Includes explicit verification instead of stopping at command execution."
+      ]
+    },
+    {
+      "id": "case-2",
+      "prompt": "Replace with a real prompt that should trigger a common failure or precondition check.",
+      "comparison_mode": "with-vs-without-skill",
+      "success_criteria": [
+        "Performs the documented precondition checks before risky actions.",
+        "Uses the documented failure-recovery path when the first attempt cannot proceed."
+      ]
+    }
+  ]
+}

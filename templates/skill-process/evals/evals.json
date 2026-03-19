@@ -1,0 +1,45 @@
+{
+  "$schema": "../../../schemas/skill-evals.schema.json",
+  "version": 1,
+  "skill": "your-skill-name",
+  "trigger_queries": [
+    {
+      "query": "Replace with a real prompt that asks the agent to run a repeatable multi-step process.",
+      "should_trigger": true,
+      "notes": "Should trigger because the task depends on a defined sequence with gates or handoff."
+    },
+    {
+      "query": "Replace with another prompt that belongs to the same repeatable workflow.",
+      "should_trigger": true
+    },
+    {
+      "query": "Replace with a neighboring prompt that asks for a one-off answer, not a managed process.",
+      "should_trigger": false,
+      "notes": "Should not trigger because no stable workflow is required."
+    },
+    {
+      "query": "Replace with another prompt that belongs to a different workflow or domain.",
+      "should_trigger": false
+    }
+  ],
+  "output_cases": [
+    {
+      "id": "case-1",
+      "prompt": "Replace with a real prompt that should exercise the standard phase order of this process.",
+      "comparison_mode": "with-vs-without-skill",
+      "success_criteria": [
+        "Follows the documented phase order instead of skipping directly to the final answer.",
+        "Produces the expected handoff artifacts or status summary."
+      ]
+    },
+    {
+      "id": "case-2",
+      "prompt": "Replace with a real prompt that should test a branch, rollback, or blocked-input path.",
+      "comparison_mode": "with-vs-without-skill",
+      "success_criteria": [
+        "Uses the documented branch or escalation path when a gate cannot be passed.",
+        "States clearly whether the process is complete, paused, or blocked."
+      ]
+    }
+  ]
+}

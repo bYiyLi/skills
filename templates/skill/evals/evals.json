@@ -4,9 +4,9 @@
   "skill": "your-skill-name",
   "trigger_queries": [
     {
-      "query": "Replace with a real prompt that should trigger this skill.",
+      "query": "Replace with a real prompt that should trigger this skill for its chosen skill-type.",
       "should_trigger": true,
-      "notes": "Explain why this prompt should trigger the skill."
+      "notes": "Explain why this prompt should trigger the skill and what contract it exercises."
     },
     {
       "query": "Replace with another real prompt that should trigger this skill.",
@@ -15,7 +15,7 @@
     {
       "query": "Replace with a neighboring prompt that should not trigger this skill.",
       "should_trigger": false,
-      "notes": "Explain why this prompt should not trigger the skill."
+      "notes": "Explain which nearby task boundary keeps this prompt outside the skill."
     },
     {
       "query": "Replace with another prompt that should not trigger this skill.",
@@ -28,7 +28,7 @@
       "prompt": "Replace with a real prompt that should be compared with and without the skill.",
       "comparison_mode": "with-vs-without-skill",
       "success_criteria": [
-        "List at least one observable quality check.",
+        "List at least one observable quality check tied to the chosen skill-type.",
         "Keep every criterion concrete and easy to verify."
       ]
     },

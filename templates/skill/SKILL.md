@@ -9,28 +9,44 @@ metadata:
   owner: your-name
   status: draft
   last-reviewed: 2026-03-19
+  skill-type: choose-normative-tooling-or-process
 ---
 
 # Goal
 
 说明这个 skill 要帮助另一个 agent 完成什么重复任务。
 
-## Workflow
+## Type Selection
 
-1. 先说明如何判断任务是否匹配这个 skill。
+- 在提交正式 skill 前，把 `metadata.skill-type` 改成 `normative`、`tooling`、`process` 之一。
+- 如果类型已经明确，优先改用对应模板:
+  - `templates/skill-normative/`
+  - `templates/skill-tooling/`
+  - `templates/skill-process/`
 
-2. 再说明完成任务的标准流程。
+## Shared Sections
 
-3. 如果有脚本、资料或模板，明确写出读取条件。
+以下章节是所有正式 skill 的共享合同，标题保持英文，正文可以中文为主。
 
-## Guardrails
+## Task Fit
 
-- 说明什么时候不该用这个 skill。
+说明哪些请求应该触发、哪些相邻请求不该触发。
 
-- 说明哪些行为会损害结果质量或浪费上下文。
+## Resources to Load
 
-- 长说明移动到 `references/`，不要全部塞进主文件。
+说明在什么条件下需要读取 `references/`、`scripts/`、`assets/`。
 
-## Minimal Example
+## Output Standard
 
-给出 1-2 个最小示例，帮助另一个 agent 快速上手。
+说明最终结果要满足哪些可观察质量标准。
+
+## Stop Conditions
+
+说明什么时候要中止、升级、回退或拒绝继续。
+
+## Minimal Examples
+
+至少给出:
+
+1. 1 个会触发的最小示例。
+2. 1 个不该触发或需要升级的边界示例。

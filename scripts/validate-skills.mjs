@@ -12,8 +12,7 @@ const allowedFrontmatterFields = new Set([
   "description",
   "license",
   "compatibility",
-  "metadata",
-  "allowed-tools"
+  "metadata"
 ]);
 
 const allowedTopLevelDirectories = new Set([
@@ -34,6 +33,121 @@ const bannedFiles = new Set([
   "INSTALLATION_GUIDE.md",
   "QUICK_REFERENCE.md"
 ]);
+
+const recommendedMetadataKeys = [
+  "owner",
+  "status",
+  "last-reviewed"
+];
+
+const sharedRequiredSections = [
+  "Task Fit",
+  "Resources to Load",
+  "Output Standard",
+  "Stop Conditions",
+  "Minimal Examples"
+];
+
+const skillTypeContracts = {
+  normative: {
+    requiredSections: [
+      "Decision Rules",
+      "Exceptions",
+      "Conflict Resolution"
+    ],
+    orderedSections: [
+      "Task Fit",
+      "Resources to Load",
+      "Decision Rules",
+      "Exceptions",
+      "Conflict Resolution",
+      "Output Standard",
+      "Stop Conditions",
+      "Minimal Examples"
+    ]
+  },
+  tooling: {
+    requiredSections: [
+      "Preconditions",
+      "Standard Procedure",
+      "Failure Recovery",
+      "Verification"
+    ],
+    orderedSections: [
+      "Task Fit",
+      "Resources to Load",
+      "Preconditions",
+      "Standard Procedure",
+      "Failure Recovery",
+      "Verification",
+      "Output Standard",
+      "Stop Conditions",
+      "Minimal Examples"
+    ]
+  },
+  process: {
+    requiredSections: [
+      "Inputs",
+      "Workflow",
+      "Branches",
+      "Quality Gates",
+      "Done Definition",
+      "Handoff"
+    ],
+    orderedSections: [
+      "Task Fit",
+      "Resources to Load",
+      "Inputs",
+      "Workflow",
+      "Branches",
+      "Quality Gates",
+      "Done Definition",
+      "Handoff",
+      "Output Standard",
+      "Stop Conditions",
+      "Minimal Examples"
+    ]
+  }
+};
+
+const evalsTopLevelFields = new Set([
+  "$schema",
+  "version",
+  "skill",
+  "trigger_queries",
+  "output_cases"
+]);
+
+const triggerQueryFields = new Set([
+  "query",
+  "should_trigger",
+  "notes"
+]);
+
+const outputCaseFields = new Set([
+  "id",
+  "prompt",
+  "comparison_mode",
+  "success_criteria",
+  "notes"
+]);
+
+const templatePlaceholderPatterns = [
+  {
+    pattern: /\byour-name\b/i,
+    label: '"your-name"'
+  },
+  {
+    pattern: /\bchoose-normative-tooling-or-process\b/i,
+    label: '"choose-normative-tooling-or-process"'
+  },
+  {
+    pattern: /\bReplace with\b/,
+    label: '"Replace with ..."'
+  }
+];
+
+const licensePlaceholderText = "Replace this file with the actual license text for the skill.";
 
 const errors = [];
 const warnings = [];
@@ -101,6 +215,7 @@ async function validateSkill(skillName) {
 
   const skillFilePath = path.join(skillDir, "SKILL.md");
   const rawSkill = await fs.readFile(skillFilePath, "utf8");
+
   let parsedSkill;
   try {
     parsedSkill = parseSkillMarkdown(rawSkill);
@@ -109,8 +224,15 @@ async function validateSkill(skillName) {
     return;
   }
 
-  validateFrontmatter(skillName, skillFilePath, parsedSkill.frontmatter);
-  validateBody(skillFilePath, parsedSkill.bodyLines);
+  const skillType = validateFrontmatter(skillName, skillFilePath, parsedSkill.frontmatter);
+  validateBody(skillFilePath, parsedSkill.bodyLines, skillType);
+  validateTemplatePlaceholders(skillFilePath, rawSkill);
+
+  const licensePath = path.join(skillDir, "LICENSE.txt");
+  if (await exists(licensePath)) {
+    const rawLicense = await fs.readFile(licensePath, "utf8");
+    validateLicense(licensePath, rawLicense);
+  }
 
   if (await exists(evalsJsonPath)) {
     const rawEvals = await fs.readFile(evalsJsonPath, "utf8");
@@ -120,6 +242,11 @@ async function validateSkill(skillName) {
 
 function validateFrontmatter(skillName, filePath, frontmatter) {
   for (const key of Object.keys(frontmatter)) {
+    if (key === "allowed-tools") {
+      error(filePath, 'Frontmatter field "allowed-tools" is not used in v1.');
+      continue;
+    }
+
     if (!allowedFrontmatterFields.has(key)) {
       error(filePath, `Unsupported frontmatter field "${key}".`);
     }
@@ -145,7 +272,7 @@ function validateFrontmatter(skillName, filePath, frontmatter) {
   } else {
     const description = frontmatter.description.trim();
     if (!/[\u4e00-\u9fff]/.test(description)) {
-      warn(filePath, 'Description should be Chinese-first for this repository.');
+      warn(filePath, "Description should be Chinese-first for this repository.");
     }
     if (!/[A-Za-z]/.test(description)) {
       warn(filePath, "Description should keep key English technical terms for discoverability.");
@@ -161,35 +288,95 @@ function validateFrontmatter(skillName, filePath, frontmatter) {
     error(filePath, 'Field "license" must be exactly "./LICENSE.txt" in this repository.');
   }
 
-  if (frontmatter["allowed-tools"] !== undefined) {
-    error(filePath, 'Frontmatter field "allowed-tools" is not used in v1.');
-  }
-
   if (frontmatter.compatibility !== undefined && !hasNonEmptyString(frontmatter.compatibility)) {
     error(filePath, 'Field "compatibility" must be a non-empty string when present.');
   }
 
-  if (frontmatter.metadata !== undefined) {
-    if (!isPlainObject(frontmatter.metadata)) {
+  if (frontmatter.metadata === undefined) {
+    error(filePath, 'Frontmatter field "metadata" is required and must include "skill-type".');
+    return null;
+  }
+
+  if (!isPlainObject(frontmatter.metadata)) {
+    error(filePath, 'Field "metadata" must be a mapping of string keys to string values.');
+    return null;
+  }
+
+  for (const [key, value] of Object.entries(frontmatter.metadata)) {
+    if (!hasNonEmptyString(key) || typeof value !== "string") {
       error(filePath, 'Field "metadata" must be a mapping of string keys to string values.');
-    } else {
-      for (const [key, value] of Object.entries(frontmatter.metadata)) {
-        if (!hasNonEmptyString(key) || typeof value !== "string") {
-          error(filePath, 'Field "metadata" must be a mapping of string keys to string values.');
-          break;
-        }
-      }
+      return null;
     }
   }
+
+  for (const key of recommendedMetadataKeys) {
+    if (!hasNonEmptyString(frontmatter.metadata[key])) {
+      warn(filePath, `Metadata key "${key}" is recommended for repository consistency.`);
+    }
+  }
+
+  if (frontmatter.metadata["last-reviewed"] !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(frontmatter.metadata["last-reviewed"])) {
+    warn(filePath, 'Metadata key "last-reviewed" should use YYYY-MM-DD format.');
+  }
+
+  const skillType = frontmatter.metadata["skill-type"];
+  if (!hasNonEmptyString(skillType)) {
+    error(filePath, 'Metadata key "skill-type" is required.');
+    return null;
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(skillTypeContracts, skillType)) {
+    error(filePath, `Metadata key "skill-type" must be one of: ${Object.keys(skillTypeContracts).join(", ")}.`);
+    return null;
+  }
+
+  return skillType;
 }
 
-function validateBody(filePath, bodyLines) {
+function validateBody(filePath, bodyLines, skillType) {
   const nonEmptyLineCount = bodyLines.filter((line) => line.trim().length > 0).length;
   if (nonEmptyLineCount === 0) {
     error(filePath, "SKILL.md must contain body instructions after frontmatter.");
   }
+
   if (bodyLines.length > 500) {
     warn(filePath, "SKILL.md body is longer than 500 lines. Move detailed material into references/.");
+  }
+
+  if (!skillType || !Object.prototype.hasOwnProperty.call(skillTypeContracts, skillType)) {
+    return;
+  }
+
+  const headingPositions = extractHeadingPositions(bodyLines);
+  const requiredSections = [
+    ...sharedRequiredSections,
+    ...skillTypeContracts[skillType].requiredSections
+  ];
+
+  for (const section of requiredSections) {
+    if (!headingPositions.has(section)) {
+      error(filePath, `Missing required section "${section}" for skill-type "${skillType}".`);
+    }
+  }
+
+  validateSectionOrder(filePath, headingPositions, skillTypeContracts[skillType].orderedSections);
+}
+
+function validateLicense(filePath, rawLicense) {
+  if (rawLicense.trim().length === 0) {
+    error(filePath, "LICENSE.txt must not be empty.");
+  }
+
+  if (rawLicense.includes(licensePlaceholderText)) {
+    error(filePath, "LICENSE.txt still contains the template placeholder text.");
+  }
+}
+
+function validateTemplatePlaceholders(filePath, rawText) {
+  for (const { pattern, label } of templatePlaceholderPatterns) {
+    if (pattern.test(rawText)) {
+      error(filePath, `Template placeholder ${label} must be replaced before committing a formal skill.`);
+    }
   }
 }
 
@@ -207,6 +394,12 @@ function validateEvals(skillName, filePath, rawEvals) {
     return;
   }
 
+  validateUnexpectedFields(filePath, data, evalsTopLevelFields, "evals.json");
+
+  if (typeof data.$schema !== "undefined" && typeof data.$schema !== "string") {
+    error(filePath, 'evals.json field "$schema" must be a string when present.');
+  }
+
   if (data.version !== 1) {
     error(filePath, 'evals.json field "version" must be 1.');
   }
@@ -218,6 +411,10 @@ function validateEvals(skillName, filePath, rawEvals) {
   if (!Array.isArray(data.trigger_queries)) {
     error(filePath, 'evals.json field "trigger_queries" must be an array.');
   } else {
+    if (data.trigger_queries.length < 4) {
+      error(filePath, 'evals.json must include at least 4 trigger_queries.');
+    }
+
     const positiveCount = data.trigger_queries.filter((item) => item?.should_trigger === true).length;
     const negativeCount = data.trigger_queries.filter((item) => item?.should_trigger === false).length;
 
@@ -230,12 +427,19 @@ function validateEvals(skillName, filePath, rawEvals) {
         error(filePath, `trigger_queries[${index}] must be an object.`);
         continue;
       }
+
+      validateUnexpectedFields(filePath, item, triggerQueryFields, `trigger_queries[${index}]`);
+
       if (!hasNonEmptyString(item.query)) {
         error(filePath, `trigger_queries[${index}].query must be a non-empty string.`);
+      } else if (looksLikeTemplatePrompt(item.query)) {
+        error(filePath, `trigger_queries[${index}].query still contains template placeholder text.`);
       }
+
       if (typeof item.should_trigger !== "boolean") {
         error(filePath, `trigger_queries[${index}].should_trigger must be a boolean.`);
       }
+
       if (item.notes !== undefined && typeof item.notes !== "string") {
         error(filePath, `trigger_queries[${index}].notes must be a string when present.`);
       }
@@ -255,12 +459,16 @@ function validateEvals(skillName, filePath, rawEvals) {
         error(filePath, `output_cases[${index}] must be an object.`);
         continue;
       }
+
+      validateUnexpectedFields(filePath, item, outputCaseFields, `output_cases[${index}]`);
+
       if (!hasNonEmptyString(item.id)) {
         error(filePath, `output_cases[${index}].id must be a non-empty string.`);
       } else {
         if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(item.id)) {
           error(filePath, `output_cases[${index}].id must use lowercase letters, digits, and single hyphen separators.`);
         }
+
         if (seenIds.has(item.id)) {
           error(filePath, `Duplicate output case id "${item.id}".`);
         }
@@ -269,6 +477,8 @@ function validateEvals(skillName, filePath, rawEvals) {
 
       if (!hasNonEmptyString(item.prompt)) {
         error(filePath, `output_cases[${index}].prompt must be a non-empty string.`);
+      } else if (looksLikeTemplatePrompt(item.prompt)) {
+        error(filePath, `output_cases[${index}].prompt still contains template placeholder text.`);
       }
 
       if (item.comparison_mode !== "with-vs-without-skill") {
@@ -281,6 +491,8 @@ function validateEvals(skillName, filePath, rawEvals) {
         for (const [criterionIndex, criterion] of item.success_criteria.entries()) {
           if (!hasNonEmptyString(criterion)) {
             error(filePath, `output_cases[${index}].success_criteria[${criterionIndex}] must be a non-empty string.`);
+          } else if (looksLikeTemplatePrompt(criterion)) {
+            error(filePath, `output_cases[${index}].success_criteria[${criterionIndex}] still contains template placeholder text.`);
           }
         }
       }
@@ -290,6 +502,56 @@ function validateEvals(skillName, filePath, rawEvals) {
       }
     }
   }
+}
+
+function validateUnexpectedFields(filePath, objectValue, allowedFields, label) {
+  for (const key of Object.keys(objectValue)) {
+    if (!allowedFields.has(key)) {
+      error(filePath, `${label} contains unsupported field "${key}".`);
+    }
+  }
+}
+
+function extractHeadingPositions(bodyLines) {
+  const positions = new Map();
+
+  for (const [index, line] of bodyLines.entries()) {
+    const match = /^(#{1,6})\s+(.+?)\s*$/.exec(line);
+    if (!match) {
+      continue;
+    }
+
+    const heading = match[2].trim();
+    if (!positions.has(heading)) {
+      positions.set(heading, index);
+    }
+  }
+
+  return positions;
+}
+
+function validateSectionOrder(filePath, headingPositions, orderedSections) {
+  let previousSection = null;
+  let previousPosition = -1;
+
+  for (const section of orderedSections) {
+    const currentPosition = headingPositions.get(section);
+    if (currentPosition === undefined) {
+      continue;
+    }
+
+    if (currentPosition < previousPosition) {
+      warn(filePath, `Section "${section}" should appear after "${previousSection}" to match the repository contract.`);
+      return;
+    }
+
+    previousSection = section;
+    previousPosition = currentPosition;
+  }
+}
+
+function looksLikeTemplatePrompt(value) {
+  return /^\s*Replace with\b/.test(value);
 }
 
 function parseSkillMarkdown(rawText) {
