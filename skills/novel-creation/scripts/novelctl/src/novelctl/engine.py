@@ -29,7 +29,7 @@ def run_sync(workspace: Path, full: bool = False, dry_run: bool = False) -> dict
 
 def run_check(workspace: Path, strict: bool = False) -> dict:
     workspace = workspace.resolve()
-    ensure_fresh_runtime(workspace, run_sync, force_full=False)
+    ensure_fresh_runtime(workspace, run_sync, command_name="check", force_full=False)
     summary = report_summary_file(workspace)
     check = summary.get("check", {})
     check["strict"] = strict

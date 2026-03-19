@@ -74,8 +74,25 @@ open_loops:
 ## Status Semantics
 
 - `draft`: 仍在创作中，不能归档。
-- `ready`: 结构和摘要齐全，可以参与章节归档。
+- `ready`: 通过 ready 最低结构标准，可以参与章节归档。
 - `hold`: 暂停，等待设定或上游剧情修复。
+
+## Ready Minimum Standard
+
+即使 prose 已经写出来，只要以下任一条件不满足，就不要把 `status` 改成 `ready`：
+
+- 顶层必填字段仍有缺失、空值或明显占位内容。
+- 正文仍是占位、提纲式备注，或明显还没把 beats 写成 scene。
+- `beats` 没体现到正文里，或正文出现了主要动作但 beats 没同步。
+- `summary` 不能稳定概括正文。
+- 正文引入了新事实、新关系或状态变化，但 `new_facts` / `state_changes` / `foreshadow` / `open_loops` 没同步。
+
+满足以下条件时，才适合把 `status` 改成 `ready`：
+
+- 必填字段完整。
+- 正文是可交接的完整 scene，而不是半成品说明。
+- beats、summary、事实卡片与正文对齐。
+- 后续 `retrieve` 和 `check` 可以依赖这些结构化字段工作。
 
 ## Optional Nested Fields
 

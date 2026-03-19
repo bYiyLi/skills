@@ -4,45 +4,170 @@
   "skill": "novel-creation",
   "trigger_queries": [
     {
-      "query": "帮我初始化一个长篇玄幻小说仓库，先把设定目录、正文创作区和项目 AGENTS.md 搭起来。",
+      "query": "帮我搭一个长篇小说仓库，先把设定目录、正文创作区和项目 AGENTS.md 建起来。",
       "should_trigger": true,
-      "notes": "命中从零启动小说工作区与流程化创作管理。"
+      "notes": "命中 bootstrap 路径，按用户意图表达工作区初始化。"
     },
     {
-      "query": "继续写这本小说的下一场戏，但先把主角时间线、当前情节线和冲突候选检索给我。",
+      "query": "先补一下这本书的主线规格、时间线和冻结设定，后面我要继续写。",
       "should_trigger": true,
-      "notes": "命中续写前检索最小上下文包和一致性检查。"
+      "notes": "命中 spec 路径，目标是补真源设定而不是直接写正文。"
     },
     {
-      "query": "帮我写一段赛博朋克小说开场，越酷越好，不需要项目文件。",
-      "should_trigger": false,
-      "notes": "纯即时写作，不需要长期工作区和知识库流程。"
+      "query": "这场戏现在能不能写，还是要先补设定？",
+      "should_trigger": true,
+      "notes": "真实入口式提问，应命中 spec/draft 之间的路径判断。"
     },
     {
-      "query": "解释一下什么是成长型主角和弧光设计。",
+      "query": "继续写这一场戏，先把这个 scene 的 context pack 拉出来，再给我 beats。",
+      "should_trigger": true,
+      "notes": "命中 draft 路径，并要求先通过 retrieve 获取最小上下文。"
+    },
+    {
+      "query": "scene-0012 写完后能不能进 ready，还是得先 check 一下？",
+      "should_trigger": true,
+      "notes": "真实入口式提问，应命中 draft/check/ready 决策闭环。"
+    },
+    {
+      "query": "先把这条主线最近的 unresolved 和冲突候选找出来，我再决定怎么续写。",
+      "should_trigger": true,
+      "notes": "命中 retrieve 路径，聚焦最小上下文与未解线索。"
+    },
+    {
+      "query": "检查一下这个仓库有没有连续性冲突和 blocking error，有的话先别归档。",
+      "should_trigger": true,
+      "notes": "命中 check 路径，并要求用结果决定是否停止归档。"
+    },
+    {
+      "query": "把前面连续 ready 的场景归档成一章，然后告诉我后面还能不能继续抽卷。",
+      "should_trigger": true,
+      "notes": "命中 archive 路径，并要求处理章节和卷条件判断。"
+    },
+    {
+      "query": "帮我写一段赛博朋克小说开场，越酷越好，不要项目文件。",
       "should_trigger": false,
-      "notes": "属于概念讨论，不属于小说项目流程执行。"
+      "notes": "纯即时写作，不需要长期工作区。"
+    },
+    {
+      "query": "只给我一点文风建议，不要仓库流程，也不要结构化字段。",
+      "should_trigger": false,
+      "notes": "只要风格建议，不需要小说项目工作流。"
+    },
+    {
+      "query": "比较《三体》和《基地》的叙事结构。",
+      "should_trigger": false,
+      "notes": "文学分析，不是小说项目工作流。"
+    },
+    {
+      "query": "教我 argparse 子命令怎么写。",
+      "should_trigger": false,
+      "notes": "通用 CLI 教学，不属于本 skill。"
+    },
+    {
+      "query": "同时帮我维护这两个小说仓库的设定和归档。",
+      "should_trigger": false,
+      "notes": "应被边界识别为多工作区批量请求，而不是正常触发。"
     }
   ],
   "output_cases": [
     {
-      "id": "context-pack-before-draft",
-      "prompt": "在一个已有几十万字的小说仓库里继续写下一场戏，先生成主角、地点、情节线和最近冲突候选的最小上下文包，再说明哪些 gate 已通过。",
+      "id": "route-selection-explanation",
+      "prompt": "我现在只想继续这一场戏，但还不确定该先写还是先查上下文。请告诉我你选择了哪条路径，以及为什么。",
       "comparison_mode": "with-vs-without-skill",
       "success_criteria": [
-        "输出明确区分当前阶段与下一步动作。",
-        "检索结果带文件路径和 scene_id/chapter_id 等来源定位。",
-        "说明是否需要先运行 sync 或 check，而不是直接续写。"
+        "明确给出当前路径名，而不是笼统描述流程。",
+        "说明为什么先走 draft 或 retrieve，而不是默认跑完整链路。",
+        "给出下一步动作。"
       ]
     },
     {
-      "id": "archive-ready-scenes",
-      "prompt": "把正文创作区前面连续三个 ready 场景归档成一章，并检查伏笔回收引用有没有断裂。",
+      "id": "spec-path-setup",
+      "prompt": "先不要写正文，先把这本书的主线规格、时间线和冻结设定补齐，好让后面续写不打架。",
       "comparison_mode": "with-vs-without-skill",
       "success_criteria": [
-        "只归档前部连续 ready 场景，不误动后续未完成场景。",
-        "输出章节归档结果、更新后的阶段状态和一致性检查结果。",
-        "明确需要更新哪些真源和哪些索引产物。"
+        "明确进入 spec 路径。",
+        "把更新目标放在设定真源和项目状态，而不是直接创作正文。",
+        "说明补完后 draft 路径能解决什么问题。"
+      ]
+    },
+    {
+      "id": "draft-authoring-loop",
+      "prompt": "继续写 scene-0012，先给我 context pack，然后列 beats，再写 prose，同时把结构化字段一并补齐。",
+      "comparison_mode": "with-vs-without-skill",
+      "success_criteria": [
+        "体现 draft 路径的顺序：context pack、场景目标、beats、prose、结构化字段、自检。",
+        "不把结构化字段更新遗漏到 handoff 之后。",
+        "说明这场戏完成后下一步是什么。"
+      ]
+    },
+    {
+      "id": "draft-reroute-retrieve",
+      "prompt": "我想继续写这场戏，但我记不清主角上一场到底拿到了什么线索，也不确定这条 plotline 现在推进到哪了。先告诉我怎么走。",
+      "comparison_mode": "with-vs-without-skill",
+      "success_criteria": [
+        "识别 draft 当前需要先补上下文，而不是直接写 prose。",
+        "明确给出 `reroute to retrieve` 或等价表述。",
+        "指出应先取 context pack 或最小 typed retrieval 材料。"
+      ]
+    },
+    {
+      "id": "draft-reroute-spec",
+      "prompt": "我想继续写这场戏，但现在连这套力量体系的代价和主线阻力都没定。你先告诉我该怎么处理。",
+      "comparison_mode": "with-vs-without-skill",
+      "success_criteria": [
+        "识别这是 draft 被 spec 缺口阻塞，而不是单纯缺检索材料。",
+        "明确给出 `reroute to spec` 或等价表述。",
+        "指出至少哪些 canon 问题要先补齐。"
+      ]
+    },
+    {
+      "id": "lexical-fallback-retrieval",
+      "prompt": "这个小说仓库没配 embedding 和 reranker，你先别报错，用现有索引帮我把这条线最近的 unresolved 和 conflict candidates 找出来。",
+      "comparison_mode": "with-vs-without-skill",
+      "success_criteria": [
+        "明确说明当前走 retrieve 路径。",
+        "明确说明 semantic retrieval 不可用，但 lexical fallback 可继续。",
+        "结果带来源定位与下一步建议。"
+      ]
+    },
+    {
+      "id": "ready-decision-output",
+      "prompt": "scene-0012 刚写完。你要明确告诉我现在是 keep draft、mark ready，还是 reroute 到别的路径。",
+      "comparison_mode": "with-vs-without-skill",
+      "success_criteria": [
+        "显式给出 ready decision，而不是只说“基本可以”或“还差一点”。",
+        "判断基于结构同步、scene 推进和 continuity 风险，而不是只看 prose 长度。",
+        "给出 decision 之后的下一步。"
+      ]
+    },
+    {
+      "id": "blocking-check-stop",
+      "prompt": "这个仓库的 check 已经有 blocking errors，但我还是想直接大规模续写和归档。先告诉我你怎么处理。",
+      "comparison_mode": "with-vs-without-skill",
+      "success_criteria": [
+        "明确走 check 相关路径，而不是直接开始写或归档。",
+        "把 blocking errors 当作停止条件。",
+        "给出回到真源修复的下一步。"
+      ]
+    },
+    {
+      "id": "check-backflow-routing",
+      "prompt": "这次 check 没有 blocking errors，但还有 review_required 和 conflict candidates。下一步该回 spec、回 draft，还是可以 archive？",
+      "comparison_mode": "with-vs-without-skill",
+      "success_criteria": [
+        "继续站在 check 路径上解释结果，而不是直接切到归档。",
+        "区分 review_required 与 conflict candidates 的处理动作。",
+        "明确给出回流方向，而不是只重复检查结果。"
+      ]
+    },
+    {
+      "id": "multi-workspace-escalation",
+      "prompt": "同时扫描两个不同小说工作区，统一整理设定冲突并一起归档。",
+      "comparison_mode": "with-vs-without-skill",
+      "success_criteria": [
+        "识别这是多工作区请求。",
+        "明确停止并升级，而不是默认批量执行。",
+        "要求先收敛到单一工作区或拆成独立任务。"
       ]
     }
   ]

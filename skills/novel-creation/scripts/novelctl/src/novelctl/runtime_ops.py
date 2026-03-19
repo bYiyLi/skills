@@ -7,6 +7,7 @@ from pathlib import Path
 import yaml
 
 from .constants import RUNTIME_INDEX_DATASETS, RUNTIME_MANIFEST_DATASETS, TEXT_SEARCH_KINDS
+from .errors import StaleRuntimeError
 from .llamaindex_adapter import persist_llamaindex_bundle
 from .openai_compat import embed_texts, embedding_enabled, embedding_signature, reranker_enabled, reranker_signature
 from .parser import detect_source_kind, parse_chapter_file, parse_draft_file, parse_markdown_title, parse_progress, parse_project_agents, parse_setting_file, parse_volume_file, split_frontmatter
@@ -46,6 +47,13 @@ def runtime_complete(workspace: Path) -> bool:
         if not manifest_path(workspace, dataset).exists():
             return False
     return runtime_freshness_path(workspace).exists()
+
+
+def auto_sync_on_read(config: dict) -> bool:
+    freshness = config.get("freshness", {})
+    if not isinstance(freshness, dict):
+        return True
+    return bool(freshness.get("auto_sync_on_read", True))
 
 
 def source_inventory(workspace: Path) -> dict[str, dict]:
@@ -344,16 +352,56 @@ def load_runtime_snapshot(workspace: Path) -> dict:
     return {"raw": raw, "inventory": inventory, "manifests": manifests, "indexes": indexes}
 
 
-def ensure_fresh_runtime(workspace: Path, run_sync_callable, *, force_full: bool = False) -> dict | None:
+def inspect_runtime(workspace: Path) -> dict:
+    workspace = workspace.resolve()
     config = load_config(workspace)
     current_inventory = source_inventory(workspace)
     previous_state = load_json(runtime_freshness_path(workspace), {"files": {}})
-    changed_files, _, removed_files = inventory_diff(previous_state, current_inventory)
-    runtime_missing = not runtime_complete(workspace)
+    changed_files, unchanged_files, removed_files = inventory_diff(previous_state, current_inventory)
+    runtime_is_complete = runtime_complete(workspace)
     config_changed = previous_state.get("config_md5") != config_md5(config)
-    if force_full or runtime_missing or config_changed or changed_files or removed_files or not runtime_llamaindex_root(workspace).exists():
-        return run_sync_callable(workspace, full=force_full or runtime_missing or config_changed, dry_run=False)
-    return None
+    llamaindex_missing = not runtime_llamaindex_root(workspace).exists()
+    return {
+        "generated_at": now_iso(),
+        "workspace": workspace.as_posix(),
+        "changed_files": changed_files,
+        "removed_files": removed_files,
+        "unchanged_files": unchanged_files,
+        "runtime_complete": runtime_is_complete,
+        "config_changed": config_changed,
+        "llamaindex_missing": llamaindex_missing,
+        "auto_sync_on_read": auto_sync_on_read(config),
+        "full_rebuild_required": (not runtime_is_complete) or config_changed,
+        "stale": (not runtime_is_complete) or config_changed or bool(changed_files) or bool(removed_files) or llamaindex_missing,
+        "last_synced_at": str(previous_state.get("generated_at", "")),
+        "config": config,
+    }
+
+
+def ensure_fresh_runtime(
+    workspace: Path,
+    run_sync_callable,
+    *,
+    command_name: str = "read",
+    allow_stale: bool = False,
+    force_full: bool = False,
+) -> dict:
+    inspection = inspect_runtime(workspace)
+    if force_full or inspection["stale"]:
+        if inspection["auto_sync_on_read"]:
+            run_sync_callable(workspace, full=force_full or inspection["full_rebuild_required"], dry_run=False)
+            return inspect_runtime(workspace)
+        if not allow_stale:
+            raise StaleRuntimeError(
+                workspace=inspection["workspace"],
+                command_name=command_name,
+                changed_files=inspection["changed_files"],
+                removed_files=inspection["removed_files"],
+                config_changed=inspection["config_changed"],
+                runtime_complete=inspection["runtime_complete"],
+                llamaindex_missing=inspection["llamaindex_missing"],
+            )
+    return inspection
 
 
 def run_sync_core(workspace: Path, *, force_full: bool = False) -> tuple[dict, dict, dict, dict, list[dict], dict, dict, dict]:

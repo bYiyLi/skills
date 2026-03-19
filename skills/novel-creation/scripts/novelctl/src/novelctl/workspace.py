@@ -33,6 +33,7 @@ from .constants import (
     VOLUME_DIR,
     WORLD_FILE,
 )
+from .errors import ConfigError, WorkspaceError
 from .utils import ensure_directory, write_text_if_changed
 
 FALLBACK_TEMPLATES = {
@@ -364,7 +365,7 @@ def find_skill_root() -> Path:
     for candidate in [current, *current.parents]:
         if (candidate / "SKILL.md").exists() and (candidate / "assets" / "workspace").exists():
             return candidate
-    raise FileNotFoundError("Unable to locate skill root from installed package.")
+    raise WorkspaceError("Unable to locate skill root from installed package.")
 
 
 def template_dir() -> Path:
@@ -378,10 +379,10 @@ def load_template_text(name: str) -> str:
         path = template_dir() / name
         if path.exists():
             return path.read_text(encoding="utf-8")
-    except FileNotFoundError:
+    except WorkspaceError:
         pass
     if name not in FALLBACK_TEMPLATES:
-        raise FileNotFoundError(f"Missing template: {name}")
+        raise WorkspaceError(f"Missing template: {name}")
     return FALLBACK_TEMPLATES[name]
 
 
@@ -521,8 +522,20 @@ def init_workspace(workspace: Path, force: bool = False, dry_run: bool = False) 
 def load_config(workspace: Path) -> dict:
     config_path = novel_root(workspace) / "config.yaml"
     if not config_path.exists():
-        raise FileNotFoundError(f"Missing config: {config_path}")
-    data = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+        raise ConfigError(
+            f"Missing config: {config_path}",
+            details={"config_path": config_path.as_posix()},
+        )
+    try:
+        data = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+    except yaml.YAMLError as exc:
+        raise ConfigError(
+            f"Config is not valid YAML: {config_path}",
+            details={"config_path": config_path.as_posix()},
+        ) from exc
     if not isinstance(data, dict):
-        raise ValueError("Config must be a YAML mapping.")
+        raise ConfigError(
+            "Config must be a YAML mapping.",
+            details={"config_path": config_path.as_posix()},
+        )
     return data

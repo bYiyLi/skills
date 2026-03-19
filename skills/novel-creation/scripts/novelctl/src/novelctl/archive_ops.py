@@ -4,6 +4,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from .constants import ARCHIVE_DIR, CHAPTER_DIR, DRAFT_FILE, VOLUME_DIR
+from .errors import ThresholdError
 from .parser import render_scene
 from .runtime_ops import ensure_fresh_runtime, load_runtime_dataset, stable_yaml
 from .utils import now_iso, relative_posix, write_text_if_changed
@@ -16,7 +17,7 @@ def draft_scenes_in_order(workspace: Path) -> list[dict]:
 
 def archive_chapter(workspace: Path, config: dict, run_sync_callable, *, force: bool = False, dry_run: bool = False) -> dict:
     workspace = workspace.resolve()
-    ensure_fresh_runtime(workspace, run_sync_callable)
+    ensure_fresh_runtime(workspace, run_sync_callable, command_name="archive chapter")
     draft_scenes = draft_scenes_in_order(workspace)
     ready_scenes: list[dict] = []
     for scene in draft_scenes:
@@ -25,13 +26,13 @@ def archive_chapter(workspace: Path, config: dict, run_sync_callable, *, force: 
         else:
             break
     if not ready_scenes:
-        raise ValueError("No leading ready scenes found in 正文创作区.md.")
+        raise ThresholdError("No leading ready scenes found in 正文创作区.md.")
     min_scenes = int(config.get("workspace", {}).get("chapter_ready_scene_threshold", 3))
     min_chars = int(config.get("workspace", {}).get("chapter_ready_char_threshold", 6000))
     total_chars = sum(len(scene["body"]) for scene in ready_scenes)
     threshold_met = len(ready_scenes) >= min_scenes or total_chars >= min_chars
     if not force and not threshold_met:
-        raise ValueError("Ready scenes do not meet chapter archive threshold. Use --force to override.")
+        raise ThresholdError("Ready scenes do not meet chapter archive threshold. Use --force to override.")
     existing_chapters = load_runtime_dataset(workspace, "chapters")
     next_index = len(existing_chapters) + 1
     chapter_id = f"chapter-{next_index:04d}"
@@ -51,7 +52,7 @@ def archive_chapter(workspace: Path, config: dict, run_sync_callable, *, force: 
 
 def archive_volume(workspace: Path, config: dict, run_sync_callable, *, force: bool = False, dry_run: bool = False) -> dict:
     workspace = workspace.resolve()
-    ensure_fresh_runtime(workspace, run_sync_callable)
+    ensure_fresh_runtime(workspace, run_sync_callable, command_name="archive volume")
     chapters = load_runtime_dataset(workspace, "chapters")
     volumes = load_runtime_dataset(workspace, "volumes")
     scenes = {scene["scene_id"]: scene for scene in load_runtime_dataset(workspace, "scenes")}
@@ -59,7 +60,7 @@ def archive_volume(workspace: Path, config: dict, run_sync_callable, *, force: b
     assigned = {chapter_id for volume in volumes for chapter_id in volume.get("chapter_ids", [])}
     eligible = [chapter for chapter in chapters if chapter["chapter_id"] not in assigned]
     if not eligible:
-        raise ValueError("No unassigned chapters available for volume extraction.")
+        raise ThresholdError("No unassigned chapters available for volume extraction.")
     min_chapters = int(config.get("workspace", {}).get("volume_ready_chapter_threshold", 10))
     min_chars = int(config.get("workspace", {}).get("volume_ready_char_threshold", 80000))
     total_chars = sum(len(scenes[scene_id]["body"]) for chapter in eligible for scene_id in chapter.get("scene_ids", []) if scene_id in scenes)
@@ -77,7 +78,7 @@ def archive_volume(workspace: Path, config: dict, run_sync_callable, *, force: b
     dangling_payoffs = [scene_id for chapter in eligible for scene_id in chapter.get("scene_ids", []) if any(ref not in facts for ref in scenes.get(scene_id, {}).get("payoff_refs", []))]
     threshold_met = len(eligible) >= min_chapters or total_chars >= min_chars
     if not force and (not threshold_met or not closed_plotlines or dangling_payoffs):
-        raise ValueError("Volume extraction threshold not met. Use --force to override.")
+        raise ThresholdError("Volume extraction threshold not met. Use --force to override.")
     next_index = len(volumes) + 1
     volume_id = f"volume-{next_index:04d}"
     title = f"第{next_index:04d}卷"
