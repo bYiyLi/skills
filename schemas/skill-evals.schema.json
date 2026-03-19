@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.personal-skills/schemas/skill-evals.schema.json",
+  "title": "Personal Skill Evals",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "skill",
+    "trigger_queries",
+    "output_cases"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "skill": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "trigger_queries": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "$ref": "#/$defs/triggerQuery"
+      },
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "should_trigger": {
+                "const": true
+              }
+            },
+            "required": [
+              "should_trigger"
+            ]
+          },
+          "minContains": 2
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "should_trigger": {
+                "const": false
+              }
+            },
+            "required": [
+              "should_trigger"
+            ]
+          },
+          "minContains": 2
+        }
+      ]
+    },
+    "output_cases": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "$ref": "#/$defs/outputCase"
+      }
+    }
+  },
+  "$defs": {
+    "triggerQuery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "query",
+        "should_trigger"
+      ],
+      "properties": {
+        "query": {
+          "type": "string",
+          "minLength": 1
+        },
+        "should_trigger": {
+          "type": "boolean"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "outputCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "prompt",
+        "comparison_mode",
+        "success_criteria"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "prompt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "comparison_mode": {
+          "const": "with-vs-without-skill"
+        },
+        "success_criteria": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
