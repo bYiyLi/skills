@@ -5,28 +5,41 @@ import json
 import sys
 from pathlib import Path
 
-from .engine import archive_chapter, archive_volume, report_conflicts, report_context_pack, report_freshness, report_gates, report_summary, report_unresolved, retrieve, run_check, run_sync, status
+from .engine import (
+    archive_chapter,
+    archive_volume,
+    report_conflicts,
+    report_context_pack,
+    report_freshness,
+    report_gates,
+    report_summary,
+    report_unresolved,
+    retrieve,
+    run_check,
+    run_sync,
+    status,
+)
 from .errors import NovelCtlError
 from .workspace import init_workspace, load_config
 
 FORMATTER = argparse.RawDescriptionHelpFormatter
-QUERY_REQUIRED_MODES = ("text", "entity", "timeline", "plotline", "fact", "relation")
+QUERY_REQUIRED_MODES = ("text", "scene", "chapter", "volume", "source", "work")
 RETRIEVE_MODE_HELP = {
-    "text": "检索正文、章节、卷、实体和规格文档中的文本。",
-    "entity": "检索角色、地点、势力、物件等实体记录。",
-    "timeline": "检索时间线记录。",
-    "plotline": "检索情节线记录。",
-    "fact": "检索事实与状态变更记录。",
-    "relation": "检索关系记录。",
+    "text": "检索 scene、chapter、volume、source、WORK 中的文本。",
+    "scene": "检索 scene 记录。",
+    "chapter": "检索章节归档记录。",
+    "volume": "检索卷总结记录。",
+    "source": "检索设定与角色真源文档。",
+    "work": "检索 WORK 项目状态合同。",
     "unresolved": "列出未闭合的情节线和 open loops。",
-    "conflict-candidates": "列出待人工核实的冲突候选。",
+    "conflict-candidates": "列出待人工核实的连续性冲突候选。",
 }
 REPORT_MODE_HELP = {
     "summary": "读取汇总报告，包含状态、检查、gates 和 freshness。",
     "conflicts": "读取完整冲突候选列表。",
     "gates": "读取当前 gates 结果。",
     "unresolved": "读取未解决 plotline/open loop 汇总。",
-    "freshness": "查看 runtime freshness；auto-sync 关闭时会显式标出 stale。",
+    "freshness": "查看 runtime freshness。",
 }
 
 
@@ -49,11 +62,11 @@ def build_parser() -> argparse.ArgumentParser:
         description="JSON-first CLI for long-form novel workspaces.",
         epilog=(
             "Examples:\n"
-            "  novelctl init ./my-novel --dry-run\n"
+            "  novelctl init ./my-novel\n"
             "  novelctl sync ./my-novel\n"
-            "  novelctl retrieve text ./my-novel \"黑石碎片\"\n"
-            "  novelctl retrieve text ./my-novel --browse\n"
-            "  novelctl report context-pack ./my-novel --scene scene-0003"
+            "  novelctl check ./my-novel --strict\n"
+            "  novelctl report context-pack ./my-novel --scene scene-0003 --profile handoff\n"
+            "  novelctl archive chapter ./my-novel"
         ),
         formatter_class=FORMATTER,
     )
@@ -61,9 +74,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     init_parser = subparsers.add_parser(
         "init",
-        help="Initialize a novel workspace.",
-        description="Initialize a novel workspace from the bundled templates.",
-        epilog="Example:\n  novelctl init ./my-novel --dry-run",
+        help="Initialize the latest novel workspace.",
+        description="Initialize the latest novel workspace from the bundled templates.",
+        epilog="Example:\n  novelctl init ./my-novel",
         formatter_class=FORMATTER,
     )
     add_common_workspace_arg(init_parser)
@@ -83,8 +96,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     check_parser = subparsers.add_parser(
         "check",
-        help="Run deterministic consistency checks.",
-        description="Run consistency checks against the latest runtime snapshot.",
+        help="Run stage-aware consistency checks.",
+        description="Run workspace contract checks and continuity checks against the latest runtime snapshot.",
         epilog="Example:\n  novelctl check ./my-novel --strict",
         formatter_class=FORMATTER,
     )
@@ -98,8 +111,8 @@ def build_parser() -> argparse.ArgumentParser:
     retrieve_parser = subparsers.add_parser(
         "retrieve",
         help="Run typed retrieval.",
-        description="Retrieve typed context from the runtime index or browse supported datasets explicitly.",
-        epilog="Example:\n  novelctl retrieve fact ./my-novel \"林野\"\n  novelctl retrieve text ./my-novel --browse",
+        description="Retrieve focused context from the runtime index or browse supported datasets explicitly.",
+        epilog="Example:\n  novelctl retrieve source ./my-novel \"黑石码头\"\n  novelctl retrieve scene ./my-novel --browse",
         formatter_class=FORMATTER,
     )
     retrieve_subparsers = retrieve_parser.add_subparsers(dest="mode", required=True, metavar="MODE")
@@ -127,16 +140,16 @@ def build_parser() -> argparse.ArgumentParser:
 
     archive_parser = subparsers.add_parser(
         "archive",
-        help="Archive scenes into chapters or chapters into volumes.",
-        description="Archive leading ready scenes into chapters, or eligible chapters into volumes.",
+        help="Archive scenes into chapters or refresh a volume summary.",
+        description="Archive leading ready scenes into the current volume chapter tree, or refresh the current volume summary.",
         epilog="Example:\n  novelctl archive chapter ./my-novel\n  novelctl archive volume ./my-novel --force",
         formatter_class=FORMATTER,
     )
     archive_subparsers = archive_parser.add_subparsers(dest="archive_mode", required=True, metavar="TARGET")
     archive_chapter_parser = archive_subparsers.add_parser(
         "chapter",
-        help="Archive leading ready scenes into a chapter.",
-        description="Archive leading ready scenes from 正文创作区.md into a new chapter file.",
+        help="Archive leading ready scenes into the current volume.",
+        description="Archive leading ready scenes from 正文创作区.md into the current volume's 章节/ tree.",
         formatter_class=FORMATTER,
     )
     add_common_workspace_arg(archive_chapter_parser)
@@ -144,8 +157,8 @@ def build_parser() -> argparse.ArgumentParser:
     archive_chapter_parser.add_argument("--dry-run", action="store_true", help="Preview chapter archive changes.")
     archive_volume_parser = archive_subparsers.add_parser(
         "volume",
-        help="Archive eligible chapters into a volume.",
-        description="Archive eligible chapters into a new volume file when thresholds and closure checks pass.",
+        help="Refresh the current volume summary.",
+        description="Create or refresh 卷.md for the current volume using its archived chapters.",
         formatter_class=FORMATTER,
     )
     add_common_workspace_arg(archive_volume_parser)
@@ -160,17 +173,12 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=FORMATTER,
     )
     add_common_workspace_arg(status_parser)
-    status_parser.add_argument(
-        "--json",
-        action="store_true",
-        help="Compatibility no-op. Status already prints JSON by default.",
-    )
 
     report_parser = subparsers.add_parser(
         "report",
         help="Read generated reports.",
         description="Read generated reports from `.novel/runtime/reports/`.",
-        epilog="Example:\n  novelctl report summary ./my-novel\n  novelctl report context-pack ./my-novel --scene scene-0002",
+        epilog="Example:\n  novelctl report summary ./my-novel\n  novelctl report context-pack ./my-novel --scene scene-0002 --profile handoff",
         formatter_class=FORMATTER,
     )
     report_subparsers = report_parser.add_subparsers(dest="report_mode", required=True, metavar="REPORT")
@@ -184,13 +192,20 @@ def build_parser() -> argparse.ArgumentParser:
         add_common_workspace_arg(report_mode_parser)
     report_context_parser = report_subparsers.add_parser(
         "context-pack",
-        help="Build a scene context pack.",
+        help="Build a scene handoff pack.",
         description="Build a focused context pack for a specific scene_id.",
-        epilog="Example:\n  novelctl report context-pack ./my-novel --scene scene-0002",
+        epilog="Example:\n  novelctl report context-pack ./my-novel --scene scene-0002 --profile handoff",
         formatter_class=FORMATTER,
     )
     add_common_workspace_arg(report_context_parser)
     report_context_parser.add_argument("--scene", required=True, dest="scene_id", help="Target scene_id.")
+    report_context_parser.add_argument(
+        "--profile",
+        choices=("draft", "check", "archive", "handoff"),
+        default=None,
+        help="Choose the context-pack view for this report.",
+    )
+
     return parser
 
 
@@ -204,35 +219,36 @@ def resolve_retrieve_limit(workspace: Path, explicit_limit: int | None) -> int:
     if explicit_limit is not None:
         return explicit_limit
     config = load_config(workspace)
-    retrieval = config.get("retrieval", {})
-    if not isinstance(retrieval, dict):
-        return 8
-    return int(retrieval.get("default_limit", 8))
+    return int(config.get("retrieval", {}).get("default_limit", 8))
+
+
+def emit(payload: dict, *, stream=None) -> int:
+    target = stream or sys.stdout
+    target.write(json.dumps(payload, ensure_ascii=False, indent=2))
+    target.write("\n")
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
-        workspace = Path(args.workspace) if hasattr(args, "workspace") else None
         if args.command == "init":
             result = init_workspace(Path(args.workspace), force=args.force, dry_run=args.dry_run)
         elif args.command == "sync":
             result = run_sync(Path(args.workspace), full=args.full, dry_run=args.dry_run)
         elif args.command == "check":
             result = run_check(Path(args.workspace), strict=args.strict)
-            print(json.dumps(result, ensure_ascii=False, indent=2))
-            has_blocking = bool(result.get("errors")) or (args.strict and (result.get("warnings") or result.get("review_required")))
-            return 1 if has_blocking else 0
+            if args.strict and (result.get("blocking") or result.get("review_required") or result.get("warnings")):
+                emit(result)
+                return 2
         elif args.command == "retrieve":
-            config = load_config(workspace)
-            limit = resolve_retrieve_limit(workspace, args.limit)
             result = retrieve(
-                workspace,
+                Path(args.workspace),
                 args.mode,
                 args.query,
-                limit,
-                config,
+                resolve_retrieve_limit(Path(args.workspace), args.limit),
+                load_config(Path(args.workspace)),
                 run_sync,
                 browse=getattr(args, "browse", False),
             )
@@ -244,8 +260,6 @@ def main(argv: list[str] | None = None) -> int:
             result = status(Path(args.workspace), run_sync)
         elif args.command == "report" and args.report_mode == "summary":
             result = report_summary(Path(args.workspace), run_sync)
-        elif args.command == "report" and args.report_mode == "context-pack":
-            result = report_context_pack(Path(args.workspace), args.scene_id, run_sync)
         elif args.command == "report" and args.report_mode == "conflicts":
             result = report_conflicts(Path(args.workspace), run_sync)
         elif args.command == "report" and args.report_mode == "gates":
@@ -254,17 +268,15 @@ def main(argv: list[str] | None = None) -> int:
             result = report_unresolved(Path(args.workspace), run_sync)
         elif args.command == "report" and args.report_mode == "freshness":
             result = report_freshness(Path(args.workspace), run_sync)
-        else:  # pragma: no cover
-            parser.error("Unsupported command.")
+        elif args.command == "report" and args.report_mode == "context-pack":
+            result = report_context_pack(Path(args.workspace), args.scene_id, run_sync, profile=args.profile)
+        else:
+            parser.error("Unhandled command")
             return 2
+        return emit(result)
     except Exception as exc:
-        payload = error_payload(exc)
-        print(json.dumps(payload, ensure_ascii=False, indent=2), file=sys.stderr)
-        return exc.exit_code if isinstance(exc, NovelCtlError) else 1
-
-    print(json.dumps(result, ensure_ascii=False, indent=2))
-    return 0
+        return emit(error_payload(exc), stream=sys.stderr) or (exc.exit_code if isinstance(exc, NovelCtlError) else 1)
 
 
-if __name__ == "__main__":  # pragma: no cover
+if __name__ == "__main__":
     raise SystemExit(main())

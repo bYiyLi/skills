@@ -238,6 +238,114 @@ async function validateSkill(skillName) {
     const rawEvals = await fs.readFile(evalsJsonPath, "utf8");
     validateEvals(skillName, evalsJsonPath, rawEvals);
   }
+
+  if (skillName === "novel-creation") {
+    await validateNovelCreationSkill(skillDir);
+  }
+}
+
+async function validateNovelCreationSkill(skillDir) {
+  const requiredFiles = [
+    "references/project-state-contract.md",
+    "references/workspace-contract.md",
+    "references/cli-usage.md",
+    "references/consistency-checks.md",
+    "references/retrieval-views.md",
+    "references/scene-schema.md",
+    "assets/workspace/WORK.md.tmpl",
+    "assets/workspace/正文创作区.md.tmpl",
+    "assets/workspace/世界观.md.tmpl",
+    "assets/workspace/主线规格.md.tmpl",
+    "assets/workspace/时间线.md.tmpl"
+  ];
+
+  for (const relativePath of requiredFiles) {
+    const absolutePath = path.join(skillDir, relativePath);
+    if (!(await exists(absolutePath))) {
+      error(absolutePath, `Missing novel-creation contract file "${relativePath}".`);
+    }
+  }
+
+  for (const relativePath of [
+    "assets/workspace/AGENTS.md.tmpl",
+    "assets/workspace/项目状态.md.tmpl",
+    "assets/workspace/正文创作区-empty.md.tmpl",
+    "assets/workspace/正文创作区-starter.md.tmpl",
+    "assets/workspace/变更记录.md.tmpl",
+    "references/layout-profiles.md",
+    "references/active-draft-profiles.md",
+    "references/migration-guide.md",
+    "references/read-policy.md",
+    "scripts/novelctl/src/novelctl/maintenance_ops.py"
+  ]) {
+    const absolutePath = path.join(skillDir, relativePath);
+    if (await exists(absolutePath)) {
+      error(absolutePath, `Deprecated novel-creation file "${relativePath}" should not remain in the latest contract.`);
+    }
+  }
+
+  const configTemplatePath = path.join(skillDir, "assets/workspace/config.yaml.tmpl");
+  if (await exists(configTemplatePath)) {
+    const rawConfigTemplate = await fs.readFile(configTemplatePath, "utf8");
+    if (rawConfigTemplate.includes("profiles:")) {
+      error(configTemplatePath, 'novel-creation config template must not include "profiles:".');
+    }
+    if (rawConfigTemplate.includes("read_policy:")) {
+      error(configTemplatePath, 'novel-creation config template must not include "read_policy:".');
+    }
+    if (rawConfigTemplate.includes("strict-no-write")) {
+      error(configTemplatePath, 'novel-creation config template must not include "strict-no-write".');
+    }
+  }
+
+  const skillPath = path.join(skillDir, "SKILL.md");
+  if (await exists(skillPath)) {
+    const rawSkill = await fs.readFile(skillPath, "utf8");
+    for (const requiredSnippet of ["WORK.md", "设定索引", "角色索引", "last verified command"]) {
+      if (!rawSkill.includes(requiredSnippet)) {
+        error(skillPath, `novel-creation SKILL.md must mention "${requiredSnippet}".`);
+      }
+    }
+  }
+
+  const deprecatedTerms = [
+    "AGENTS.md",
+    "segmented-active-drafts",
+    "strict-no-write",
+    "read_policy",
+    "novelctl doctor",
+    "novelctl migrate",
+    "--active-draft-profile",
+    "--minimal",
+    "--starter"
+  ];
+  const scanRoots = [
+    path.join(skillDir, "SKILL.md"),
+    path.join(skillDir, "references"),
+    path.join(skillDir, "assets/workspace"),
+    path.join(skillDir, "scripts/novelctl/src/novelctl"),
+    path.join(skillDir, "evals")
+  ];
+  const candidateFiles = await collectTextFiles(scanRoots);
+  for (const filePath of candidateFiles) {
+    const raw = await fs.readFile(filePath, "utf8");
+    for (const term of deprecatedTerms) {
+      if (raw.includes(term)) {
+        error(filePath, `novel-creation still contains deprecated term "${term}".`);
+      }
+    }
+  }
+
+  const workspaceModulePath = path.join(skillDir, "scripts/novelctl/src/novelctl/workspace.py");
+  if (await exists(workspaceModulePath)) {
+    const rawWorkspaceModule = await fs.readFile(workspaceModulePath, "utf8");
+    if (!rawWorkspaceModule.includes("parse_work_body")) {
+      error(workspaceModulePath, "novel-creation workspace module must parse WORK.md body indexes.");
+    }
+    if (!rawWorkspaceModule.includes("update_work_frontmatter")) {
+      error(workspaceModulePath, "novel-creation workspace module must keep WORK.md frontmatter/body in sync.");
+    }
+  }
 }
 
 function validateFrontmatter(skillName, filePath, frontmatter) {
@@ -704,6 +812,34 @@ function normalizeScalar(value) {
   const trimmed = value.trim();
   const quotedMatch = /^(['"])(.*)\1$/.exec(trimmed);
   return quotedMatch ? quotedMatch[2] : trimmed;
+}
+
+async function collectTextFiles(scanRoots) {
+  const output = [];
+  const textExtensions = new Set([".md", ".json", ".txt", ".py", ".mjs", ".js", ".yaml", ".yml", ".toml"]);
+  for (const root of scanRoots) {
+    if (!(await exists(root))) {
+      continue;
+    }
+    const stats = await fs.stat(root);
+    if (stats.isFile()) {
+      output.push(root);
+      continue;
+    }
+    const entries = await fs.readdir(root, { withFileTypes: true });
+    for (const entry of entries) {
+      const childPath = path.join(root, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === "__pycache__") {
+          continue;
+        }
+        output.push(...(await collectTextFiles([childPath])));
+      } else if (entry.isFile() && textExtensions.has(path.extname(entry.name))) {
+        output.push(childPath);
+      }
+    }
+  }
+  return output;
 }
 
 async function discoverSkillNames(sourceDir) {

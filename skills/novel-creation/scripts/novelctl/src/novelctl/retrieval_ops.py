@@ -8,9 +8,9 @@ from .errors import SceneNotFoundError, ValidationError
 from .openai_compat import embed_texts, embedding_enabled, rerank_candidates, reranker_enabled, retrieval_config
 from .runtime_ops import ensure_fresh_runtime, load_runtime_dataset, load_runtime_snapshot, report_path
 from .utils import cosine_similarity, load_json, score_text, stable_id, write_json_if_changed
-from .workspace import runtime_root
+from .workspace import load_config
 
-QUERY_REQUIRED_MODES = {"text", "entity", "timeline", "plotline", "fact", "relation"}
+QUERY_REQUIRED_MODES = {"text", "scene", "chapter", "volume", "source", "work"}
 
 
 def lexical_candidates(documents: list[dict], query: str) -> dict[str, dict]:
@@ -27,7 +27,18 @@ def lexical_candidates(documents: list[dict], query: str) -> dict[str, dict]:
                 lexical_score += field_score
                 matched_fields.append(field)
         if lexical_score > 0:
-            candidates[doc["id"]] = {"kind": doc["kind"], "id": doc["id"], "title": doc["title"], "source_path": doc["source_path"], "source_ref": doc["source_ref"], "matched_fields": matched_fields, "snippet": doc.get("summary", "")[:240] or doc.get("text", "")[:240], "lexical_score": lexical_score, "semantic_score": 0.0, "rerank_score": 0.0}
+            candidates[doc["id"]] = {
+                "kind": doc["kind"],
+                "id": doc["id"],
+                "title": doc["title"],
+                "source_path": doc["source_path"],
+                "source_ref": doc["source_ref"],
+                "matched_fields": matched_fields,
+                "snippet": doc.get("summary", "")[:240] or doc.get("text", "")[:240],
+                "lexical_score": lexical_score,
+                "semantic_score": 0.0,
+                "rerank_score": 0.0,
+            }
     return candidates
 
 
@@ -47,7 +58,19 @@ def semantic_candidates(documents: list[dict], query: str, workspace: Path, conf
         score = cosine_similarity(query_vector, vector)
         if score <= 0:
             continue
-        scored.append((score, {"kind": doc["kind"], "id": doc["id"], "title": doc["title"], "source_path": doc["source_path"], "source_ref": doc["source_ref"], "matched_fields": ["semantic"], "snippet": doc.get("summary", "")[:240] or doc.get("text", "")[:240], "lexical_score": 0.0, "semantic_score": score, "rerank_score": 0.0}))
+        payload = {
+            "kind": doc["kind"],
+            "id": doc["id"],
+            "title": doc["title"],
+            "source_path": doc["source_path"],
+            "source_ref": doc["source_ref"],
+            "matched_fields": ["semantic"],
+            "snippet": doc.get("summary", "")[:240] or doc.get("text", "")[:240],
+            "lexical_score": 0.0,
+            "semantic_score": score,
+            "rerank_score": 0.0,
+        }
+        scored.append((score, payload))
     scored.sort(key=lambda item: (-item[0], item[1]["id"]))
     return {item["id"]: item for _, item in scored[: max(limit * 3, 10)]}
 
@@ -65,64 +88,15 @@ def apply_rerank(query: str, records: list[dict], config: dict) -> None:
 
 
 def mode_kinds(mode: str) -> set[str]:
-    mapping = {"text": {"scene", "chapter", "volume", "entity", "spec"}, "entity": {"entity"}, "timeline": {"timeline"}, "plotline": {"plotline"}, "fact": {"fact"}, "relation": {"relation"}}
+    mapping = {
+        "text": {"scene", "chapter", "volume", "source", "work"},
+        "scene": {"scene"},
+        "chapter": {"chapter"},
+        "volume": {"volume"},
+        "source": {"source"},
+        "work": {"work"},
+    }
     return mapping.get(mode, set())
-
-
-def stale_next_actions(workspace: Path) -> list[str]:
-    return [f"先运行 `novelctl sync {workspace.as_posix()}` 更新 runtime，再继续读取最新结果。"]
-
-
-def stale_status_payload(workspace: Path, inspection: dict) -> dict:
-    payload = load_json(report_path(workspace, "status.json"), {})
-    if not isinstance(payload, dict):
-        payload = {}
-    freshness = payload.get("freshness", {}) if isinstance(payload.get("freshness"), dict) else {}
-    freshness.update(
-        {
-            "stale": True,
-            "changed_files": inspection["changed_files"],
-            "removed_files": inspection["removed_files"],
-            "config_changed": inspection["config_changed"],
-            "runtime_complete": inspection["runtime_complete"],
-            "llamaindex_missing": inspection["llamaindex_missing"],
-            "auto_sync_on_read": inspection["auto_sync_on_read"],
-            "last_synced_at": inspection["last_synced_at"],
-        }
-    )
-    runtime = payload.get("runtime", {}) if isinstance(payload.get("runtime"), dict) else {}
-    runtime.update({"root": runtime_root(workspace).as_posix(), "complete": inspection["runtime_complete"]})
-    payload.update(
-        {
-            "generated_at": inspection["generated_at"],
-            "runtime": runtime,
-            "freshness": freshness,
-            "next_actions": stale_next_actions(workspace),
-        }
-    )
-    return payload
-
-
-def stale_freshness_payload(workspace: Path, inspection: dict) -> dict:
-    payload = report_freshness_file(workspace)
-    if not isinstance(payload, dict):
-        payload = {}
-    payload.update(
-        {
-            "generated_at": inspection["generated_at"],
-            "workspace": inspection["workspace"],
-            "stale": True,
-            "changed_files": inspection["changed_files"],
-            "removed_files": inspection["removed_files"],
-            "config_changed": inspection["config_changed"],
-            "runtime_complete": inspection["runtime_complete"],
-            "llamaindex_missing": inspection["llamaindex_missing"],
-            "auto_sync_on_read": inspection["auto_sync_on_read"],
-            "last_synced_at": inspection["last_synced_at"],
-            "next_actions": stale_next_actions(workspace),
-        }
-    )
-    return payload
 
 
 def retrieve(
@@ -147,7 +121,22 @@ def retrieve(
     documents = load_runtime_dataset(workspace, "documents")
     if mode == "unresolved":
         unresolved = report_unresolved_file(workspace)
-        items = [{"kind": "unresolved", "id": item["plotline_id"], "title": item["plotline_id"], "source_path": "", "source_ref": item["plotline_id"], "matched_fields": ["open_loops"], "snippet": ", ".join(item["open_loops"]), "lexical_score": 1.0, "semantic_score": 0.0, "rerank_score": 0.0} for item in unresolved.get("plotlines", []) if not query or score_text(query, json.dumps(item, ensure_ascii=False)) > 0]
+        items = [
+            {
+                "kind": "unresolved",
+                "id": item["plotline_id"],
+                "title": item["plotline_id"],
+                "source_path": "",
+                "source_ref": item["plotline_id"],
+                "matched_fields": ["open_loops"],
+                "snippet": ", ".join(item["open_loops"]),
+                "lexical_score": 1.0,
+                "semantic_score": 0.0,
+                "rerank_score": 0.0,
+            }
+            for item in unresolved.get("plotlines", [])
+            if not query or score_text(query, json.dumps(item, ensure_ascii=False)) > 0
+        ]
         return {"mode": mode, "query": query, "results": items[:limit]}
     if mode == "conflict-candidates":
         report = report_conflicts_file(workspace)
@@ -157,7 +146,20 @@ def retrieve(
             lexical = score_text(query, text) if query else 1.0
             if lexical <= 0:
                 continue
-            items.append({"kind": item["kind"], "id": stable_id("candidate", text), "title": item["kind"], "source_path": item.get("source_path", ""), "source_ref": item.get("scene_id", item["kind"]), "matched_fields": ["report"], "snippet": text[:240], "lexical_score": lexical, "semantic_score": 0.0, "rerank_score": 0.0})
+            items.append(
+                {
+                    "kind": item["kind"],
+                    "id": stable_id("candidate", text),
+                    "title": item["kind"],
+                    "source_path": item.get("source_path", ""),
+                    "source_ref": item.get("scene_id", item["kind"]),
+                    "matched_fields": ["report"],
+                    "snippet": text[:240],
+                    "lexical_score": lexical,
+                    "semantic_score": 0.0,
+                    "rerank_score": 0.0,
+                }
+            )
         items.sort(key=lambda record: (-record["lexical_score"], record["id"]))
         return {"mode": mode, "query": query, "results": items[:limit]}
     kinds = mode_kinds(mode)
@@ -166,7 +168,18 @@ def retrieve(
     semantic = semantic_candidates(mode_documents, query, workspace, config, limit) if query else {}
     merged: dict[str, dict] = {}
     for record in mode_documents if browse_mode else []:
-        merged[record["id"]] = {"kind": record["kind"], "id": record["id"], "title": record["title"], "source_path": record["source_path"], "source_ref": record["source_ref"], "matched_fields": [], "snippet": record.get("summary", "")[:240] or record.get("text", "")[:240], "lexical_score": 0.0, "semantic_score": 0.0, "rerank_score": 0.0}
+        merged[record["id"]] = {
+            "kind": record["kind"],
+            "id": record["id"],
+            "title": record["title"],
+            "source_path": record["source_path"],
+            "source_ref": record["source_ref"],
+            "matched_fields": [],
+            "snippet": record.get("summary", "")[:240] or record.get("text", "")[:240],
+            "lexical_score": 0.0,
+            "semantic_score": 0.0,
+            "rerank_score": 0.0,
+        }
     for source in (lexical, semantic):
         for key, record in source.items():
             merged.setdefault(key, record)
@@ -186,13 +199,16 @@ def retrieve(
     payload = {"mode": mode, "query": query, "results": candidates[:limit]}
     if browse_mode:
         payload["browse_mode"] = True
+    if not embedding_enabled(config):
+        payload["semantic_mode"] = "lexical-fallback"
     return payload
 
 
-def report_context_pack(workspace: Path, scene_id: str, run_sync_callable) -> dict:
+def report_context_pack(workspace: Path, scene_id: str, run_sync_callable, *, profile: str | None = None) -> dict:
     workspace = workspace.resolve()
+    config = load_config(workspace)
     ensure_fresh_runtime(workspace, run_sync_callable, command_name="report context-pack")
-    snapshot = load_runtime_snapshot(workspace)
+    snapshot = load_runtime_snapshot(workspace, config)
     scene_map = {scene["scene_id"]: scene for scene in snapshot["manifests"]["scenes"]}
     scene = scene_map.get(scene_id)
     if not scene:
@@ -200,14 +216,81 @@ def report_context_pack(workspace: Path, scene_id: str, run_sync_callable) -> di
             f"Unknown scene_id: {scene_id}",
             details={"scene_id": scene_id, "available_scene_ids": sorted(scene_map)[:20]},
         )
-    entities = [entity for entity in snapshot["manifests"]["entities"] if entity["name"] in {scene["pov"], scene["location"], *scene["characters"]}]
-    timeline = [item for item in snapshot["manifests"]["timelines"] if item["scene_id"] == scene_id or item["scene_id"] in scene["continuity_refs"]]
-    plotlines = [item for item in snapshot["manifests"]["plotlines"] if item["plotline_id"] in scene["plotlines"]]
+    selected_profile = profile or "draft"
+    project_state = snapshot["manifests"]["project_work"]
+    source_docs = [doc for doc in snapshot["manifests"]["source_docs"] if doc.get("kind") == "source"]
+    focus_names = {scene["pov"], scene["location"], *scene["characters"]}
+    focus_sources = [
+        doc for doc in source_docs if doc["title"] in focus_names or doc["source_path"] in set(project_state.get("setting_index", []))
+    ]
+    recent_related = [scene_map[ref] for ref in scene["continuity_refs"] if ref in scene_map]
+    chapters = [
+        chapter
+        for chapter in snapshot["manifests"]["chapters"]
+        if chapter.get("volume_id") == project_state.get("current_volume")
+        or any(ref in chapter.get("scene_ids", []) for ref in scene["continuity_refs"])
+    ]
     conflicts = report_conflicts_file(workspace).get("items", [])
-    conflict_hits = [item for item in conflicts if item.get("scene_id") == scene_id or any(character and character in json.dumps(item, ensure_ascii=False) for character in scene["characters"]) or scene["scene_id"] in json.dumps(item, ensure_ascii=False)]
+    conflict_hits = [item for item in conflicts if item.get("scene_id") == scene_id or scene["scene_id"] in json.dumps(item, ensure_ascii=False)]
     unresolved = report_unresolved_file(workspace)
-    pack = {"scene": scene, "continuity_refs": [scene_map[ref] for ref in scene["continuity_refs"] if ref in scene_map], "entities": entities, "timeline": timeline, "plotlines": plotlines, "unresolved": unresolved, "conflict_candidates": conflict_hits, "recommended_retrievals": [f'novelctl retrieve fact "{scene["pov"] or scene["scene_id"]}"', f'novelctl retrieve timeline "{scene["time"]}"', f'novelctl retrieve plotline "{scene["plotlines"][0]}"' if scene["plotlines"] else "novelctl retrieve plotline \"plot-main-001\""]}
-    write_json_if_changed(report_path(workspace, f"context-pack-{scene_id}.json"), pack)
+    ready_frontier = [
+        item["scene_id"]
+        for item in snapshot["manifests"]["scenes"]
+        if item["source_kind"] == "draft" and item["status"] == "ready"
+    ]
+    pack = {
+        "profile": selected_profile,
+        "scene": scene,
+        "project_state": {
+            "stage": project_state.get("stage", "bootstrap"),
+            "current_task_type": project_state.get("current_task_type", "bootstrap"),
+            "current_scope": project_state.get("current_scope", ""),
+            "blockers": project_state.get("blockers", []),
+            "next_step": project_state.get("next_step", ""),
+            "current_scene": project_state.get("current_scene", ""),
+            "current_chapter": project_state.get("current_chapter", ""),
+            "current_volume": project_state.get("current_volume", ""),
+        },
+        "continuity_refs": recent_related,
+        "related_chapters": chapters,
+        "focus_sources": focus_sources,
+        "unresolved": unresolved,
+        "conflict_candidates": conflict_hits,
+        "recommended_route": "archive" if scene["status"] == "ready" else "draft",
+        "next_commands": [
+            f'novelctl check "{workspace.as_posix()}"',
+            f'novelctl report context-pack "{workspace.as_posix()}" --scene {scene_id} --profile handoff',
+        ],
+    }
+    if selected_profile == "draft":
+        pack["draft_focus"] = {
+            "characters": scene["characters"],
+            "location": scene["location"],
+            "goal": scene["goal"],
+            "recent_related_scenes": recent_related,
+        }
+    elif selected_profile == "check":
+        pack["check_focus"] = {
+            "scene_summary": scene["summary"],
+            "conflict_candidates": conflict_hits,
+            "blockers": project_state.get("blockers", []),
+        }
+    elif selected_profile == "archive":
+        pack["archive_focus"] = {
+            "ready_frontier": ready_frontier,
+            "current_volume": project_state.get("current_volume", ""),
+            "current_chapter": project_state.get("current_chapter", ""),
+        }
+        pack["next_commands"].insert(0, f'novelctl archive chapter "{workspace.as_posix()}" --dry-run')
+    elif selected_profile == "handoff":
+        pack["handoff"] = {
+            "current_stage": project_state.get("stage", "bootstrap"),
+            "current_blockers": project_state.get("blockers", []),
+            "next_step": project_state.get("next_step", ""),
+            "reentry_scene": scene_id,
+            "last_verified_command": f'novelctl check "{workspace.as_posix()}"',
+        }
+    write_json_if_changed(report_path(workspace, f"context-pack-{scene_id}-{selected_profile}.json"), pack)
     return pack
 
 
@@ -237,15 +320,11 @@ def report_unresolved(workspace: Path, run_sync_callable) -> dict:
 
 def report_freshness(workspace: Path, run_sync_callable) -> dict:
     workspace = workspace.resolve()
-    inspection = ensure_fresh_runtime(workspace, run_sync_callable, command_name="report freshness", allow_stale=True)
-    if inspection["stale"] and not inspection["auto_sync_on_read"]:
-        return stale_freshness_payload(workspace, inspection)
+    ensure_fresh_runtime(workspace, run_sync_callable, command_name="report freshness")
     return report_freshness_file(workspace)
 
 
 def status(workspace: Path, run_sync_callable) -> dict:
     workspace = workspace.resolve()
-    inspection = ensure_fresh_runtime(workspace, run_sync_callable, command_name="status", allow_stale=True)
-    if inspection["stale"] and not inspection["auto_sync_on_read"]:
-        return stale_status_payload(workspace, inspection)
+    ensure_fresh_runtime(workspace, run_sync_callable, command_name="status")
     return load_json(report_path(workspace, "status.json"), {})

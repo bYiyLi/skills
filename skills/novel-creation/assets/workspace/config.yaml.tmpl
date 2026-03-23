@@ -2,11 +2,8 @@ workspace:
   locale: zh-CN
   chapter_ready_scene_threshold: 3
   chapter_ready_char_threshold: 6000
-  volume_ready_chapter_threshold: 10
-  volume_ready_char_threshold: 80000
-
-freshness:
-  auto_sync_on_read: true
+  volume_ready_chapter_threshold: 3
+  volume_ready_char_threshold: 20000
 
 retrieval:
   default_limit: 8
@@ -17,7 +14,7 @@ retrieval:
 embedding:
   enabled: false
   provider: openai-compatible
-  base_url: https://api.example.com/v1
+  base_url: https://api.example.com
   model: text-embedding-3-small
   api_key_env: OPENAI_API_KEY
   batch_size: 32
@@ -26,7 +23,7 @@ embedding:
 reranker:
   enabled: false
   provider: openai-compatible
-  base_url: https://api.example.com/v1
+  base_url: https://api.example.com
   model: rerank-1
   api_key_env: OPENAI_API_KEY
   top_k: 20

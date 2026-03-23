@@ -6,22 +6,9 @@ from typing import Iterable
 
 import yaml
 
-from .constants import (
-    ARCHIVE_DIR,
-    CHAPTER_DIR,
-    CHARACTER_DIR,
-    DRAFT_FILE,
-    ENTITY_DIRS,
-    FACTION_DIR,
-    ITEM_DIR,
-    LOCATION_DIR,
-    PLACEHOLDER_VALUES,
-    PROGRESS_DIR,
-    PROJECT_STATUS_FILE,
-    SETTINGS_DIR,
-    VOLUME_DIR,
-)
+from .constants import ARCHIVE_DIR, CHARACTERS_DIR, CHAPTERS_DIR, DRAFT_FILE, PLACEHOLDER_VALUES, SETTINGS_DIR, VOLUMES_DIR, WORK_FILE
 from .utils import md5_file, relative_posix, stable_id
+from .workspace import parse_work_body, split_frontmatter_text, volumes_root
 
 SCENE_BLOCK_RE = re.compile(
     r"^##\s+(?P<heading>[^\n]+)\r?\n```yaml\r?\n(?P<meta>.*?)\r?\n```\r?\n(?P<body>.*?)(?=^##\s+[^\n]+\r?\n```yaml|\Z)",
@@ -50,24 +37,14 @@ REQUIRED_SCENE_FIELDS = {
     "open_loops",
 }
 
-ALLOW_EMPTY_LIST_FIELDS = {
-    "continuity_refs",
-    "payoff_refs",
-}
+ALLOW_EMPTY_LIST_FIELDS = {"continuity_refs", "payoff_refs"}
 
 
 def split_frontmatter(text: str) -> tuple[dict, str]:
-    if not text.startswith("---"):
-        return {}, text
-    marker = "\n---\n"
-    end_index = text.find(marker, 4)
-    if end_index == -1:
-        return {}, text
-    raw = text[4:end_index]
-    data = yaml.safe_load(raw) or {}
-    if not isinstance(data, dict):
+    frontmatter, body = split_frontmatter_text(text)
+    if frontmatter and not isinstance(frontmatter, dict):
         raise ValueError("Frontmatter must be a YAML mapping.")
-    return data, text[end_index + len(marker) :]
+    return frontmatter, body
 
 
 def parse_markdown_title(text: str, fallback: str) -> str:
@@ -76,9 +53,8 @@ def parse_markdown_title(text: str, fallback: str) -> str:
 
 
 def parse_sections(text: str) -> dict[str, list[str]]:
-    sections: dict[str, list[str]] = {}
+    sections: dict[str, list[str]] = {"__root__": []}
     current = "__root__"
-    sections[current] = []
     for line in text.splitlines():
         match = SECTION_RE.match(line)
         if match:
@@ -97,6 +73,10 @@ def _normalize_list(value: object) -> list:
     return [value]
 
 
+def _normalize_mapping_list(value: object) -> list[dict]:
+    return [item for item in _normalize_list(value) if isinstance(item, dict)]
+
+
 def _single_doc_record(
     *,
     path: Path,
@@ -111,7 +91,6 @@ def _single_doc_record(
     extra: dict | None = None,
 ) -> dict:
     rel_path = relative_posix(path, workspace)
-    file_md5 = md5_file(path)
     record = {
         "id": record_id,
         "record_id": record_id,
@@ -123,7 +102,7 @@ def _single_doc_record(
         "refs": [str(item) for item in _normalize_list(frontmatter.get("refs")) if str(item).strip()],
         "body": body.strip(),
         "source_path": rel_path,
-        "source_file_md5": file_md5,
+        "source_file_md5": md5_file(path),
     }
     if kind:
         record["kind"] = kind
@@ -160,9 +139,9 @@ def parse_scene_blocks(text: str, rel_path: str, source_kind: str, source_file_m
                 "continuity_refs": [str(item).strip() for item in _normalize_list(metadata.get("continuity_refs")) if str(item).strip()],
                 "summary": str(metadata.get("summary", "")).strip(),
                 "beats": [str(item).strip() for item in _normalize_list(metadata.get("beats")) if str(item).strip()],
-                "new_facts": [item for item in _normalize_list(metadata.get("new_facts")) if isinstance(item, dict)],
-                "state_changes": [item for item in _normalize_list(metadata.get("state_changes")) if isinstance(item, dict)],
-                "foreshadow": [item for item in _normalize_list(metadata.get("foreshadow")) if isinstance(item, dict)],
+                "new_facts": _normalize_mapping_list(metadata.get("new_facts")),
+                "state_changes": _normalize_mapping_list(metadata.get("state_changes")),
+                "foreshadow": _normalize_mapping_list(metadata.get("foreshadow")),
                 "payoff_refs": [str(item).strip() for item in _normalize_list(metadata.get("payoff_refs")) if str(item).strip()],
                 "open_loops": [item for item in _normalize_list(metadata.get("open_loops")) if item],
                 "body": body,
@@ -201,123 +180,54 @@ def render_scene(scene: dict) -> str:
     return f"## {heading}\n```yaml\n{yaml_text}\n```\n正文:\n\n{scene['body'].strip()}\n"
 
 
-def parse_setting_file(path: Path, workspace: Path) -> dict:
+def parse_source_markdown(path: Path, workspace: Path, kind: str) -> dict:
     text = path.read_text(encoding="utf-8")
     frontmatter, body = split_frontmatter(text)
     title = parse_markdown_title(body, path.stem)
-    parent_name = path.parent.name
-    rel_path = relative_posix(path, workspace)
-    file_md5 = md5_file(path)
-
-    base = {
-        "aliases": [str(item).strip() for item in _normalize_list(frontmatter.get("aliases")) if str(item).strip()],
-        "current_state": frontmatter.get("current_state", ""),
-        "updated_at": str(frontmatter.get("updated_at", "")),
-        "frozen": bool(frontmatter.get("frozen", False)),
-    }
-    if parent_name in ENTITY_DIRS:
-        entity_kind = str(frontmatter.get("entity_kind", ENTITY_DIRS[parent_name]))
-        entity_id = str(frontmatter.get("entity_id") or frontmatter.get("record_id") or stable_id("entity", rel_path))
-        return _single_doc_record(
-            path=path,
-            workspace=workspace,
-            body=body,
-            frontmatter=frontmatter,
-            record_id=entity_id,
-            record_type=str(frontmatter.get("record_type", "entity")),
-            title=str(frontmatter.get("name", title)),
-            summary=str(frontmatter.get("summary", "")).strip(),
-            kind="entity",
-            extra={
-                "entity_id": entity_id,
-                "entity_kind": entity_kind,
-                "name": str(frontmatter.get("name", title)),
-                "source_path": rel_path,
-                "source_file_md5": file_md5,
-                **base,
-            },
-        )
-
-    spec_id = str(frontmatter.get("record_id") or stable_id("spec", rel_path))
+    record_id = str(frontmatter.get("record_id") or stable_id(kind, relative_posix(path, workspace)))
+    source_group = "setting" if kind == "setting" else "character"
     return _single_doc_record(
         path=path,
         workspace=workspace,
         body=body,
         frontmatter=frontmatter,
-        record_id=spec_id,
-        record_type=str(frontmatter.get("record_type", "spec")),
+        record_id=record_id,
+        record_type=str(frontmatter.get("record_type", source_group)),
         title=str(frontmatter.get("name", title)),
         summary=str(frontmatter.get("summary", "")).strip(),
-        kind="spec",
+        kind="source",
         extra={
-            "spec_kind": parent_name if path.parent.name == SETTINGS_DIR else "spec",
-            "updated_at": str(frontmatter.get("updated_at", "")),
-            "frozen": bool(frontmatter.get("frozen", False)),
+            "source_group": source_group,
+            "source_title": path.stem,
         },
     )
 
 
-def parse_project_agents(path: Path, workspace: Path) -> dict:
+def parse_work_file(path: Path, workspace: Path) -> dict:
     text = path.read_text(encoding="utf-8")
     frontmatter, body = split_frontmatter(text)
-    sections = parse_sections(body)
-    frozen_lines = [line.strip("- ").strip() for line in sections.get("冻结设定与禁改项", []) if line.strip().startswith("-")]
-    stage = str(frontmatter.get("stage", "")).strip()
-    if not stage:
-        for line in sections.get("当前阶段", []):
-            if "stage:" in line:
-                stage = line.split("stage:", 1)[1].strip()
-                break
-    active_plotlines = [str(item).strip() for item in _normalize_list(frontmatter.get("active_plotlines")) if str(item).strip()]
+    registry = parse_work_body(body)
     return _single_doc_record(
         path=path,
         workspace=workspace,
         body=body,
         frontmatter=frontmatter,
-        record_id=str(frontmatter.get("record_id", "project-agents")),
-        record_type=str(frontmatter.get("record_type", "project-agents")),
-        title="AGENTS",
-        summary=str(frontmatter.get("summary", "项目协作约束")).strip(),
-        kind="project",
+        record_id=str(frontmatter.get("record_id", "project-work")),
+        record_type=str(frontmatter.get("record_type", "project-work")),
+        title=str(frontmatter.get("title", "WORK")),
+        summary=str(frontmatter.get("summary", "项目工作状态")).strip(),
+        kind="work",
         extra={
-            "stage": stage or "bootstrap",
-            "active_plotlines": active_plotlines,
-            "frozen_lines": [line for line in frozen_lines if line and line not in PLACEHOLDER_VALUES],
-        },
-    )
-
-
-def parse_progress(path: Path, workspace: Path) -> dict:
-    text = path.read_text(encoding="utf-8")
-    frontmatter, body = split_frontmatter(text)
-    sections = parse_sections(body)
-    current_scene = str(frontmatter.get("current_scene", "")).strip()
-    current_chapter = str(frontmatter.get("current_chapter", "")).strip()
-    current_volume = str(frontmatter.get("current_volume", "")).strip()
-    if not current_scene:
-        for line in sections.get("当前推进位置", []):
-            if "current-scene:" in line:
-                current_scene = line.split("current-scene:", 1)[1].strip()
-            if "current-chapter:" in line:
-                current_chapter = line.split("current-chapter:", 1)[1].strip()
-            if "current-volume:" in line:
-                current_volume = line.split("current-volume:", 1)[1].strip()
-    unresolved = [line.strip("- ").strip() for line in sections.get("未解决冲突候选", []) if line.strip().startswith("-")]
-    return _single_doc_record(
-        path=path,
-        workspace=workspace,
-        body=body,
-        frontmatter=frontmatter,
-        record_id=str(frontmatter.get("record_id", "project-progress")),
-        record_type=str(frontmatter.get("record_type", "project-progress")),
-        title="项目状态",
-        summary=str(frontmatter.get("summary", "项目进展状态")).strip(),
-        kind="project",
-        extra={
-            "current_scene": current_scene,
-            "current_chapter": current_chapter,
-            "current_volume": current_volume,
-            "unresolved_notes": [item for item in unresolved if item and item not in PLACEHOLDER_VALUES],
+            "stage": str(frontmatter.get("stage", "bootstrap")).strip() or "bootstrap",
+            "current_task_type": str(frontmatter.get("current_task_type", "bootstrap")).strip() or "bootstrap",
+            "current_scope": str(frontmatter.get("current_scope", "")).strip(),
+            "current_scene": str(frontmatter.get("current_scene", "")).strip(),
+            "current_chapter": str(frontmatter.get("current_chapter", "")).strip(),
+            "current_volume": str(frontmatter.get("current_volume", "")).strip(),
+            "blockers": [str(item).strip() for item in _normalize_list(frontmatter.get("blockers")) if str(item).strip()],
+            "next_step": str(frontmatter.get("next_step", "")).strip(),
+            "setting_index": [item["path"] for item in registry["setting_links"]],
+            "character_index": [item["path"] for item in registry["character_links"]],
         },
     )
 
@@ -340,6 +250,7 @@ def parse_chapter_file(path: Path, workspace: Path) -> tuple[dict, list[dict]]:
         kind="chapter",
         extra={
             "chapter_id": chapter_id,
+            "volume_id": str(frontmatter.get("volume_id", "")).strip(),
             "scene_ids": [str(item).strip() for item in _normalize_list(frontmatter.get("scene_ids")) if str(item).strip()],
             "source_file_md5": file_md5,
         },
@@ -366,8 +277,6 @@ def parse_volume_file(path: Path, workspace: Path) -> dict:
         extra={
             "volume_id": volume_id,
             "chapter_ids": [str(item).strip() for item in _normalize_list(frontmatter.get("chapter_ids")) if str(item).strip()],
-            "closed_plotlines": [str(item).strip() for item in _normalize_list(frontmatter.get("closed_plotlines")) if str(item).strip()],
-            "unresolved_loops": [str(item).strip() for item in _normalize_list(frontmatter.get("unresolved_loops")) if str(item).strip()],
         },
     )
 
@@ -396,8 +305,10 @@ def find_missing_scene_fields(scene: dict) -> list[str]:
 
 
 def has_placeholder(value: object) -> bool:
+    values = {item.lower() for item in PLACEHOLDER_VALUES}
     if isinstance(value, str):
-        return value.strip().lower() in PLACEHOLDER_VALUES
+        text = value.strip().lower()
+        return not text or text in values
     if isinstance(value, list):
         return any(has_placeholder(item) for item in value)
     if isinstance(value, dict):
@@ -413,18 +324,16 @@ def gather_markdown_files(directory: Path) -> Iterable[Path]:
 
 def detect_source_kind(path: Path, workspace: Path) -> str:
     rel = relative_posix(path, workspace)
-    if rel == "AGENTS.md":
-        return "project-agents"
-    if rel == f"{PROGRESS_DIR}/{PROJECT_STATUS_FILE}":
-        return "project-progress"
+    if rel == WORK_FILE:
+        return "project-work"
     if rel == DRAFT_FILE:
         return "draft"
     if rel.startswith(f"{SETTINGS_DIR}/"):
         return "setting"
-    if rel.startswith(f"{ARCHIVE_DIR}/{CHAPTER_DIR}/"):
-        return "chapter"
-    if rel.startswith(f"{ARCHIVE_DIR}/{VOLUME_DIR}/"):
+    if rel.startswith(f"{CHARACTERS_DIR}/"):
+        return "character"
+    if rel.startswith(f"{ARCHIVE_DIR}/{VOLUMES_DIR}/") and rel.endswith("/卷.md"):
         return "volume"
-    if rel.startswith(f"{PROGRESS_DIR}/"):
-        return "progress-note"
+    if rel.startswith(f"{ARCHIVE_DIR}/{VOLUMES_DIR}/") and f"/{CHAPTERS_DIR}/" in rel:
+        return "chapter"
     return "markdown"

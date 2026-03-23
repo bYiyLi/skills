@@ -61,31 +61,3 @@ class NotFoundError(NovelCtlError):
 class SceneNotFoundError(NotFoundError):
     default_code = "SceneNotFoundError"
     default_hint = "检查 `scene_id` 是否正确，或先运行 `novelctl retrieve text <workspace> --browse` 浏览可用场景。"
-
-
-class StaleRuntimeError(NovelCtlError):
-    default_code = "StaleRuntimeError"
-
-    def __init__(
-        self,
-        *,
-        workspace: str,
-        command_name: str,
-        changed_files: list[str],
-        removed_files: list[str],
-        config_changed: bool,
-        runtime_complete: bool,
-        llamaindex_missing: bool,
-    ) -> None:
-        message = f"Runtime is stale for `{command_name}`."
-        hint = "先运行 `novelctl sync <workspace>` 更新 runtime，或在 `.novel/config.yaml` 中开启 `freshness.auto_sync_on_read`。"
-        details = {
-            "workspace": workspace,
-            "command": command_name,
-            "changed_files": changed_files,
-            "removed_files": removed_files,
-            "config_changed": config_changed,
-            "runtime_complete": runtime_complete,
-            "llamaindex_missing": llamaindex_missing,
-        }
-        super().__init__(message, hint=hint, details=details)
