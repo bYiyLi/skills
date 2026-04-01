@@ -1,0 +1,49 @@
+{
+  "$schema": "../../../schemas/skill-evals.schema.json",
+  "version": 1,
+  "skill": "software-requirements-spec",
+  "trigger_queries": [
+    {
+      "query": "把这批零散需求讨论整理成一版 feature spec，补上范围、角色、功能要求、非功能要求和验收标准。",
+      "should_trigger": true,
+      "notes": "标准需求文档编写。"
+    },
+    {
+      "query": "审一下这份软件需求文档，重点看每条 requirement 是否可测、是否重复、是否泄漏设计。",
+      "should_trigger": true,
+      "notes": "需求质量审校。"
+    },
+    {
+      "query": "帮我写这套系统的架构图、模块分层和部署拓扑。",
+      "should_trigger": false,
+      "notes": "这是设计文档任务。"
+    },
+    {
+      "query": "给最终用户写一个从零上手的操作教程。",
+      "should_trigger": false,
+      "notes": "这是使用说明文档任务。"
+    }
+  ],
+  "output_cases": [
+    {
+      "id": "requirements-baseline",
+      "prompt": "把一个模糊的功能想法整理成可交给设计和测试继续工作的需求文档。",
+      "comparison_mode": "with-vs-without-skill",
+      "success_criteria": [
+        "先定义 scope、actors、out-of-scope，而不是直接列功能点。",
+        "区分 functional、interface、NFR、constraints。",
+        "给关键 requirement 留出 acceptance / verification hook。"
+      ]
+    },
+    {
+      "id": "requirements-review",
+      "prompt": "评审这份 SRS 是否存在歧义、重复、实现泄漏和不可验证的要求。",
+      "comparison_mode": "with-vs-without-skill",
+      "success_criteria": [
+        "能指出 requirement quality 问题，而不是只润色措辞。",
+        "会检查 traceability 和验证入口。",
+        "会把设计建议从 requirement statement 中剥离。"
+      ]
+    }
+  ]
+}

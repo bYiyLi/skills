@@ -1,0 +1,49 @@
+{
+  "$schema": "../../../schemas/skill-evals.schema.json",
+  "version": 1,
+  "skill": "software-design-spec",
+  "trigger_queries": [
+    {
+      "query": "为这个新支付子系统写一版架构与详细设计，覆盖上下文、模块划分、关键时序、数据流和部署影响。",
+      "should_trigger": true,
+      "notes": "标准设计文档编写。"
+    },
+    {
+      "query": "评审这份 feature design，重点看接口边界、失败路径、兼容性和 trade-off 是否写全。",
+      "should_trigger": true,
+      "notes": "设计文档审校。"
+    },
+    {
+      "query": "先帮我把需求范围和验收标准定下来。",
+      "should_trigger": false,
+      "notes": "这是需求文档任务。"
+    },
+    {
+      "query": "给运维同学写一份日常巡检和故障处理手册。",
+      "should_trigger": false,
+      "notes": "这是使用说明文档任务。"
+    }
+  ],
+  "output_cases": [
+    {
+      "id": "design-view-selection",
+      "prompt": "基于一组明确需求，写一版能指导研发实现的 feature design，并选择必要视图。",
+      "comparison_mode": "with-vs-without-skill",
+      "success_criteria": [
+        "先写 design drivers，而不是直接堆架构图。",
+        "视图至少覆盖结构、接口和运行时行为。",
+        "记录关键 decisions、alternatives 和 trade-offs。"
+      ]
+    },
+    {
+      "id": "design-review-traceability",
+      "prompt": "评审设计文档是否既覆盖关键风险，又能追溯到需求和质量目标。",
+      "comparison_mode": "with-vs-without-skill",
+      "success_criteria": [
+        "会检查 requirements-to-design traceability。",
+        "会指出缺失的 runtime/deployment/failure-mode 信息。",
+        "不会把 as-is 和 to-be 混为一谈。"
+      ]
+    }
+  ]
+}
