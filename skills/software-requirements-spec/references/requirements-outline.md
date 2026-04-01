@@ -48,6 +48,8 @@
 2. 把愿景、目标、假设和 requirement 混写。
 3. NFR 只写“高性能”“高可用”而无量化边界。
 4. 接口依赖、异常场景、权限边界被遗漏。
+5. 新需求写在随机目录或临时笔记里，没有进入 canonical requirements 路径。
+6. 同主题出现多份 requirements 文档，但没有标哪份是当前真源。
 
 ## Repository Requirements Standard
 
@@ -74,3 +76,7 @@
 4. 对追溯的要求：
    - 关键 requirement 要能指向来源。
    - 后续设计和测试应能回指到这些 requirement。
+5. 对文档管理的要求：
+   - 默认放 `docs/requirements/`
+   - 标明 status、baseline、owner
+   - 替代旧文档时显式写 supersede 关系

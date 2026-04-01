@@ -32,7 +32,8 @@
       "success_criteria": [
         "先定义 scope、actors、out-of-scope，而不是直接列功能点。",
         "区分 functional、interface、NFR、constraints。",
-        "给关键 requirement 留出 acceptance / verification hook。"
+        "给关键 requirement 留出 acceptance / verification hook。",
+        "明确 canonical save path、status，以及是新建还是更新。"
       ]
     },
     {
@@ -42,7 +43,8 @@
       "success_criteria": [
         "能指出 requirement quality 问题，而不是只润色措辞。",
         "会检查 traceability 和验证入口。",
-        "会把设计建议从 requirement statement 中剥离。"
+        "会把设计建议从 requirement statement 中剥离。",
+        "会检查是否存在平行真源、错误状态或缺失的 supersede 关系。"
       ]
     }
   ]

@@ -31,6 +31,8 @@
 3. 是否给 expected result 或 checkpoint。
 4. 是否写了失败恢复或排障入口。
 5. 是否明确版本差异或已知限制。
+6. 是否放到了正确的 canonical 目录。
+7. 是否标明状态与替代关系。
 
 ## Common Failure Modes
 
@@ -61,3 +63,7 @@
    - permissions
    - expected results
    - rollback or recovery
+6. 对文档管理的要求：
+   - tutorial/how-to/operator/reference 各放到正确目录
+   - 标明 status、baseline、owner
+   - 替代旧文档时显式写 supersede 关系

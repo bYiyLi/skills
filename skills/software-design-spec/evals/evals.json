@@ -32,7 +32,8 @@
       "success_criteria": [
         "先写 design drivers，而不是直接堆架构图。",
         "视图至少覆盖结构、接口和运行时行为。",
-        "记录关键 decisions、alternatives 和 trade-offs。"
+        "记录关键 decisions、alternatives 和 trade-offs。",
+        "明确 canonical save path、status，以及是新建还是更新。"
       ]
     },
     {
@@ -42,7 +43,8 @@
       "success_criteria": [
         "会检查 requirements-to-design traceability。",
         "会指出缺失的 runtime/deployment/failure-mode 信息。",
-        "不会把 as-is 和 to-be 混为一谈。"
+        "不会把 as-is 和 to-be 混为一谈。",
+        "会检查是否存在平行真源、错误状态或缺失的 supersede 关系。"
       ]
     }
   ]

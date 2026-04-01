@@ -32,7 +32,7 @@
       "success_criteria": [
         "会先按 tutorial/how-to/reference/explanation 进行路由。",
         "不会把所有内容机械地留在一篇长文里。",
-        "会说明各部分的读者目标和真源。"
+        "会说明各部分的读者目标、真源和 canonical path。"
       ]
     },
     {
@@ -42,7 +42,8 @@
       "success_criteria": [
         "结构贴近真实接口面，而不是写成教程。",
         "会覆盖参数、返回、错误和版本/鉴权说明。",
-        "示例可复制，并标注 baseline 或版本。"
+        "示例可复制，并标注 baseline 或版本。",
+        "明确 canonical save path、status，以及是新建还是更新。"
       ]
     }
   ]

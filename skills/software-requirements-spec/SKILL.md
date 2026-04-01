@@ -37,6 +37,7 @@ metadata:
 
 - 需要选文档层级或章节骨架时，读 [references/requirements-outline.md](references/requirements-outline.md)。
 - 需要确认 requirement quality checklist、追溯项和常见坏味道时，也读 [references/requirements-outline.md](references/requirements-outline.md)。
+- 需要确定需求文档该保存到哪里、如何标状态和如何替代旧版时，读 [references/doc-management-contract.md](references/doc-management-contract.md)。
 - 需要直接起草文档时，优先套用 [assets/feature-spec-template.md.tmpl](assets/feature-spec-template.md.tmpl) 或 [assets/srs-template.md.tmpl](assets/srs-template.md.tmpl)。
 - 若请求先问“这该不该写成需求文档”，应先配合 `software-doc-writing-standards` 做路由，再回到本流程。
 
@@ -49,6 +50,7 @@ metadata:
 3. 当前要产出的深度：brief、feature spec 还是较完整的 SRS。
 4. 已有事实来源：用户问题、业务目标、法规、合同、现网问题、现有接口、历史决议。
 5. 当前版本、里程碑或范围基线。
+6. 目标仓库是否已有 requirements 文档目录合同；如果没有，默认采用 `docs/requirements/`。
 
 缺输入时按以下顺序处理：
 
@@ -62,21 +64,28 @@ metadata:
    - 低风险或单功能：可写 feature spec。
    - 多角色、多约束、要长期留档：提升到 SRS 风格。
    - 如果用户只给“想法”，先收敛成 problem / goal / scope brief。
-2. 固定边界。
+2. 选择 canonical document path。
+   - 先判断是更新现有 requirements 真源，还是新建文档。
+   - 目标仓库没有显式合同就落到 `docs/requirements/`。
+   - 不要把正式需求长期放在 PR 描述、临时笔记或随机目录中。
+3. 固定边界。
    - 写清问题陈述、业务目标、成功指标、范围内/范围外、关键角色、依赖与约束。
-3. 盘点需求项。
+4. 盘点需求项。
    - 分类整理 functional、interface、data、quality、security、compliance、operational requirements。
    - 把“背景说明”“设计建议”“实现细节”从 requirement statement 里剥离出去。
-4. 正式化每条关键要求。
+5. 正式化每条关键要求。
    - 给唯一标识或稳定标题。
    - 保持单一语义。
    - 说明来源、优先级和验证方式。
-5. 写验收与追溯。
+6. 写验收与追溯。
    - 需求至少能追到来源和预期验证。
    - 关键需求要能为后续 design / test 留出 traceability hook。
-6. 做质量审校。
+7. 补文档管理信息。
+   - 明确 doc type、status、owner、baseline、last updated。
+   - 如替代旧文档，补 `supersedes / superseded_by`，并处理旧文档状态。
+8. 做质量审校。
    - 查歧义、重复、互相冲突、实现泄漏、空泛 NFR、遗漏接口、遗漏例外。
-7. 输出基线与未决项。
+9. 输出基线与未决项。
    - 区分 accepted baseline、assumptions、open questions、follow-up actions。
 
 ## Branches
@@ -85,6 +94,8 @@ metadata:
 - 如果实现方案已经被上游强制指定，把它记为 constraint，不要写成“需求天然如此”。
 - 如果需求来源互相冲突，保留冲突对照和待裁决项，不要私自选边并写成定论。
 - 如果是对已有系统补文档，允许从现状和已实现行为倒推，但要标明“as-is baseline”。
+- 如果仓库里已有同主题 requirements 文档，优先更新真源；只有主题或层级明显不同的情况下才新建。
+- 如果旧文档已被替代但仍在工作目录中，标记 `deprecated` 或移入 archive，不要继续并列维护。
 
 ## Quality Gates
 
@@ -98,6 +109,8 @@ metadata:
    - 重要质量要求有量化目标、边界条件或至少明确的判断标准。
 5. Traceability Gate
    - 关键要求可追到来源，并指向 acceptance / verification 入口。
+6. Repository Gate
+   - 需求文档位于 canonical 路径，状态明确，没有制造新的平行真源。
 
 ## Done Definition
 
@@ -108,6 +121,7 @@ metadata:
 3. 关键 requirements 已写到可供设计和测试继续工作的粒度。
 4. 验收/验证思路和 open questions 已分离，不互相混淆。
 5. 关键追溯入口已经建立。
+6. 文档已放在 canonical path，且管理状态明确。
 
 ## Handoff
 
@@ -118,14 +132,17 @@ metadata:
 3. `key requirements and priorities`
 4. `acceptance / verification hooks`
 5. `assumptions and open questions`
-6. `recommended next step`
+6. `document path and status`
+7. `supersede/archive actions if any`
+8. `recommended next step`
 
 ## Output Standard
 
-- 先给文档模式、范围基线和当前置信度，再给 requirements 正文。
+- 先给文档模式、canonical path、范围基线和当前置信度，再给 requirements 正文。
 - requirement statement 与背景、例外、设计建议分开展示。
 - 不要把“可能”“最好”“支持一下”这类模糊话术当成正式要求。
 - 重要要求后面要能看到来源、约束或验证入口。
+- 如有旧版文档，明确是更新、替代还是归档。
 
 ## Stop Conditions
 
@@ -133,6 +150,7 @@ metadata:
 - 用户真正需要的是设计文档而不是需求文档。
 - 没有可信事实来源，却要求交付正式承诺性需求基线。
 - 上游来源互相冲突且当前无法裁决。
+- 仓库内已存在冲突的 requirements 真源，且当前无法判断哪份有效。
 
 ## Minimal Examples
 

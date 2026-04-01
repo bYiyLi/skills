@@ -34,6 +34,8 @@
 3. 视图之间互相矛盾，或 as-is / to-be 混写。
 4. 没把质量目标和设计联系起来。
 5. 没写风险、兼容性、迁移和 technical debt。
+6. 同主题设计文档分散在多个目录，没有 current source 标记。
+7. 新设计写出来了，但旧设计仍保持 active 状态。
 
 ## Repository Design Standard
 
@@ -59,3 +61,7 @@
 4. 关键设计元素必须有追溯入口。
    - 能回到 requirement / constraint / quality goal
    - 能前指到 verification / rollout / migration
+5. 对文档管理的要求：
+   - 默认放 `docs/design/`
+   - 标明 status、baseline、owner
+   - 替代旧设计时显式写 supersede 关系

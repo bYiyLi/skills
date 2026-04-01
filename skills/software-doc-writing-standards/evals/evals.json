@@ -32,7 +32,7 @@
       "success_criteria": [
         "明确指出文档类型混杂，而不是直接润色原文。",
         "按读者目标拆成 requirements/design/tutorial/how-to/reference/explanation 中的合适类型。",
-        "说明每类文档的真源和边界。"
+        "说明每类文档的真源、canonical path 和边界。"
       ]
     },
     {
@@ -42,6 +42,7 @@
       "success_criteria": [
         "能单独指出 assumptions、gaps、open questions。",
         "会检查 traceability，而不是只给泛泛写作建议。",
+        "会检查文档状态、真源唯一性和替代/归档关系。",
         "不会编造缺失的规范或事实。"
       ]
     }

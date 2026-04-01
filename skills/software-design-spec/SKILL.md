@@ -38,6 +38,7 @@ metadata:
 
 - 需要决定用哪些视图或章节时，读 [references/design-view-set.md](references/design-view-set.md)。
 - 需要快速检查设计是否缺结构、运行时、部署、风险或决策记录时，也读 [references/design-view-set.md](references/design-view-set.md)。
+- 需要确定设计文档该保存到哪里、如何标状态和如何替代旧版时，读 [references/doc-management-contract.md](references/doc-management-contract.md)。
 - 需要直接起草设计文档时，优先套用 [assets/design-spec-template.md.tmpl](assets/design-spec-template.md.tmpl)。
 - 若先判断这是不是设计文档任务，应先配合 `software-doc-writing-standards` 做路由。
 
@@ -50,6 +51,7 @@ metadata:
 3. 现有系统上下文、外部依赖、已有接口和已有设计决议。
 4. 重要质量目标：性能、可靠性、安全性、可维护性、可扩展性、可观测性等。
 5. 当前 baseline：as-is、to-be，还是 migration delta。
+6. 目标仓库是否已有 design 文档目录合同；如果没有，默认采用 `docs/design/`。
 
 缺输入时按以下顺序处理：
 
@@ -63,20 +65,27 @@ metadata:
    - 全局或跨系统变更：偏 architecture overview。
    - 单特性或子系统改动：偏 feature design。
    - 模块内部实现约束：偏 detailed design。
-2. 写清 design drivers。
+2. 选择 canonical document path。
+   - 先判断是更新现有 design 真源，还是新建设计文档。
+   - 目标仓库没有显式合同就落到 `docs/design/`。
+   - 不要把长期设计基线留在 PR 描述、白板截图说明或零散笔记里。
+3. 写清 design drivers。
    - 目标、约束、质量需求、stakeholders、concerns、已知边界。
-3. 选择最小必要 view set。
+4. 选择最小必要 view set。
    - 常见组合：context、container/component/module、runtime、data、interface、deployment、security/ops。
    - 只保留能支撑当前决策的视图，不追求模板填满。
-4. 展开关键设计内容。
+5. 展开关键设计内容。
    - 每个视图写职责、边界、依赖、关键交互、失败路径或约束。
    - 记录数据模型、状态变化、兼容性和迁移点。
-5. 记录 architecture decisions。
+6. 记录 architecture decisions。
    - 对重要设计选择写 rationale、alternatives、trade-offs、known consequences。
-6. 建立追溯。
+7. 建立追溯。
    - 设计元素要能回到 requirement / constraint / quality goal。
    - 也要指向后续 verification、rollout 或 migration 方案。
-7. 做一致性审校并输出 handoff。
+8. 补文档管理信息。
+   - 明确 doc type、status、owner、baseline、last updated。
+   - 如替代旧文档，补 `supersedes / superseded_by`，并处理旧文档状态。
+9. 做一致性审校并输出 handoff。
    - 检查各视图是否互相矛盾，当前态与目标态是否混写，风险是否被隐藏。
 
 ## Branches
@@ -85,6 +94,8 @@ metadata:
 - 如果改动范围很小，可以压缩 context/deployment，但不能省略接口、依赖和失败模式。
 - 如果已有强制模板或 ADR 机制，优先嵌入现有决策容器，不重复堆一份平行文档。
 - 如果当前实现已经偏离历史设计，明确区分 as-is / to-be / gap，不要假装历史文档仍然有效。
+- 如果仓库里已有同主题 design 文档，优先更新真源；只有层级或范围明确变化时才新建。
+- 如果旧设计已被新设计替代，标 `deprecated` 或归档，不要让两份 active 设计并列。
 
 ## Quality Gates
 
@@ -98,6 +109,8 @@ metadata:
    - 重要 trade-off、被放弃方案和 rationale 已记录。
 5. Traceability Gate
    - 关键设计能够回溯到需求/约束，也能前指到验证/上线/迁移。
+6. Repository Gate
+   - 设计文档位于 canonical 路径，状态明确，没有制造新的平行真源。
 
 ## Done Definition
 
@@ -108,6 +121,7 @@ metadata:
 3. 风险、兼容性、运维影响和已知未决项没有被藏在口头假设里。
 4. 关键设计决策和取舍已经留痕。
 5. 下一步实现、验证或评审动作明确。
+6. 文档已放在 canonical path，且管理状态明确。
 
 ## Handoff
 
@@ -119,14 +133,17 @@ metadata:
 4. `major decisions and trade-offs`
 5. `key risks / compatibility / migration notes`
 6. `traceability hooks`
-7. `recommended next step`
+7. `document path and status`
+8. `supersede/archive actions if any`
+9. `recommended next step`
 
 ## Output Standard
 
-- 先给设计范围、当前/目标态和主要驱动，再展开视图与决策。
+- 先给设计范围、canonical path、当前/目标态和主要驱动，再展开视图与决策。
 - 区分 facts、assumptions、decisions、alternatives。
 - 结构图、时序、部署或数据说明都应能用文字独立复现。
 - 不要只写“采用微服务/事件驱动/分层架构”这种标签，必须说明为何适配当前驱动。
+- 如有旧版文档，明确是更新、替代还是归档。
 
 ## Stop Conditions
 
@@ -134,6 +151,7 @@ metadata:
 - 用户真正需要的是需求文档或使用说明文档。
 - 关键接口、依赖或部署边界无法确认，且继续写会误导实现。
 - 涉及安全、合规或组织级决策，但当前没有裁决 authority。
+- 仓库内已存在冲突的 design 真源，且当前无法判断哪份有效。
 
 ## Minimal Examples
 

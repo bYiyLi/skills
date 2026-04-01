@@ -18,6 +18,14 @@
 3. 使用说明和 reference 要能追到真实接口、真实命令或真实产品行为。
 4. 发现 orphan 内容时，不要默认保留；先标注来源缺失。
 
+## Repository Management Rules
+
+1. 文档必须落在 canonical 路径，而不是散落在随机目录。
+2. 每份正式文档都必须有状态，至少区分 `draft / active / approved / deprecated / archived`。
+3. 每个 topic 在每种文档类型下只允许一份 active 或 approved 真源。
+4. 文档被替代时，必须显式写 supersede 关系，不靠文件名猜。
+5. 归档是显式动作；不要把过时文档继续留在工作目录冒充当前基线。
+
 ## Non-Fabrication Rules
 
 1. 没确认的接口、字段、权限、错误码，不要自己补。
@@ -43,4 +51,5 @@
 2. 设计必须能追溯到需求、约束或质量目标，不能出现无来源的重要设计元素。
 3. reference 必须贴近真实接口面，结构稳定，不能混入大段教学叙事。
 4. 文档要显式区分 facts、assumptions、open questions、examples。
-5. 无法确认时默认保守，标注 gap，不补写想当然的细节。
+5. 文档要显式区分当前真源、替代关系和归档状态。
+6. 无法确认时默认保守，标注 gap，不补写想当然的细节。
