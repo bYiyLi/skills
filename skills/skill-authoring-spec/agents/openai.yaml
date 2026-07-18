@@ -1,0 +1,4 @@
+interface:
+  display_name: "Skill Authoring Spec"
+  short_description: "Apply the project Agent Skill authoring spec"
+  default_prompt: "Use $skill-authoring-spec with $skill-creator to apply this repository's authoring rules while revising an Agent Skill."
