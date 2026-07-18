@@ -1,4 +1,0 @@
-Replace this file with the actual license text for the skill.
-Keep the corresponding SKILL.md frontmatter as:
-
-license: ./LICENSE.txt
