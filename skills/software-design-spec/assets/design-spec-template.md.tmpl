@@ -1,97 +1,88 @@
----
-title: <Feature Or System Name> Design Spec
-doc_type: design
-status: draft
-owner: <team-or-person>
-last_updated: YYYY-MM-DD
-baseline: <release-branch-or-milestone>
-source_of_truth: repo
-related_requirements:
-related_adrs:
-supersedes:
-superseded_by:
----
+# {{DESIGN_TITLE}}
 
-# <Feature Or System Name> Design Spec
+## 设计范围
 
-## Design Scope
+- 设计层级：{{DESIGN_LEVEL}}
+- baseline：{{BASELINE}}
+- 范围内：{{IN_SCOPE}}
+- 范围外：{{OUT_OF_SCOPE}}
 
-- Design level:
-- Baseline:
-- In scope:
-- Out of scope:
+## 设计驱动
 
-## Design Drivers
-
-- Goals:
-- Constraints:
-- Quality goals:
-- Stakeholders / concerns:
+- 目标：{{GOALS}}
+- 约束：{{CONSTRAINTS}}
+- 质量目标：{{QUALITY_GOALS}}
+- stakeholders 与 concerns：{{STAKEHOLDERS_AND_CONCERNS}}
 
 ## Context View
 
-- System context:
-- External dependencies:
-- Ownership boundaries:
+- 外部参与者和系统：{{EXTERNAL_ACTORS_AND_SYSTEMS}}
+- ownership 与 trust boundaries：{{OWNERSHIP_AND_TRUST_BOUNDARIES}}
+- 依赖：{{EXTERNAL_DEPENDENCIES}}
 
 ## Structure View
 
-- Major containers / components / modules:
-- Responsibilities:
-- Dependency rules:
+- containers、components 或 modules：{{STRUCTURAL_ELEMENTS}}
+- 职责与边界：{{RESPONSIBILITIES_AND_BOUNDARIES}}
+- 依赖方向：{{DEPENDENCY_RULES}}
 
 ## Interface View
 
-- Key APIs / contracts:
-- Input / output:
-- Error handling:
-- Compatibility notes:
+- 契约：{{INTERFACE_CONTRACTS}}
+- 输入与输出：{{INPUTS_AND_OUTPUTS}}
+- 错误与权限：{{ERRORS_AND_PERMISSIONS}}
+- 版本与兼容性：{{VERSION_AND_COMPATIBILITY}}
 
 ## Runtime View
 
-- Main scenarios:
-- Sequence of interactions:
-- Failure paths:
+- 主要场景：{{RUNTIME_SCENARIOS}}
+- 交互顺序与并发：{{ORDERING_AND_CONCURRENCY}}
+- 失败、降级与恢复：{{FAILURE_AND_RECOVERY}}
 
 ## Data View
 
-- Core entities:
-- State transitions:
-- Persistence / consistency notes:
+- 实体与 ownership：{{DATA_ENTITIES_AND_OWNERSHIP}}
+- 状态变化：{{STATE_TRANSITIONS}}
+- 持久化与一致性：{{PERSISTENCE_AND_CONSISTENCY}}
+- 迁移与保留：{{MIGRATION_AND_RETENTION}}
 
 ## Deployment And Operations
 
-- Runtime environment:
-- Deployment impact:
-- Monitoring / alerting:
-- Rollback / recovery:
+- 运行环境：{{RUNTIME_ENVIRONMENT}}
+- 部署与 rollout：{{DEPLOYMENT_AND_ROLLOUT}}
+- 可观测性：{{OBSERVABILITY}}
+- rollback 与恢复：{{ROLLBACK_AND_RECOVERY}}
+
+## Security View
+
+- 身份与授权：{{IDENTITY_AND_AUTHORIZATION}}
+- 敏感数据与 trust boundaries：{{SENSITIVE_DATA_AND_TRUST}}
+- 滥用与防护：{{ABUSE_PATHS_AND_CONTROLS}}
 
 ## Decisions And Trade-Offs
 
-### DEC-1 <short name>
+### {{DECISION_ID}} {{DECISION_TITLE}}
 
-- Decision:
-- Rationale:
-- Alternatives considered:
-- Consequences:
+- 决定：{{DECISION}}
+- 证据与依据：{{RATIONALE_AND_EVIDENCE}}
+- 备选方案：{{ALTERNATIVES}}
+- 取舍与后果：{{TRADE_OFFS_AND_CONSEQUENCES}}
 
-## Risks And Open Questions
+## 风险、冲突与未决项
 
-- Risk:
-- Open question:
+- 风险：{{RISKS}}
+- 来源冲突：{{SOURCE_CONFLICTS}}
+- explicit gaps：{{EXPLICIT_GAPS}}
+- 升级条件：{{ESCALATION_CONDITIONS}}
 
-## Traceability Hooks
+## Traceability
 
-- Related requirements:
-- Verification / rollout hooks:
+| Driver | Design element / decision / gap | Verification / rollout / migration |
+| --- | --- | --- |
+| {{DRIVER}} | {{DESIGN_RESPONSE}} | {{DOWNSTREAM_HOOK}} |
 
-## Document Management
+## 验证
 
-- Canonical path: `docs/design/<topic-slug>.md`
-- Status:
-- Related docs:
-- Supersedes / superseded by:
-
-## Recommended Next Step
-
-- Next step:
+- 已执行检查：{{PERFORMED_CHECKS}}
+- 未执行检查：{{UNPERFORMED_CHECKS}}
+- 剩余未验证项：{{UNVERIFIED_ITEMS}}

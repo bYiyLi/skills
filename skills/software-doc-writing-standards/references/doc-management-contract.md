@@ -1,96 +1,33 @@
-# Software Doc Management Contract
+# Repository Documentation Handling
 
-这份合同定义软件文档在仓库中的默认存放、命名、状态、追溯和归档规则。
+仅当宿主任务需要在目标仓库中创建、修改、移动、替代、归档或删除文档，或只读核对路径、
+metadata、状态及 lifecycle 关系时读取本文件。它不为任意仓库规定默认目录、frontmatter
+或生命周期枚举。只读评审只核对请求范围内的合同和事实，不执行管理动作。
 
-如果目标仓库已经有显式文档合同，优先遵守目标仓库的合同；只有在目标仓库没有明确规则时，才使用本合同作为默认标准。
+## 查明目标合同
 
-## Default Layout
+在写入或只读核对前依次检查：
 
-默认目录如下：
+1. 当前任务的检查范围和明确路径；需要写入时再确认对应副作用授权。
+2. 目标仓库的 `AGENTS.md`、贡献说明、文档配置、生成规则和适用模板。
+3. 同类型现有文档的稳定目录、命名、元数据和链接模式。
+4. 同主题是否已有当前文档，以及哪个来源明确拥有其状态。
 
-```text
-docs/
-  requirements/
-  design/
-  usage/
-    tutorials/
-    how-to/
-    operators/
-  reference/
-  adr/
-  archive/
-    requirements/
-    design/
-    usage/
-    reference/
-    adr/
-```
+现有文件只能证明观察到的模式。只有目标仓库的明确规则、适用自动化或用户在其权限内
+作出的决定，才能建立强制合同。没有明确合同且多个稳定模式并存时，不要自行选一个并
+写入；报告候选路径并请求裁决。内容草稿可以继续，但仓库 placement 保持未验证。
 
-## Canonical Source Rules
+## 控制副作用
 
-1. 仓库内文档文件才是 authoritative source。
-2. PR 描述、聊天记录、工单评论、会议纪要不算真源，除非内容已同步回仓库文档。
-3. 每个 topic 在每种 doc type 下只保留一份 active 或 approved 的 canonical 文档。
-4. 发现同主题多份平行文档时，必须显式指定哪份是当前真源，其他文档降级为 deprecated 或 archived。
+- 只执行用户请求所授权的创建或修改。只读评审不得写文件。
+- 移动、标记 deprecated、归档或删除旧文档需要这些动作本身处于授权范围；新建文档的
+  授权不自动包含它们。
+- 不要提交、推送、发布或对外发送，除非宿主任务明确要求。
+- 写入中途失败时，保留已完成且可识别的结果，报告失败位置、未完成动作和重新进入前
+  应检查的当前状态；不要盲目重放副作用。
 
-## Naming Rules
+## 验证仓库结果
 
-1. 长期维护的 living document 使用稳定 slug：`<topic-slug>.md`
-2. 时间点强相关的提案、评审纪要、快照或迁移计划使用日期前缀：`YYYY-MM-DD-<topic-slug>.md`
-3. 不要使用 `final.md`、`final-v2.md`、`new-final-final.md` 这类命名。
-4. 被替代的文档不要靠文件名后缀硬区分版本，优先用 metadata 和 `supersedes / superseded_by` 表达。
-
-## Required Metadata
-
-建议所有正式软件文档在 frontmatter 中至少写：
-
-```yaml
----
-title: <doc title>
-doc_type: requirement | design | tutorial | how-to | operator-guide | reference | adr
-status: draft | active | approved | deprecated | archived
-owner: <team-or-person>
-last_updated: YYYY-MM-DD
-baseline: <release-branch-version-or-milestone>
-source_of_truth: repo
----
-```
-
-建议按需补充：
-
-```yaml
-audience:
-related_requirements:
-related_designs:
-related_reference:
-related_adrs:
-supersedes:
-superseded_by:
-review_cycle:
-```
-
-## Lifecycle Rules
-
-1. 新文档默认以 `draft` 状态进入 canonical 目录。
-2. 文档成为团队当前工作基线时，提升为 `active` 或 `approved`。
-3. 新文档替代旧文档时，旧文档标记为 `deprecated`，并维护 `supersedes / superseded_by`。
-4. 不再作为当前基线使用、但需保留历史追溯性时，移动到 `docs/archive/<category>/` 并标记 `archived`。
-5. 已被代码、发布说明、测试计划或外部流程引用的正式文档，不要静默删除。
-
-## Cross-Link Rules
-
-1. requirement 应链接相关 design、reference 或 acceptance 入口。
-2. design 应链接相关 requirement、ADR、migration 或 rollout 入口。
-3. usage/how-to 应链接相关 reference 和版本基线。
-4. reference 应链接相关 how-to、usage 或 design caveat，而不是孤立存在。
-
-## Repository Hygiene Rules
-
-每次创建、修改或评审软件文档时，都要明确：
-
-1. 文档保存路径
-2. 新建还是更新
-3. 当前状态
-4. 当前真源
-5. 是否替代旧文档
-6. 相关文档是否需要一起更新
+完成仓库修改后，按目标合同检查实际路径、格式或生成器结果、链接、未替换占位符以及
+与同主题文档的关系。只有检查成功的属性才可报告为已验证。没有可用的仓库合同或消费
+工具时，明确列为未验证，而不是应用本 Skill 自创的默认值。

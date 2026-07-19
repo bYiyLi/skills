@@ -1,44 +1,67 @@
-# Design Doc Management Contract
+# Repository Evidence and Lifecycle
 
-如果目标仓库没有显式文档合同，软件设计文档默认按以下规则管理。
+只在 create 或 revise 需要仓库写入、状态变更、替代、移动、归档或删除，或 lifecycle-only
+review 需要核对这些管理事实时读取本 reference。它不定义通用目录、frontmatter、状态枚举
+或归档布局。review 只检查请求范围内的合同和事实，不执行生命周期动作。
 
-## Default Placement
+## 先解析目标仓库合同
 
-1. design 真源默认放 `docs/design/`
-2. ADR 默认放 `docs/adr/`
-3. 失效历史文档默认放 `docs/archive/design/`
-4. 不要把长期设计基线留在 PR 描述、白板截图说明或随机笔记里
+在选择路径、命名、metadata 或状态前，检查当前任务可用的证据：
 
-## Naming Rules
+1. 适用于目标文件的 host 指令和仓库指令。
+2. 仓库明确声明的文档合同、schema、配置或模板。
+3. 同类型现有文档及其可观察布局和状态表达。
+4. 用户在其 authority 和当前任务范围内作出的明确决定。
 
-1. living design doc 使用稳定 slug：`<topic-slug>.md`
-2. 时间点强相关的快照、迁移计划或评审稿可用：`YYYY-MM-DD-<topic-slug>.md`
-3. 不要使用 `final-v2.md` 这类文件名表达状态
+按 instruction authority、来源 authority 和 scope 解决冲突。文件出现次数、最近修改时间
+或目录名称本身不能自动决定 authority。若证据不能确定唯一适用规则，保留冲突并停止会
+建立新仓库约定的写入。
 
-## Required Metadata
+目标仓库没有相关证据时：
 
-设计文档 frontmatter 至少应包含：
+- 回复内草案不需要虚构仓库路径或 metadata。
+- 仓库写入必须使用请求明确给出的目标，或请求能够唯一确定的现有目标文档。
+- 若仍需选择新路径、命名或状态且不同选择会建立不同约定，返回 blocker 并请求该决定。
 
-```yaml
----
-title:
-doc_type: design
-status: draft | active | approved | deprecated | archived
-owner:
-last_updated:
-baseline:
-source_of_truth: repo
-related_requirements:
-related_adrs:
-supersedes:
-superseded_by:
----
-```
+## 分别检查动作与授权
 
-## Lifecycle Rules
+不要把一个动作的授权扩展到另一个动作：
 
-1. 新建设计文档默认 `draft`
-2. 当前工作基线使用 `active` 或 `approved`
-3. 新设计替代旧版时，旧文档标 `deprecated`
-4. 归档历史文档时，移动到 `docs/archive/design/` 并标 `archived`
-5. 同主题同层级只保留一份 active 或 approved design 真源
+| 动作 | 最低授权边界 |
+| --- | --- |
+| 创建新文件 | 请求明确要求创建，并且目标路径已由适用证据解析 |
+| 覆盖或修订文件 | 请求明确要求修改已识别的现有文件 |
+| 写入新文件所需 metadata | 适用仓库合同要求，或用户为该新文件明确提供 |
+| 修改现有 metadata 或状态 | 请求或 host task 单独授权该状态变化 |
+| 移动、替代或归档 | 请求或 host task 单独授权具体源、目标和生命周期动作 |
+| 删除 | 请求或 host task 单独授权准确目标 |
+| commit 或 push | 不属于本 Skill；不能从创建、修订或归档请求推导 |
+
+授权不明确、被拒绝或运行时不能执行时，不尝试等价副作用。可以返回未持久化草案或
+blocker，但不能声称仓库状态已经改变。
+
+## 依据证据处理生命周期
+
+只有目标仓库的适用合同定义了 lifecycle 时，才使用其状态和值：
+
+1. 先读取当前文件状态和引用关系。
+2. 确认请求授权的目标状态或动作满足该合同的进入条件。
+3. 只修改已授权文件；不要仅因新设计存在就移动、降级或归档旧文档。
+4. 若替代关系需要同步多个文件，把每个文件修改视为独立副作用并分别验证。
+5. 合同没有定义状态、metadata、替代或归档时，不创建自有枚举或目录。
+6. 删除前检查准确目标、当前引用、适用保留要求和恢复证据；任一项不明确时不删除。
+
+发现可能冲突的同主题文档时，先报告每份文档的路径、可观察状态、引用关系和支持其
+authority 的证据。证据不足以选出当前真源时返回 blocker，不自行重命名或降级文件。
+
+## 验证写入与恢复
+
+每次获授权写入后：
+
+1. 重新读取准确目标，确认预期内容和状态。
+2. 检查本次操作是否意外改变未授权文件。
+3. 分别报告创建、内容修改、状态修改、移动和归档是否实际完成。
+4. 删除只在准确目标已不存在，且引用、保留和恢复要求仍满足时报告完成。
+
+若操作中途失败，先检查当前文件和仓库状态。保留已经验证的结果，列出失败动作和未执行
+验证，并给出继续所需的权限、输入或状态。不要盲目重复已经可能成功的写入、移动、归档或删除。
