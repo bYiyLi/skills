@@ -2,6 +2,8 @@
 
 Use this reference when deciding where Skill content belongs or when auditing an existing Skill's resource set.
 
+The labels `SKILL.md`, `references/`, `scripts/`, and `assets/` below name semantic roles used by formats that support those paths. Inspect the native Skill format before applying a path or layout requirement. For another format, map each role to its native instruction and resource surfaces; if the format cannot be inspected, assess role and necessity while leaving path and layout conclusions unverified.
+
 ## Contents
 
 - [Decide Whether the Content Should Exist](#decide-whether-the-content-should-exist)
@@ -17,19 +19,21 @@ Use this reference when deciding where Skill content belongs or when auditing an
 
 Evaluate each proposed file or block in this order:
 
-1. Verify that non-obvious mandatory rules and domain claims are grounded in applicable project sources, authoritative documentation or policy, representative artifacts or task traces, failure records, or explicit user decisions.
-2. Name the concrete task failure the content's absence would cause. Omit it when no realistic failure exists.
-3. Put it in `SKILL.md` when every relevant invocation needs it before choosing an operation or branch.
-4. Put it in `references/` when the agent reads it only for a particular operation, branch, domain, provider, format, or variant.
+1. Verify that source-dependent mandatory rules and domain claims are grounded in applicable project sources, authoritative documentation or policy, representative artifacts or task traces, failure records, or explicit user decisions. A user decision establishes policy only within that user's authority and the stated task scope; an artifact or trace proves only observed behavior; external format, host, and runtime guarantees require a source or runtime evidence with matching authority and scope.
+2. Name the concrete task failure the content's absence would cause. Omit it when no supported invocation would fail without it.
+3. Put core behavioral instructions in `SKILL.md` when every supported invocation needs them before choosing an operation or branch.
+4. Put agent-readable knowledge or detail in `references/` when it is conditional, or when keeping it in `SKILL.md` would obscure the core decisions and routing. If every path needs a large reference, route to it unconditionally and explain why the body cannot carry the content directly.
 5. Put it in `scripts/` when the agent should execute stable logic instead of reconstructing an error-prone or repeated implementation.
 6. Put it in `assets/` when the file becomes part of an output through copying, filling, transforming, packaging, or embedding.
 7. Split mixed content by runtime role instead of choosing a directory by its current extension or source location.
 
 Classify by runtime consumer rather than extension. A JSON schema read by the agent is a reference; JSON copied into a generated project is an asset; JSON used only by a bundled script belongs with that implementation.
 
-Treat `agents/openai.yaml` as product interface metadata governed by `skill-creator`, not as a bundled resource or a place for agent instructions.
+Treat product interface metadata and runtime policy as native integration
+material, not as bundled Skill resources. Do not use them as the only location
+for post-trigger rules the executor must follow.
 
-Do not create placeholder files, empty resource directories, speculative variants, research history, installation guides, quick references, or changelogs. Add a resource only for a current responsibility and a demonstrated use path.
+Do not create placeholder files, empty resource directories, speculative variants, research history, or standalone guides, quick references, and changelogs with no declared runtime role. Put installation instructions in a reference when a supported path requires them; otherwise omit them. Add a resource only for a current responsibility and a demonstrated use path.
 
 ## Keep Always-Needed Behavior in SKILL.md
 
@@ -44,12 +48,16 @@ Do not turn the body into a domain encyclopedia, duplicate detailed references, 
 
 ## Use References for Conditional Knowledge
 
-Use `references/` for material the agent must read and reason about but not on every invocation, such as:
+Use `references/` for material the agent must read and reason about but that does not belong in the core body. Most references are conditional, such as:
 
 - detailed policies, protocols, schemas, and domain rules;
 - provider-, framework-, format-, or operation-specific instructions;
 - large examples that resolve non-obvious decisions;
 - volatile facts whose source, version, or freshness must be checked at execution time.
+
+A large authoritative source may be required on every path. In that case, keep
+only its unconditional route and the decisions needed before loading it in
+`SKILL.md`; do not copy the source into the body merely to avoid a reference.
 
 Give each reference one coherent subject. State authority, scope, version, or freshness where confusion would change a decision. If live retrieval is required, define the authoritative source and the behavior when retrieval fails; do not present stale embedded knowledge as current.
 
@@ -66,9 +74,9 @@ Use `scripts/` when execution benefits from determinism, repeatability, or a tes
 - logic that would otherwise be rewritten in multiple tasks;
 - checks whose result must be machine-verifiable.
 
-Define the script's inputs, outputs, exit behavior, side effects, and safe failure behavior. Keep policy and judgment in the body or a reference unless the script is itself the authoritative executable policy. Do not hide permissions, destructive behavior, network writes, or fallback decisions inside an unexplained script.
+Define the script's inputs, outputs, exit behavior, side effects, and behavior when it fails. Keep policy and judgment in the body or a reference unless the script is itself the authoritative executable policy. Do not hide permissions, destructive behavior, network writes, or fallback decisions inside an unexplained script.
 
-Do not add a script for a simple command merely to make the Skill look complete. Test every materially distinct added implementation by running representative success and failure cases. When many scripts are substantially equivalent, test a justified representative sample and identify what was not run. Verify the produced artifact or state, not only exit code zero.
+Do not add a script when one stable existing command performs the same task without repeated logic. Add one only when repeated rewriting, a demonstrated implementation failure, a stable executable interface, or a machine-verifiable result gives it a concrete role. When that evidence is absent or equally supports a script and omission, choose `Omit`. Test each implementation whose inputs, outputs, side effects, or failure behavior differ. When several scripts share those properties, test one sample for each distinct behavior and identify the scripts that were not run. Verify the produced artifact or state, not only exit code zero.
 
 If the required runtime is unavailable, keep the script's declared interface explicit but report runtime correctness as unverified. Do not infer executable behavior from the surrounding prompt.
 
@@ -85,7 +93,7 @@ Use `assets/` for files consumed as part of the result rather than as instructio
 
 Place output templates under `assets/` rather than inventing a separate top-level `templates/` contract. Keep instructions, policies, and decision rules out of assets. If the agent must read a template to understand a rule, move that rule into the body or a reference.
 
-State how the asset is selected and used, whether it may be modified, and which output properties must be preserved. To claim runtime usability, verify that the asset exists, opens in its intended consumer, and produces a usable result through the documented path. If the intended consumer is unavailable, report that claim as unverified.
+State how the asset is selected and used, whether it may be modified, and which output properties must be preserved. To claim runtime usability, verify that the asset exists, opens in its intended consumer, and produces a result that meets those documented output properties through the documented path. If the intended consumer is unavailable, report that claim as unverified.
 
 ## Account for the Primary Type
 
@@ -102,7 +110,11 @@ Routing among files inside the same Skill does not change its primary type. Resp
 
 ## Route Resources Conditionally
 
-Prefer a direct condition, exact path, and concrete action.
+Prefer a direct condition, exact path, and concrete action. The paths and file
+names in the examples below are illustrative; they are not files required by
+this Skill.
+
+An unconditional route is valid when every declared invocation needs the resource. If every resource is required on that path, load all of them; do not infer that requirement from directory membership alone.
 
 Positive reference route:
 
@@ -114,7 +126,7 @@ document. Do not load it for plain text extraction.
 Negative reference route:
 
 ```text
-Read every file in references/ before starting.
+Read every file in references/ before starting because it is in that directory.
 ```
 
 Positive script route:
@@ -141,15 +153,19 @@ The negative routes either waste context or leave resource selection and failure
 
 ## Validate the Resource Set
 
-Keep prompt-contract evidence separate from model behavior and runtime correctness:
+Validate the resource set at these Skill-specific levels:
 
-1. **Contract integrity**: Verify exact paths and casing, a real routing condition for every resource, no unreferenced files, and no duplicated or contradictory rules across the body and references.
+1. **Contract integrity**: Verify exact paths and casing, a real routing condition for every resource, no unreferenced files, and no duplicated or contradictory rules across the body and references. If a resource required by the selected path is missing, unreadable, or case-mismatched, report a blocker for that path and do not claim the contract is complete.
 2. **Content validity**: Parse structured references; verify the grounding, authority, scope, version, and freshness of non-obvious claims where they change decisions; and inspect declared script or asset interfaces for inputs, outputs, side effects, and failure behavior.
 3. **Observed use**: When claiming that an agent loads or avoids a resource correctly, obtain model-evaluation output or trace evidence. A path and routing sentence alone prove only the intended route.
 4. **Runtime correctness**: Run scripts on representative success and failure cases and inspect the produced artifact or state. Open, render, or consume assets through their documented path. Mark unavailable runtime checks as unverified.
 
-For necessity, first perform text reduction: remove the resource route and confirm whether the written contract loses a required decision, fact, or output material. Claim that the resource causally improves agent behavior only after a repeated model ablation under the same model, host, Skill collection, cases, and environment.
+For necessity, distinguish removing the resource route from the written contract
+from comparing model behavior with and without that route. A resource is
+textually necessary when removing its route loses a required decision, fact, or
+output material; claim causal behavior improvement only after a controlled model
+evaluation compares the same cases with and without the route.
 
-Verify that scripts and assets do not broaden side effects beyond the declared responsibility. Test failure paths without writing to live or production systems unless the user explicitly authorizes that scope. A pure instruction Skill does not need runtime evidence unless a conclusion depends on model behavior, executable resources, assets, tools, permissions, clients, or external state.
+Verify that scripts and assets do not broaden side effects beyond the declared responsibility. Test failure paths without writing to live or production systems unless the user explicitly authorizes that scope.
 
 Do not use frontmatter validation, file existence, a large resource count, or the author's description of expected behavior as evidence of runtime quality. Report each conclusion at the strongest evidence level actually obtained.

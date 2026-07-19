@@ -1,4 +1,4 @@
 interface:
   display_name: "Skill Authoring Spec"
-  short_description: "Apply the project Agent Skill authoring spec"
-  default_prompt: "Use $skill-authoring-spec with $skill-creator to apply this repository's authoring rules while revising an Agent Skill."
+  short_description: "Design and review portable Agent Skill contracts"
+  default_prompt: "Use $skill-authoring-spec only in the Agent Skill authoring, revision, or read-only review mode requested by the user; naming the Skill or target alone does not choose a mode, so ask before assessing or changing it."

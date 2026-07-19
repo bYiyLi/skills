@@ -1,0 +1,4 @@
+interface:
+  display_name: "Prompt Authoring Spec"
+  short_description: "Write scoped, closed, executable model instructions"
+  default_prompt: "Use $prompt-authoring-spec in the requested instruction authoring, revision, or read-only review mode; if the request does not choose one, ask before writing, rewriting, or reviewing."
