@@ -47,7 +47,8 @@ description: >
 - 决定做什么、约束什么、如何验收：requirements。
 - 说明系统如何组织、为何这样设计、如何指导实现：design。
 - 让新读者沿一条学习路径建立技能：tutorial。
-- 让已有目标的读者完成一个任务：how-to；高风险运维任务使用 operator guide。
+- 让已有目标的读者完成一个任务：how-to；管理或运维任务需要操作者权限、执行前检查点，
+  或 rollback、recovery 或 escalation 边界时使用 operator guide。
 - 让读者快速查询接口、命令、字段、返回或错误：reference。
 - 解释背景、原理或取舍而不指导操作：explanation。
 
