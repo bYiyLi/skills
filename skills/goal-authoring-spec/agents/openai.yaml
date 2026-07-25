@@ -1,0 +1,4 @@
+interface:
+  display_name: "Goal Authoring Spec"
+  short_description: "Define and review defensible Agent execution goals"
+  default_prompt: "Use $goal-authoring-spec to define or review an Agent execution Goal whose outcome, applicable constraints, and obtainable evidence support a defensible completion decision."
