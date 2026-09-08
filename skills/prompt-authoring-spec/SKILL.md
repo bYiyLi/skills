@@ -19,14 +19,19 @@ the artifact, execution, runtime evaluation, and delivery with that host task.
 Preserve the requested mode: a read-only review reports findings without
 rewriting the artifact; revise only when the user requests revision.
 
-Invoking this Skill does not select a mode. If the requested result does not
-distinguish authoring, revision, or read-only review, ask which result the user
-wants before writing, rewriting, or reviewing.
+Infer the mode from the request and available context. Naming this Skill alone
+does not authorize a write. When writing is not explicitly authorized, keep the
+target unchanged and proceed with useful read-only inspection or review. Ask
+only when the target or a material ambiguity still prevents the requested
+result; do not block inspection merely because revision is not authorized.
 
-Before authoring, require requested behavior or source requirements that
-determine the target instructions. Before revision or review, require the target
-instructions in context or at an accessible path. If required input is missing
-or unreadable, request it and stop until supplied.
+Before authoring, establish the requested behavior or source requirements.
+Before revision or review, locate the target instructions in context or through
+available, authorized sources. If decisive input remains missing or unreadable,
+report the exact gap and pause only the dependent action; complete independent
+parts supported by current evidence. Do not invent missing target text or
+required resources. Missing source evidence can limit a review conclusion
+without preventing inspection of the available text.
 
 Let an artifact-specific specification govern native format and semantics. Apply
 this specification only to the model-visible instructions in that artifact. Do
@@ -95,5 +100,6 @@ text the executor will receive.
 
 A routed reference is required only on its stated path. If a required reference
 is missing, unreadable, or case-mismatched, stop that path and report the exact
-blocker. An authoring or revision task may return a draft only when it labels the
-affected review incomplete; do not call the prompt complete or validated.
+blocker. Continue independent paths. An authoring or revision task may return a
+draft only when it labels the affected review incomplete; do not call the
+affected prompt complete or validated.

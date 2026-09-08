@@ -13,9 +13,10 @@ description: >
 
 # Software Design Spec
 
-本 Skill 负责对一份软件设计文档执行用户明确请求的创建、修订或只读评审。责任在
-交付 completed result、provisional draft、review result 或 blocker 时结束，不继续
-实现代码，也不把设计请求解释为提交、推送、发布或部署授权。
+本 Skill 负责对一份软件设计文档执行用户明确请求的创建、修订或只读评审。交付
+completed result、provisional draft、review result 或 blocker 后，把结果交回当前
+host task；宿主继续本次已授权的剩余步骤。本 Skill 不实现代码，也不把设计请求
+解释为实现、提交、推送、发布或部署授权。
 
 ## 选择操作并保持模式
 
@@ -29,12 +30,14 @@ description: >
 
 仅执行用户请求的操作。组合请求只执行被明确请求的操作，并按输入依赖排序；一个操作
 失败时，保留并分别报告其他已完成操作的结果。若无法从请求区分 revise 与 review，
-且选择会改变写入权限，先请求确认。
+先保持只读并检查可用材料；只有歧义仍阻止请求结果时才澄清，明确授权前不写入。
 
 保持 host task 的模式。命名本 Skill、提供文档路径或要求“看看”均不构成写入授权。
 create、覆盖现有文件、修改状态、移动、归档、删除、提交和推送是彼此独立的动作；
 仅在 host task 分别授权且当前运行时允许时执行。commit、push、发布和部署不属于本
-Skill 的完成结果。
+Skill 的完成结果。这里的“确认”和“分别授权”指核对每项动作已有的明确依据，
+不要求多轮重复批准；同一本次请求可以授权多个动作。即时确认、正式状态变更和删除
+的明确要求仍须遵守。
 
 进入 create 或 revise 的仓库写入、状态变更或生命周期路径，或执行 lifecycle-only review
 前，读取 [references/doc-management-contract.md](references/doc-management-contract.md)。
@@ -151,8 +154,10 @@ blocker；可以不作该决定而提供有用设计内容时交付 provisional 
   revise 可返回 provisional draft；review 返回带未验证项的 review result。
 - **denied**：写入或生命周期动作未授权或被运行时拒绝时，不执行替代副作用；若持久化是
   请求结果则返回 blocker，可附上已生成但未持久化的 provisional draft。
-- **post-start failure**：先检查当前文件和仓库状态，保留已完成结果并返回 blocker，报告
-  部分状态；不要盲目重复写入、移动、归档、删除或其他副作用。
+- **post-start failure**：先检查当前文件和仓库状态。仅对确认尚未执行、可安全重试且
+  仍在授权范围内的动作，修正原因后继续；不盲目重复已成功或结果未知且可能重复产生
+  副作用的动作。不能安全恢复时只阻塞依赖它的部分，继续其他独立的已授权工作。
+  权限拒绝仍按 denied 处理，不属于可重试故障。
 
 blocker 必须包含阻塞条件、已观察状态、未执行动作或验证，以及恢复该路径所需的
 输入、权限或状态。重入时从当前状态继续，不重复已经验证完成的副作用。
@@ -187,5 +192,6 @@ lifecycle-only revise 不应用上述内容检查；它完成需要准确目标�
   验证项。
 - **blocker**：当前无法产生不误导的请求结果，按失败与重入合同报告。
 
-到达上述终态后停止。实现、测试、commit、push、发布和部署由后续 host task 在各自
-授权边界内负责。
+到达上述终态后结束本 Skill 的职责并返回当前 host task。实现、测试、commit、push、
+发布和部署由宿主在各自授权边界内负责；本次已经授权的后续步骤继续执行，未授权的
+步骤不执行。用户仅要求文档时，到文档结果为止。

@@ -15,9 +15,12 @@ Preserve the host task's mode. A read-only review reports findings without
 changing the reviewed Skill. Author or revise only when the user requests that
 result.
 
-Naming this Skill or a target Skill does not select a mode. If the requested
-result does not distinguish authoring, revision, or read-only review, ask which
-result the user wants before assessing or changing the target.
+Infer the mode from the request and available context. Naming a Skill alone does
+not authorize changes. Without explicit writing authorization, keep the target
+unchanged and perform useful read-only inspection or assessment. Ask only when
+the target or a material ambiguity still prevents the requested result, after
+checking available, authorized sources; do not gate inspection on permission to
+revise.
 
 Add only confirmed rules that change an authoring decision. Do not preserve
 research history, unvalidated ideas, or empty structure for hypothetical rules.
@@ -133,7 +136,8 @@ route. Claim model selection, model behavior, or runtime correctness only from
 evidence collected on the named surface, model, or runtime.
 
 If a reference required by the current path is missing, unreadable, or
-case-mismatched, stop that path and report the exact blocker. An authoring or
+case-mismatched, stop only that dependent path and report the exact blocker.
+Continue independent work supported by available evidence. An authoring or
 revision task may return a draft only when it labels the affected review
 incomplete.
 
