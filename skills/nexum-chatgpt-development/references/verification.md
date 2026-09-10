@@ -22,12 +22,14 @@ Do not turn "review" into permission to repair findings.
 
 ## Run the feedback loop
 
-The following steps govern implementation. In review-only mode, collect scoped
-evidence and apply the review criteria, then return findings without steps that
-implement or repair the subject.
+The following steps govern implementation. Choose checkpoints by dependencies
+and the behavior changed; related edits can share a verification run. These are
+internal execution checkpoints, not user approval gates. After a checkpoint,
+continue remaining authorized work. In review-only mode, collect scoped evidence
+and return findings without implementing or repairing the subject.
 
 1. Implement a coherent change within the authorized scope.
-2. Run the smallest verification that can detect that change's expected failure.
+2. Run checks that exercise the changed behavior and affected interfaces.
    Inspect terminal exit status and actual output, including collected tests,
    skipped cases, warnings, and generated artifacts.
 3. Resolve or classify a failure before expanding dependent implementation.
@@ -47,14 +49,18 @@ implement or repair the subject.
 | Documentation or templates | Actual paths/links, example consistency, placeholder instantiation |
 | Skill or prompt | Format/resource validation and closed-contract scenarios; observed model behavior only when separately tested |
 
-The matrix is not a requirement to run every category for every change. A small
-verification radius never waives a repository-mandated final gate.
+The matrix is not a requirement to run every category for every change. Targeted
+checks never waive repository-mandated gates or the full requested acceptance.
+Add tests when they detect a required behavior, regression, or invariant; do not
+add assertions that merely mirror a low-impact edit or the wording of a prompt.
+Once required checks pass, repeat or broaden them only for changed inputs,
+failures, or a concrete unresolved concern. Otherwise advance toward delivery.
 
 ## Classify failures without hiding them
 
 | Observed cause | Required response |
 | --- | --- |
-| Implementation defect | Repair it and add/adjust a regression test that detects it |
+| Implementation defect | Repair it; use existing checks that detect the defect, adding or adjusting regression coverage when needed |
 | Incorrect test expectation | Confirm the contract first, then fix the test; do not weaken assertions just to pass |
 | Missing or conflicting design | Apply the design-gap path before choosing behavior |
 | Environment/tool failure | Diagnose from outputs; use an authorized documented alternative or mark the check blocked |
@@ -81,15 +87,17 @@ security, concurrency, compatibility, or performance when the changed surface
 can affect them; do not append an unrelated universal audit.
 
 For each actionable finding, identify severity/impact, path and location,
-reachable failure, evidence, and the smallest correction. Distinguish observed
-defects from hypotheses and optional polish. A review-only result is the findings
+reachable failure, evidence, and a correction covering the cause and affected
+behavior. Distinguish observed defects from hypotheses and optional polish.
+A review-only result is the findings
 and coverage limits; an implementation result additionally resolves findings
 that affect its contract, acceptance, or required quality gates.
 
 ## Close against fresh evidence
 
-Before declaring implementation complete, map each acceptance criterion to a
-concrete check/result, confirm required gates, and inspect final Git status plus
+Before declaring implementation complete, reconcile the result against every
+requested outcome, not just the last edited component. Map each acceptance
+criterion to a concrete check/result, confirm required gates, and inspect Git status plus
 the full staged/unstaged/task-owned untracked diff. Include documentation,
 fixtures, generated files, and accidental changes in that inspection. Record
 what was actually reviewed and any non-blocking limitations.

@@ -17,6 +17,12 @@ Keep hard prohibitions for real permission or correctness boundaries and name
 the allowed continuation. Replace "keep improving forever" with the acceptance
 and unresolved-finding stopping rule.
 
+Define completion against the user's entire requested outcome. Separate an
+internal edit/check checkpoint from a user approval boundary. Review instructions
+in generated templates as standalone units: a main skill cannot repair a template
+that still directs the executor to stop after partial work. Preserve explicit
+user scope changes without letting workflow defaults invent approval gates.
+
 Use the project's language and concise direct sentences. An imperative is a
 requirement within its stated scope; mark a preference as a default with its
 deciding exception. Do not add flattering personas, threats, prestige claims,
@@ -61,6 +67,11 @@ Distinguish structural validation, source review, scenario walkthroughs, and
 observed model/runtime tests. File existence and a coherent written scenario do
 not prove automatic selection or reliable behavior in ChatGPT Web.
 
+When a rule interrupts an authorized workflow, record its exact source, wording,
+and observed or reachable consequence. Test the correction against both full-task
+execution and deliberately limited/read-only requests. Treat a passing structural
+check as packaging evidence, not proof that premature stopping is eliminated.
+
 ## Source and applicability
 
 The [OpenAI prompt-engineering article](https://help.openai.com/zh-hans-cn/articles/6654000-best-practices-for-prompt-engineering-with-the-openai-api)
@@ -69,3 +80,10 @@ requirements, useful examples, and positive directions. Apply those writing
 principles here; do not copy API model/temperature/token settings into ChatGPT
 Web instructions or claim this skill controls them. Check current official docs
 before making a new host-specific claim.
+
+The [OpenAI model guidance](https://developers.openai.com/api/docs/guides/latest-model)
+was reviewed on 2026-09-10, particularly Initiative and follow-through,
+Instruction following, and Testing and verification. Use its applicable guidance
+for task completion, instruction-conflict diagnosis, and calibrated verification.
+Its API configuration and delegation examples do not establish capabilities or
+permissions in a ChatGPT Web + Nexum session. Retain the live host/tool boundary.

@@ -11,22 +11,27 @@ description: >-
 
 # Nexum ChatGPT Development
 
-Own the requested project-development outcome, not the project's entire backlog.
-End with an evidenced in-scope result or a precise blocker. Use ChatGPT Web for
-collaboration, Nexum for the authorized local environment, and the repository
+Own the user's complete intended project-development outcome within task scope.
+End with evidence for that outcome or the unresolved work and its blockers.
+Use ChatGPT Web for collaboration, Nexum for the authorized local environment,
+and the repository
 for durable truth. This skill supplies a workflow, not product architecture or
 an authorization mechanism.
 
 ## Resolve the task before acting
 
-Preserve host instruction precedence, tool permissions, and the user's requested
-mode. Discussion and review leave repository content unchanged, including logs.
+Preserve host instruction precedence and tool permissions. Within those bounds,
+the user's explicit task instructions override this skill's workflow defaults.
+Infer action versus discussion from the request and context, not a required
+keyword: a request to help fix something calls for execution. Discussion and
+review alone leave repository content unchanged, including logs; review with
+requested repair includes in-scope fixes under the existing implementation authority.
 Implementation authorizes the necessary code, tests, and documentation in scope;
 commit, push, publication, and deployment require their corresponding authority.
 Production changes and destructive cleanup require their specific authority.
 One request can authorize several actions; do not ask again for authority it
-already grants. Continue ordinary in-scope engineering work without approval
-checkpoints invented by this skill.
+already grants. Resolve routine engineering choices from inspected evidence and
+continue; this skill adds no per-step approval checkpoints.
 
 For local work, discover the current Nexum tools and call `project.list`, then
 `project.open` for the selected Agent and absolute directory. Reuse returned
@@ -69,16 +74,23 @@ paths, commands, or completed settings.
 
 ## Execute to the requested boundary
 
-Determine acceptance from the request and repository plan before implementing.
-For phased work, follow the plan's declared dependency order and acceptance.
-For a small task without a formal plan, state concrete checks in the task; do not
-create a phase hierarchy. Choose the smallest change satisfying the current
-contract. Add abstractions, dependencies, or new machinery only for a demonstrated
-requirement or engineering constraint.
+Identify every requested outcome and its acceptance from the request, agreed
+scope, and repository plan. Follow declared phase dependencies. Without a formal
+plan, state concrete completion checks in the task rather than creating phases.
+Implement the required behavior, integration, error handling, tests, and docs.
+Choose engineering changes for correctness and maintainability under repository
+rules; do not use patch size to decide how much of the task to complete. Keep
+unrelated features outside scope without deferring work necessary for the goal.
+
+Organize edits and checks into useful execution units and continue between them.
+A plan, patch, passing test, subphase, or specialist skill result is a checkpoint,
+not task completion. Continue the remaining authorized work without asking the
+user to say "continue". Do not substitute a prototype, subset, or next-step list
+for the requested outcome merely to reduce effort, time, or response length.
 
 For implementation, follow `Inspect → Implement → Verify → Review → Fix → Re-verify`.
 For a design gap, inspect design, code/tests, and applicable primary references;
-write the smallest supported design amendment before dependent implementation.
+document the affected contract completely before dependent implementation.
 Ask only when a material product-contract choice remains undecidable from those
 sources. Keep independent authorized work moving while that choice is pending.
 
@@ -88,11 +100,17 @@ never blindly replay a write with an unknown outcome. A denied action remains
 denied across tools. Do not promise work after the response ends. Give brief
 factual progress updates during long work; report a genuine access, environment,
 or execution limit with completed work and the next concrete recovery condition.
+Before a required approval, finish authorized preparation that does not depend
+on it and present the concrete decision or result. If an instruction causes a
+pause, extra confirmation, or omitted work, identify its exact file/location and
+relevant wording, distinguish the rule from your interpretation, and name the
+blocked action. Pause only dependent work; progress updates do not request approval.
 
 For repository changes, synchronize affected documents and append a task journal
 entry within the authorized file scope, following the documentation reference.
-Implementation finishes when acceptance has current evidence, required checks
-pass, task-affecting findings are resolved, and the final diff is reviewed.
+Implementation finishes when every requested acceptance criterion has current
+evidence, required checks pass, task-affecting findings are resolved, and the
+final diff is reviewed.
 Read-only review finishes with findings and coverage limits, not repairs; setup
 finishes only for the outputs/settings actually verified. Report outcome,
 changed paths, verification/results, limitations, and actual Git/CI state.

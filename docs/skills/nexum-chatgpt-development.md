@@ -24,6 +24,20 @@
 `docs/vlog/` 和 `docs/chatgpt-project.md`。已有项目沿用自己的真源和日志路径，
 不为了目录统一迁移文件。设计记录当前合同，vlog 记录历史，不相互替代。
 
+## 完整目标与连续执行
+
+完成范围由用户的实际目标、已约定范围和仓库验收决定，不用“最小实现”或补丁大小
+限制交付。需要的跨模块集成、错误处理、测试、设计和开发文档都属于完整结果。
+用户明确只要原型、某个子阶段或只读评审时，完成该范围，不扩大成整个产品。
+
+AI 自行组织编辑与验证单元，在同一授权任务内持续推进。一次修改、一次测试、
+一个子阶段或一个专项 Skill 的结束只是检查点，不要求用户再次说“继续”。
+验证按受影响行为和必要门禁选择；没有新修改、失败或具体疑点时，不机械重复。
+
+宿主与工具权限仍然有效。工作流默认规则不能覆盖用户的明确任务指令；必要审批前
+先完成不依赖审批的已授权准备。指令导致暂停、额外确认或遗漏工作时，说明具体
+文件位置、原句、受影响动作，并区分明确规则与 AI 自己的解释。
+
 ## 在 ChatGPT Web 使用
 
 在目标 ChatGPT Project 内明确任务，连接 Nexum，并让当前会话读取正式 Skill。
@@ -81,6 +95,11 @@ skill-creator 指导；分发后的 Skill 不强迫使用者安装这些编写�
 [OpenAI prompt-engineering guide](https://help.openai.com/zh-hans-cn/articles/6654000-best-practices-for-prompt-engineering-with-the-openai-api)：
 前置明确指令、分隔上下文、定义输出、使用有必要的例子与正向动作要求。
 API 参数建议不转换成 ChatGPT Web 的虚构控制项。
+
+2026-09-10 复核用户指定的
+[OpenAI model guidance](https://developers.openai.com/api/docs/guides/latest-model)，
+采用与本场景相关的持续完成、指令冲突诊断和适度验证原则；没有把 API 参数、
+异步工具或子 Agent 示例写成本 Skill 的默认能力或权限。
 
 Project UI/记忆行为以当前
 [OpenAI Projects 文档](https://help.openai.com/en/articles/10169521-using-projects-in-chatgpt)

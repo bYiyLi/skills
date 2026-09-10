@@ -14,9 +14,10 @@ an unchecked promise is not evidence.
 
 When implementation exposes an undefined behavior, inspect the current contract,
 existing code/tests, and applicable primary references. Within implementation
-authority, decide and document the smallest amendment supported by established
-goals before building on it. If alternatives materially change the product
-contract and the evidence does not select one, record the unresolved choice and
+authority, resolve the affected behavior using established goals and document
+the contract needed by implementation before building on it. If alternatives
+materially change the product contract and the evidence does not select one,
+record the unresolved choice and
 pause dependent implementation. In discussion/review, propose the amendment
 without changing files unless writing was also requested.
 

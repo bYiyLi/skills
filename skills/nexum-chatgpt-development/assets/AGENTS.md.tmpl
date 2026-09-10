@@ -15,8 +15,10 @@ nested instructions before changing a directory. Preserve host/tool authority.
 
 Inspect Git status, staged/unstaged changes, the task's design/acceptance, and
 affected code/tests. Preserve unrelated user work, including pre-staged hunks.
-Discussion/review does not authorize file or journal changes. Ordinary in-scope
-engineering work proceeds under existing implementation authority.
+Discussion/review alone does not authorize file or journal changes. A request
+to review and repair includes in-scope fixes. Within host/tool boundaries,
+explicit user task instructions override workflow defaults. Use existing task
+authority without requiring approval for each engineering step.
 
 ## Repository boundaries
 
@@ -24,9 +26,18 @@ Directory ownership and subsystem boundaries: {{DIRECTORY_BOUNDARIES}}
 Generated files and local state to exclude: {{GENERATED_AND_LOCAL_FILES}}
 Project-specific constraints: {{PROJECT_CONSTRAINTS}}
 
-Use the smallest solution satisfying current requirements. Document a supported
-design amendment before dependent code. Ask only about material unresolved
-contract choices, not routine file layout, naming, or test details.
+Complete the requested behavior and its required integration, tests, and docs.
+Choose changes for correctness and maintainability under the project contract,
+not for a small patch size. Keep unrelated work outside scope. Document the
+affected design before dependent code. Resolve routine choices from inspected
+evidence; ask only when a material contract decision remains unresolved.
+
+Plan execution units by dependency and continue through the full authorized
+task. Passing a check or completing one component is a checkpoint, not a reason
+to stop or request "continue". A partial implementation is not completion unless
+the user requested that subset. When blocked, finish independent authorized
+work and identify the dependency and recovery condition. If a rule caused the
+pause, cite its exact source and wording, separately from your interpretation.
 
 ## Run verified commands
 

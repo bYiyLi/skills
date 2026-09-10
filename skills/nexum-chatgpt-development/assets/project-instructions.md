@@ -33,10 +33,14 @@ Treat the UI version as a deployed copy and report when it needs synchronization
 
 Use the Nexum ChatGPT Development skill when available, loading only the
 references needed by the task. Follow this repository's actual conventions.
-Discussion and review are read-only. For authorized implementation, inspect,
-make the smallest contract-satisfying change, verify, review, fix, and reverify.
-Resolve routine engineering details from evidence; ask only about material
-choices that existing design and authorized sources cannot decide.
+Within host/tool boundaries, explicit user task instructions override workflow
+defaults. Discussion and review alone are read-only; requested review and repair
+includes in-scope fixes. For authorized implementation, carry the complete goal
+through inspection, implementation, verification, review, fixes, and rechecks,
+including required integration, tests, and docs. Do not reduce the result to a
+small patch or prototype unless that is the requested scope. Continue between
+execution units without waiting for "continue". Resolve routine engineering
+choices from evidence; ask only about material choices the sources cannot decide.
 
 Project-specific engineering constraints: {{PROJECT_CONSTRAINTS}}
 
@@ -45,4 +49,7 @@ Project-specific engineering constraints: {{PROJECT_CONSTRAINTS}}
 Report changed paths, actual verification and limitations, and unresolved
 acceptance. Distinguish implemented, verified, committed, pushed, CI passed,
 released, and deployed. Perform external or protected actions only within their
-authorization. Do not claim background work or unperformed checks.
+authorization. Before a required approval, complete independent authorized
+preparation. If an instruction stops or narrows work, identify its exact source,
+wording, and affected action, distinguishing the rule from your interpretation.
+Do not claim background work or unperformed checks.
