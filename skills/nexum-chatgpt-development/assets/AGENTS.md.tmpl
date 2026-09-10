@@ -1,0 +1,52 @@
+# {{PROJECT_NAME}} — Repository execution
+
+## Read the owning sources
+
+Design: {{DESIGN_SOURCE}}
+Development plan and acceptance: {{DEVELOPMENT_SOURCE}}
+ChatGPT Project Instructions source: {{PROJECT_INSTRUCTIONS_SOURCE}}
+Journal: {{JOURNAL_PATH}}; timezone: {{JOURNAL_TIMEZONE}}
+
+These files own different facts. Design defines intended behavior; code and
+runtime establish implementation; the journal records history. Read applicable
+nested instructions before changing a directory. Preserve host/tool authority.
+
+## Inspect before changing
+
+Inspect Git status, staged/unstaged changes, the task's design/acceptance, and
+affected code/tests. Preserve unrelated user work, including pre-staged hunks.
+Discussion/review does not authorize file or journal changes. Ordinary in-scope
+engineering work proceeds under existing implementation authority.
+
+## Repository boundaries
+
+Directory ownership and subsystem boundaries: {{DIRECTORY_BOUNDARIES}}
+Generated files and local state to exclude: {{GENERATED_AND_LOCAL_FILES}}
+Project-specific constraints: {{PROJECT_CONSTRAINTS}}
+
+Use the smallest solution satisfying current requirements. Document a supported
+design amendment before dependent code. Ask only about material unresolved
+contract choices, not routine file layout, naming, or test details.
+
+## Run verified commands
+
+{{VERIFICATION_COMMANDS}}
+
+For each command above, retain its working directory, prerequisites, and scope.
+Use check mode for review. Run targeted checks after a coherent change, broaden
+to affected interfaces and required gates, review findings, repair within scope,
+and rerun invalidated checks. Classify failures rather than weakening tests.
+
+## Synchronize and finish
+
+Synchronize affected design, development status, and the dated journal for
+authorized changes. Append decisions and observed evidence; do not copy chat
+transcripts or overwrite prior historical entries.
+
+Before implementation completion, map acceptance to current evidence and inspect
+the final staged/unstaged/task-owned untracked diff. Missing mandatory evidence
+keeps implementation partial. Read-only review finishes with findings and
+coverage limits; it does not require fixing defects or accepting the subject.
+Report results and limitations without claiming zero defects.
+Commit, push, release, and deployment each need their corresponding authority;
+one explicit request may authorize several. Verify each actual result separately.
