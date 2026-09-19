@@ -16,6 +16,8 @@
 | 安装运行、操作方法、接口查询 | [software-usage-docs](skills/software-usage-docs/SKILL.md) | 同一产品的使用文档 |
 | 一次变更影响多份文档 | [sync-software-docs](skills/sync-software-docs/SKILL.md) | 同步工作流，正文共用对应类型 Skill |
 | ChatGPT Web 通过 Nexum 开发本地项目 | [nexum-chatgpt-development](skills/nexum-chatgpt-development/SKILL.md) | 特定环境的完整开发工作流 |
+| 通过 Nexum 控制用户本地浏览器状态 | [nexum-browser](skills/nexum-browser/SKILL.md) | Browser Runtime capability，不接管代码修改或上层任务 |
+| 运营 Nexum 增长、渠道、社区和用户转化 | [nexum-operations](skills/nexum-operations/SKILL.md) | 运营工作流；产品开发仍由开发工作流负责 |
 
 需求定义产品承诺，设计定义技术合同，计划安排工作与验收，指南说明使用，日志记录历史。
 目标项目已有目录和职责优先；其他项目示例不自动成为通用约定。
