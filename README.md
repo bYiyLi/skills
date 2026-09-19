@@ -17,6 +17,9 @@
 | 安装运行、操作方法、接口查询 | [software-usage-docs](skills/software-usage-docs/SKILL.md) | 同一产品的使用文档 |
 | 一次变更影响多份文档 | [sync-software-docs](skills/sync-software-docs/SKILL.md) | 同步工作流，正文共用对应类型 Skill |
 | ChatGPT Web 通过 Nexum 开发本地项目 | [nexum-chatgpt-development](skills/nexum-chatgpt-development/SKILL.md) | 特定环境的完整开发工作流 |
+| 审计提示词或 Skill 的坏味道、风险与可维护性 | [prompt-smell-detector](skills/prompt-smell-detector/SKILL.md) | 专项审计与可选评分，不接管完整重写 |
+| 沉淀和复用设计、工程或协作方法论 | [methodology-journal](skills/methodology-journal/SKILL.md) | 方法论记录工作流，不接管原宿主任务 |
+| 合并职责与生命周期相同的相似对象 | [unified-object-design](skills/unified-object-design/SKILL.md) | 数据/能力模型 guidance，不授权实现 |
 
 需求定义产品承诺，设计定义技术合同，计划安排工作与验收，指南说明使用，日志记录历史。
 目标项目已有目录和职责优先；其他项目示例不自动成为通用约定。

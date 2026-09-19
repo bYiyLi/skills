@@ -1,0 +1,10 @@
+interface:
+  display_name: Prompt Smell Detector
+  short_description: Audit prompts and Skills for evidence-backed reliability defects
+  default_prompt: Use $prompt-smell-detector to audit this prompt or Skill and report evidence-backed defects and fixes.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  allow_implicit_invocation: true

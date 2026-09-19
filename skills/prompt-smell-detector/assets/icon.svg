@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="prompt smell detector icon">
+  <rect width="64" height="64" rx="14" fill="#111827"/>
+  <circle cx="28" cy="28" r="14" fill="none" stroke="#ffffff" stroke-width="5"/>
+  <line x1="39" y1="39" x2="52" y2="52" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
+  <path d="M22 27h12M22 34h7" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+</svg>
