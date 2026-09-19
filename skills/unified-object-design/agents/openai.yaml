@@ -1,4 +1,0 @@
-interface:
-  display_name: "Unified Object Design"
-  short_description: "Merge similar objects without losing boundaries"
-  default_prompt: "Use $unified-object-design to review whether related capability objects should be merged into one bounded model."
