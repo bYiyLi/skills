@@ -18,6 +18,7 @@ from typing import Any
 from .common import (
     LOG_PATH,
     MARKER,
+    PUBLIC_API_SURFACES,
     RUNTIME_DIR,
     SKILL_ROOT,
     STATE_PATH,
@@ -857,6 +858,7 @@ class AppServer:
     def _bootstrap_browser(self) -> None:
         uri = self.browser_client.resolve().as_uri()
         public_api = build_public_api_contract()
+        public_surfaces = PUBLIC_API_SURFACES
         code = f"""
 const {{setupBrowserRuntime}} = await import({json.dumps(uri)});
 const __nexumSetupGlobals = {{}};
@@ -867,6 +869,7 @@ const __nexumSetupResult = await setupBrowserRuntime({{
 globalThis.__nexumBrowserAgent = __nexumSetupResult ?? __nexumSetupGlobals.agent;
 if (globalThis.__nexumBrowserAgent == null) throw new Error('Browser Runtime setup did not return an agent');
 globalThis.__nexumPublicApi = {json.dumps(public_api, separators=(',', ':'))};
+globalThis.__nexumPublicSurfaces = {json.dumps(public_surfaces, separators=(',', ':'))};
 globalThis.__nexumBrowserHandles = new Map();
 globalThis.__nexumBrowserHandleMeta = new Map();
 globalThis.__nexumBrowserHandleSeq = 0;
@@ -896,6 +899,13 @@ globalThis.__nexumInflate = (value) => {{
     if (typeof value.$handle === 'string') {{
       if (!globalThis.__nexumBrowserHandles.has(value.$handle)) throw new Error(`Unknown browser handle: ${{value.$handle}}`);
       return globalThis.__nexumBrowserHandles.get(value.$handle);
+    }}
+    if (value.$call != null) {{
+      const descriptor = value.$call;
+      if (descriptor == null || typeof descriptor !== 'object' || Array.isArray(descriptor)) {{
+        throw new Error('$call must contain a public Browser API call descriptor');
+      }}
+      return async () => await globalThis.__nexumInvokeDescriptor(descriptor);
     }}
     return Object.fromEntries(Object.entries(value).map(([k,v]) => [k, globalThis.__nexumInflate(v)]));
   }}
@@ -937,7 +947,9 @@ globalThis.__nexumPublicCall = (interfaceName, path, args) => {{
   let returnInterface = null;
   for (let i = 0; i < parts.length; i++) {{
     const members = globalThis.__nexumPublicApi.interfaces[currentInterface];
-    const member = members?.[parts[i]];
+    const member = members != null && Object.prototype.hasOwnProperty.call(members, parts[i])
+      ? members[parts[i]]
+      : null;
     if (!member) throw new Error(`Browser API member is not public: ${{currentInterface}}.${{parts[i]}}`);
     let candidates = member.returns || [];
     if (currentInterface === 'PlaywrightAPI' && parts[i] === 'waitForEvent') {{
@@ -989,6 +1001,60 @@ globalThis.__nexumCallHandleRaw = async (handleId, path, args) => {{
   const meta = globalThis.__nexumBrowserHandleMeta.get(handleId) || {{}};
   if (!meta.interface) throw new Error(`Browser handle ${{handleId}} has no documented public interface`);
   return await globalThis.__nexumCallRaw(globalThis.__nexumBrowserHandles.get(handleId), meta.interface, path, args);
+}};
+
+globalThis.__nexumResolveDescriptorTarget = async (descriptor) => {{
+  const surface = descriptor.surface;
+  if (surface === 'handle') {{
+    const handleId = descriptor.handle;
+    if (typeof handleId !== 'string' || !globalThis.__nexumBrowserHandles.has(handleId)) {{
+      throw new Error(`Unknown browser handle: ${{String(handleId)}}`);
+    }}
+    const meta = globalThis.__nexumBrowserHandleMeta.get(handleId) || {{}};
+    if (!meta.interface) throw new Error(`Browser handle ${{handleId}} has no documented public interface`);
+    return {{receiver: globalThis.__nexumBrowserHandles.get(handleId), interfaceName: meta.interface}};
+  }}
+
+  const interfaceName = globalThis.__nexumPublicSurfaces[surface];
+  if (!interfaceName) throw new Error(`Unsupported callback Browser API surface: ${{String(surface)}}`);
+  if (surface === 'agent') return {{receiver: globalThis.__nexumBrowserAgent, interfaceName}};
+  if (surface === 'browsers-api') return {{receiver: globalThis.__nexumBrowserAgent.browsers, interfaceName}};
+  if (surface === 'docs-api') return {{receiver: globalThis.__nexumBrowserAgent.documentation, interfaceName}};
+  if (surface === 'browser') return {{receiver: globalThis.__nexumBrowser, interfaceName}};
+  if (surface === 'tabs') return {{receiver: globalThis.__nexumBrowser.tabs, interfaceName}};
+  if (surface === 'user') return {{receiver: globalThis.__nexumBrowser.user, interfaceName}};
+
+  const tabId = descriptor.tab;
+  if (typeof tabId !== 'string' || !tabId) throw new Error(`tab is required for callback surface ${{surface}}`);
+  const tab = await globalThis.__nexumBrowser.tabs.get(tabId);
+  const receiver = {{
+    tab,
+    playwright: tab.playwright,
+    cua: tab.cua,
+    'dom-cua': tab.dom_cua,
+    ax: tab.ax,
+    content: tab.content,
+    clipboard: tab.clipboard,
+    dev: tab.dev,
+  }}[surface];
+  if (receiver == null) throw new Error(`Browser API surface ${{surface}} is unavailable on the selected backend`);
+  return {{receiver, interfaceName}};
+}};
+
+globalThis.__nexumInvokeDescriptor = async (descriptor) => {{
+  if (typeof descriptor.method !== 'string' || !descriptor.method) {{
+    throw new Error('$call descriptor requires a public method');
+  }}
+  if (descriptor.args != null && !Array.isArray(descriptor.args)) {{
+    throw new Error('$call descriptor args must be an array');
+  }}
+  const {{receiver, interfaceName}} = await globalThis.__nexumResolveDescriptorTarget(descriptor);
+  return await globalThis.__nexumCallRaw(
+    receiver,
+    interfaceName,
+    descriptor.method,
+    descriptor.args || [],
+  );
 }};
 
 globalThis.__nexumAwaitHandle = async (handleId) => {{

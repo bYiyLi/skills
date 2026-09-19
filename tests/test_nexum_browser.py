@@ -84,6 +84,9 @@ class RuntimeContractTests(unittest.TestCase):
         self.assertIn("globals: __nexumSetupGlobals", captured[0])
         self.assertIn("elicitationDisplayName: 'Nexum Browser'", captured[0])
         self.assertIn("__nexumSetupResult ?? __nexumSetupGlobals.agent", captured[0])
+        self.assertIn("__nexumInvokeDescriptor", captured[0])
+        self.assertIn("value.$call", captured[0])
+        self.assertIn("Object.prototype.hasOwnProperty.call", captured[0])
 
     def test_app_server_allowlist_has_no_model_turn_methods(self) -> None:
         self.assertEqual(
@@ -263,11 +266,30 @@ class RuntimeContractTests(unittest.TestCase):
         self.assertIn("domSnapshot()", server.code)
 
     def test_public_api_bridge_covers_every_installed_interface(self) -> None:
-        coverage = public_api_coverage()
+        fake_contract = {
+            "interfaces": {
+                "Browser": {},
+                "Tab": {"getJsDialog": {"returns": ["Dialog"]}},
+                "AlertDialog": {},
+                "PlaywrightAPI": {
+                    "locator": {"returns": ["PlaywrightLocator"]}
+                },
+                "PlaywrightLocator": {"innerText": {"returns": []}},
+            },
+            "aliases": {"Dialog": ["AlertDialog"]},
+        }
+        with patch(
+            "nexum_browser.common.build_public_api_contract",
+            return_value=fake_contract,
+        ):
+            coverage = public_api_coverage()
         self.assertTrue(
             coverage["complete"],
             f"unreachable public interfaces: {coverage['unreachableInterfaces']}",
         )
+        self.assertEqual(coverage["unreachableInterfaces"], [])
+        self.assertIn("PlaywrightLocator", coverage["reachableInterfaces"])
+        self.assertIn("AlertDialog", coverage["reachableInterfaces"])
 
     def test_output_js_does_not_redeclare_persistent_repl_variable(self) -> None:
         code = _output_js("{ok:true}")

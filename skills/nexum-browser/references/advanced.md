@@ -108,6 +108,36 @@ When an API argument itself must be another Runtime object, pass a handle refere
 
 This enables operations such as locator `and` / `or` without exposing arbitrary Node.js execution.
 
+When a documented public method requires an action callback, pass a public call
+descriptor as `{"$call": ...}`. The adapter turns only that descriptor into an
+async callback and validates the nested call against the same public API
+contract. It does not evaluate arbitrary Node.js callback source.
+
+For example, `PlaywrightAPI.expectNavigation` can wrap a click on a locator
+handle:
+
+```json
+[
+  {
+    "$call": {
+      "surface": "handle",
+      "handle": "h_1",
+      "method": "click",
+      "args": []
+    }
+  },
+  {
+    "url": "http://127.0.0.1:8766/page2.html",
+    "waitUntil": "load",
+    "timeoutMs": 10000
+  }
+]
+```
+
+The nested descriptor may target any direct public surface listed by
+`api-call --help` or a typed `handle`. Backend-disabled surfaces still fail
+normally.
+
 Use `$value` to inspect a handle's safe metadata, `$release` when it is no longer needed, and `$image` only for a handle representing `Uint8Array` image bytes. The adapter does not expose arbitrary object internals through handle inspection.
 
 ## Event and callback flows

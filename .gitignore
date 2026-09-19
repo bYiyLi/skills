@@ -4,6 +4,7 @@ skills-lock.json
 .venv/
 **/.venv/
 **/__pycache__/
+**/.runtime/
 *.pyc
 
 .DS_Store
