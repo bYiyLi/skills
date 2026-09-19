@@ -51,7 +51,7 @@ For ordinary browser work, use the stable command layer:
 - `tabs`, `selected`, `claim`, `open`
 - `goto`, `back`, `forward`, `reload`, `close`, `mark`
 - `observe`, `snapshot`, `visible-dom`, `surfaces`
-- `click`, `fill`, `press`, `scroll`, `evaluate`
+- `click`, `fill`, `type`, `press`, `scroll`, `evaluate`
 - `upload`, `download`, `click-nav`
 - `screenshot`, `dev-logs`
 - `capabilities`
@@ -60,8 +60,9 @@ Use `history` only when the user's request specifically requires browser history
 
 `observe --mode auto` adapts to the selected backend. It currently prefers the
 Runtime's accessibility surface when available, then legacy DOM CUA, then the
-Playwright semantic snapshot. The result includes `source` and `kind`; use those
-fields instead of assuming which backend API produced the observation.
+Playwright semantic snapshot. The result includes `source`, `kind`, and
+`targetKind`; use those fields instead of assuming which backend API produced
+the observation.
 
 Use `snapshot` when the task specifically needs the Playwright semantic DOM.
 `visible-dom` is a compatibility command: it prefers legacy DOM CUA when that
@@ -72,11 +73,11 @@ Use `surfaces --tab <tabId>` when a backend-specific operation fails or before
 choosing an advanced surface. It reports the actual tab surfaces and advertised
 optional capabilities for the selected backend.
 
-`status` is diagnostic and does not create a Browser session. `setup` configures the Codex app-server runtime, starts the Skill-owned local broker, and verifies a Browser session; run it only when the user asked to configure this Skill or approved that setup step. It does not install the Codex CLI. If the required standalone Codex install is missing, report the returned setup error instead of installing Codex implicitly. When Codex refuses its shared daemon because a Windows caller is elevated, the bundled adapter uses its broker-owned authenticated loopback app-server instead of weakening the daemon integrity-level check.
+`status` is diagnostic and does not create a Browser session. `setup` configures the Codex app-server runtime, starts the Skill-owned local broker, and verifies a Browser session; run it only when the user asked to configure this Skill or approved that setup step. It does not install the Codex CLI. If the required standalone Codex install is missing, report the returned setup error instead of installing Codex implicitly. When Codex refuses its shared daemon because a Windows caller is elevated, the bundled adapter uses its broker-owned authenticated loopback app-server instead of weakening the daemon integrity-level check. If the shared daemon can start but Browser thread creation fails only because the user's Codex configuration references a missing local path, the adapter may isolate its browser-only thread in the same authenticated private app-server with Codex Skill loading disabled; it does not edit the user's global Codex configuration.
 
 When Windows setup reports a stale bundled Browser plugin, missing native-host registration, disabled extension, or unavailable browser, treat that diagnostic as a runtime prerequisite. Do not create registry entries or run internal plugin installers; ask the user to reload or reinstall the bundled Browser plugin from the Codex/ChatGPT desktop plugin UI when the returned diagnostic requires it.
 
-`stop` releases the active nexum-browser Browser Runtime state and stops the Skill-owned broker. On Windows it also removes the on-demand current-user Scheduled Task used to keep that broker alive across separate Nexum process calls. It does not stop the shared Codex app-server daemon; when the elevated-Windows fallback is active it also terminates that broker-owned private app-server.
+`stop` releases the active nexum-browser Browser Runtime state and stops the Skill-owned broker. On Windows it also removes the on-demand current-user Scheduled Task used to keep that broker alive across separate Nexum process calls. It does not stop the shared Codex app-server daemon; when a broker-owned private app-server fallback is active it terminates that private app-server too.
 
 ## Select and inspect before acting
 
@@ -90,7 +91,23 @@ After navigation, or after an interaction whose result matters, inspect current
 state again instead of assuming success. Prefer `observe` for general state
 inspection and `snapshot` when locator-oriented semantic DOM detail is needed.
 
-For `click`, `fill`, and `press`, prefer semantic Playwright locators such as role/name, label, placeholder, visible text, or test id when the inspected page exposes those semantics. Use a CSS selector when it is the clearest stable target.
+Use the target form that matches the observation instead of converting every
+backend into a Playwright assumption:
+
+- `targetKind: locator`: use a semantic locator such as role/name, label,
+  placeholder, visible text, or test id; use CSS when it is the clearest stable
+  target.
+- `targetKind: ax-index`: pass the returned accessibility index with
+  `--ax-index`.
+- `targetKind: node-id`: pass the returned DOM-CUA node id with `--node-id`.
+- For screenshot-coordinate work, `--point '[x,y]'` uses AX first and CUA when
+  AX is unavailable.
+
+`fill` means replace the existing input value, so it uses only Playwright
+`fill` or AX `setValue`. Use `type` when the requested operation is keyboard
+text entry without clearing existing content; that operation can use
+Playwright, AX, DOM-CUA, or CUA according to the supplied target and live
+surface support.
 
 ## Visual verification
 
@@ -124,7 +141,8 @@ calls reach public locator, frame-locator, dialog, file-chooser, download, and
 other returned interfaces without exposing arbitrary Node objects. Run
 `api-coverage` when developing or validating this Skill; `complete: true` means
 every interface in the installed `api.json` is reachable through a direct root
-or a typed returned handle. It does not mean every backend supports every
+or a typed returned handle, and every directly-declared callback shape is
+representable by the bridge. It does not mean every backend supports every
 interface.
 
 Prefer the narrowest advanced call that completes the browser task.

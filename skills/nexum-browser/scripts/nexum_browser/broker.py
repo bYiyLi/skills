@@ -56,6 +56,11 @@ class Broker:
                     "runtimeBackend": (
                         self.server.backend if self.server is not None else None
                     ),
+                    "runtimeFallbackReason": (
+                        self.server.fallback_reason
+                        if self.server is not None
+                        else None
+                    ),
                 },
             }
         if command == "__stop__":
@@ -374,6 +379,7 @@ def broker_status() -> dict[str, Any]:
         "startedAt": state.get("startedAt"),
         "runtimeActive": bool((data or {}).get("runtimeActive")),
         "runtimeBackend": (data or {}).get("runtimeBackend"),
+        "runtimeFallbackReason": (data or {}).get("runtimeFallbackReason"),
     }
 
 

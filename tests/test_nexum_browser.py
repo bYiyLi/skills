@@ -22,6 +22,8 @@ from nexum_browser.operations import BrowserOperations, _output_js
 from nexum_browser.runtime import (
     AppServer,
     _ALLOWED_APP_SERVER_METHODS,
+    _CONFIG_FALLBACK_REASON,
+    _is_missing_config_path_error,
     _parse_json_output,
     diagnose_browser_runtime_error,
     prepare_runtime,
@@ -87,6 +89,10 @@ class RuntimeContractTests(unittest.TestCase):
         self.assertIn("__nexumInvokeDescriptor", captured[0])
         self.assertIn("value.$call", captured[0])
         self.assertIn("Object.prototype.hasOwnProperty.call", captured[0])
+        self.assertIn("surface === 'browser-capability'", captured[0])
+        self.assertIn("dynamicCapability", captured[0])
+        self.assertIn("Optional capability callback member is invalid", captured[0])
+        self.assertIn("Browser API surface user is unavailable", captured[0])
 
     def test_app_server_allowlist_has_no_model_turn_methods(self) -> None:
         self.assertEqual(
@@ -142,6 +148,16 @@ class RuntimeContractTests(unittest.TestCase):
         self.assertEqual(result["backend"], "managed-daemon")
         self.assertEqual(result["bootstrap"]["status"], "already-running")
         bootstrap.assert_not_called()
+
+    def test_missing_config_path_error_is_narrowly_detected(self) -> None:
+        self.assertTrue(
+            _is_missing_config_path_error(
+                "failed to load configuration: No such file or directory (os error 2)"
+            )
+        )
+        self.assertFalse(_is_missing_config_path_error("failed to load configuration"))
+        self.assertFalse(_is_missing_config_path_error("No such file or directory"))
+        self.assertIn("Codex Skill loading disabled", _CONFIG_FALLBACK_REASON)
 
     def test_windows_untrusted_browser_client_error_is_actionable(self) -> None:
         with patch("nexum_browser.runtime.os.name", "nt"):
@@ -245,6 +261,7 @@ class RuntimeContractTests(unittest.TestCase):
         self.assertIn("__tab.dom_cua!=null", server.code)
         self.assertIn("__tab.ax!=null", server.code)
         self.assertIn("__tab.ax.get('state')", server.code)
+        self.assertIn("__targetKind='ax-index'", server.code)
 
     def test_observe_supports_explicit_semantic_mode(self) -> None:
         class FakeServer:
@@ -264,17 +281,185 @@ class RuntimeContractTests(unittest.TestCase):
         )
         self.assertEqual(result["source"], "playwright")
         self.assertIn("domSnapshot()", server.code)
+        self.assertIn("__targetKind='locator'", server.code)
+
+    def test_tabs_does_not_require_user_tab_surface(self) -> None:
+        class FakeServer:
+            def execute_js(self, code, **_kwargs):
+                self.code = code
+                return {
+                    "controlled": [],
+                    "user": [],
+                    "userTabsSupported": False,
+                }, []
+
+        server = FakeServer()
+        result = BrowserOperations(server).execute("tabs", {})
+        self.assertFalse(result["userTabsSupported"])
+        self.assertIn("__userApi!=null", server.code)
+        self.assertIn("__userApi.openTabs()", server.code)
+
+    def test_snapshot_checks_live_playwright_surface(self) -> None:
+        class FakeServer:
+            def execute_js(self, code, **_kwargs):
+                self.code = code
+                return {"tabId": "1", "snapshot": "state"}, []
+
+        server = FakeServer()
+        BrowserOperations(server).execute("snapshot", {"tab": "1"})
+        self.assertIn("__tab.playwright==null", server.code)
+        self.assertIn("domSnapshot()", server.code)
+
+    def test_mark_checks_backend_method_before_calling(self) -> None:
+        class FakeServer:
+            def execute_js(self, code, **_kwargs):
+                self.code = code
+                return {"tabId": "1", "mode": "handoff"}, []
+
+        server = FakeServer()
+        BrowserOperations(server).execute(
+            "mark", {"tab": "1", "mode": "handoff"}
+        )
+        self.assertIn("typeof __tab.markHandoff!=='function'", server.code)
+        self.assertIn("await __tab.markHandoff()", server.code)
+
+    def test_click_accepts_accessibility_index(self) -> None:
+        class FakeServer:
+            def execute_js(self, code, **_kwargs):
+                self.code = code
+                return {"tabId": "1", "action": "click", "source": "ax"}, []
+
+        server = FakeServer()
+        result = BrowserOperations(server).execute(
+            "click",
+            {"tab": "1", "axIndex": 4},
+        )
+        self.assertEqual(result["source"], "ax")
+        self.assertIn("__tab.ax==null", server.code)
+        self.assertIn("__tab.ax.click(4)", server.code)
+
+    def test_fill_uses_ax_set_value_for_replace_semantics(self) -> None:
+        class FakeServer:
+            def execute_js(self, code, **_kwargs):
+                self.code = code
+                return {"tabId": "1", "action": "fill", "source": "ax"}, []
+
+        server = FakeServer()
+        BrowserOperations(server).execute(
+            "fill",
+            {"tab": "1", "axIndex": 2, "text": "replacement"},
+        )
+        self.assertIn('__tab.ax.setValue(2,"replacement")', server.code)
+        self.assertNotIn("__tab.ax.typeText", server.code)
+
+    def test_type_accepts_dom_cua_node_id(self) -> None:
+        class FakeServer:
+            def execute_js(self, code, **_kwargs):
+                self.code = code
+                return {"tabId": "1", "action": "type", "source": "dom-cua"}, []
+
+        server = FakeServer()
+        BrowserOperations(server).execute(
+            "type",
+            {"tab": "1", "nodeId": "node-7", "text": "hello"},
+        )
+        self.assertIn("__tab.dom_cua==null", server.code)
+        self.assertIn('"node_id": "node-7"', server.code)
+        self.assertIn('__tab.dom_cua.type({"text": "hello"})', server.code)
+
+    def test_point_click_routes_between_ax_and_cua(self) -> None:
+        class FakeServer:
+            def execute_js(self, code, **_kwargs):
+                self.code = code
+                return {"tabId": "1", "action": "click", "source": "ax"}, []
+
+        server = FakeServer()
+        BrowserOperations(server).execute(
+            "click",
+            {"tab": "1", "point": [120, 80]},
+        )
+        self.assertIn("__tab.ax!=null", server.code)
+        self.assertIn("__tab.ax.click([120, 80])", server.code)
+        self.assertIn("__tab.cua!=null", server.code)
+        self.assertIn('__tab.cua.click({"x": 120, "y": 80})', server.code)
+
+    def test_scroll_prefers_backend_native_or_advertised_capability(self) -> None:
+        class FakeServer:
+            def execute_js(self, code, **_kwargs):
+                self.code = code
+                return {"tabId": "1", "source": "cdp", "result": {}}, []
+
+        server = FakeServer()
+        BrowserOperations(server).execute(
+            "scroll",
+            {"tab": "1", "dx": 0, "dy": 300},
+        )
+        self.assertIn("__tab.dom_cua!=null", server.code)
+        self.assertIn("__caps.some(x=>x.id==='cdp')", server.code)
+        self.assertIn("__source='cdp'", server.code)
+
+    def test_capability_call_checks_requested_member_exists(self) -> None:
+        class FakeServer:
+            def execute_js(self, code, **_kwargs):
+                self.code = code
+                return {"result": {}}, []
+
+        server = FakeServer()
+        BrowserOperations(server).execute(
+            "api-call",
+            {
+                "tab": "1",
+                "surface": "tab-capability",
+                "capability": "cdp",
+                "method": "send",
+                "args": ["Runtime.evaluate", {"expression": "1"}],
+            },
+        )
+        self.assertIn('"send" in __cap', server.code)
+        self.assertIn("Browser capability member is unavailable", server.code)
+
+    def test_advanced_user_surface_checks_live_backend_support(self) -> None:
+        class FakeServer:
+            def execute_js(self, code, **_kwargs):
+                self.code = code
+                return {"result": None}, []
+
+        server = FakeServer()
+        BrowserOperations(server).execute(
+            "api-call",
+            {
+                "surface": "user",
+                "method": "openTabs",
+                "args": [],
+            },
+        )
+        self.assertIn("__nexumBrowser.user == null", server.code)
+        self.assertIn("Browser API surface user is unavailable", server.code)
 
     def test_public_api_bridge_covers_every_installed_interface(self) -> None:
         fake_contract = {
             "interfaces": {
                 "Browser": {},
-                "Tab": {"getJsDialog": {"returns": ["Dialog"]}},
+                "Tab": {
+                    "getJsDialog": {
+                        "returns": ["Dialog"],
+                        "callbackKinds": [],
+                    }
+                },
                 "AlertDialog": {},
                 "PlaywrightAPI": {
-                    "locator": {"returns": ["PlaywrightLocator"]}
+                    "locator": {
+                        "returns": ["PlaywrightLocator"],
+                        "callbackKinds": [],
+                    },
+                    "expectNavigation": {
+                        "returns": [],
+                        "callbackKinds": ["zero-arg-async"],
+                    },
                 },
-                "PlaywrightLocator": {"innerText": {"returns": []}},
+                "PlaywrightLocator": {
+                    "innerText": {"returns": [], "callbackKinds": []}
+                },
             },
             "aliases": {"Dialog": ["AlertDialog"]},
         }
@@ -290,6 +475,39 @@ class RuntimeContractTests(unittest.TestCase):
         self.assertEqual(coverage["unreachableInterfaces"], [])
         self.assertIn("PlaywrightLocator", coverage["reachableInterfaces"])
         self.assertIn("AlertDialog", coverage["reachableInterfaces"])
+        self.assertEqual(coverage["unsupportedCallbackMembers"], [])
+        self.assertEqual(
+            coverage["callbackMembers"],
+            [
+                {
+                    "member": "PlaywrightAPI.expectNavigation",
+                    "kinds": ["zero-arg-async"],
+                }
+            ],
+        )
+
+    def test_public_api_coverage_flags_unrepresentable_callbacks(self) -> None:
+        fake_contract = {
+            "interfaces": {
+                "PlaywrightAPI": {
+                    "futureCallback": {
+                        "returns": [],
+                        "callbackKinds": ["unsupported"],
+                    }
+                }
+            },
+            "aliases": {},
+        }
+        with patch(
+            "nexum_browser.common.build_public_api_contract",
+            return_value=fake_contract,
+        ):
+            coverage = public_api_coverage()
+        self.assertFalse(coverage["complete"])
+        self.assertEqual(
+            coverage["unsupportedCallbackMembers"],
+            ["PlaywrightAPI.futureCallback"],
+        )
 
     def test_output_js_does_not_redeclare_persistent_repl_variable(self) -> None:
         code = _output_js("{ok:true}")
@@ -303,6 +521,20 @@ class RuntimeContractTests(unittest.TestCase):
             self.assertIs(broker.ensure_server(), first)
             self.assertIs(broker.ensure_server(), first)
         app_server.assert_called_once_with()
+
+    def test_broker_ping_reports_runtime_fallback_reason(self) -> None:
+        class FakeServer:
+            backend = "local-websocket"
+            fallback_reason = "isolated browser runtime"
+
+        broker = Broker()
+        broker.server = FakeServer()
+        response = broker.handle({"command": "__ping__"})
+        self.assertEqual(response["data"]["runtimeBackend"], "local-websocket")
+        self.assertEqual(
+            response["data"]["runtimeFallbackReason"],
+            "isolated browser runtime",
+        )
 
     def test_broker_close_releases_runtime(self) -> None:
         class FakeServer:
@@ -445,6 +677,19 @@ class RuntimeContractTests(unittest.TestCase):
                 else:
                     parsed = parser.parse_args([command])
                 self.assertEqual(parsed.command, command)
+
+    def test_cli_interaction_targets_are_surface_neutral(self) -> None:
+        parser = build_parser()
+        click = parser.parse_args(["click", "--tab", "1", "--ax-index", "4"])
+        self.assertEqual(click.axIndex, 4)
+        typed = parser.parse_args(
+            ["type", "--tab", "1", "--node-id", "node-7", "--text", "hello"]
+        )
+        self.assertEqual(typed.nodeId, "node-7")
+        point = parser.parse_args(
+            ["press", "--tab", "1", "--point", "[10,20]", "--key", "Enter"]
+        )
+        self.assertEqual(point.point, [10, 20])
 
 
 if __name__ == "__main__":

@@ -170,10 +170,17 @@ def build_public_api_contract() -> dict[str, Any]:
             if not isinstance(member, dict):
                 continue
             returns: list[str] = []
+            callback_kinds: list[str] = []
             for declaration in member.get("declarations") or []:
                 if not isinstance(declaration, dict):
                     continue
                 text = str(declaration.get("text") or "").split("//", 1)[0].strip()
+                signature = text.rsplit("):", 1)[0] if "):" in text else text
+                if "=>" in signature:
+                    if re.search(r"\(\s*\)\s*=>\s*Promise\b", signature):
+                        callback_kinds.append("zero-arg-async")
+                    else:
+                        callback_kinds.append("unsupported")
                 if "):" in text:
                     return_text = text.rsplit("):", 1)[1].rsplit(";", 1)[0]
                 elif ":" in text:
@@ -183,7 +190,10 @@ def build_public_api_contract() -> dict[str, Any]:
                 for ref in declaration.get("references") or []:
                     if ref in return_names and re.search(rf"\b{re.escape(ref)}\b", return_text):
                         returns.append(ref)
-            member_contract[member_name] = {"returns": list(dict.fromkeys(returns))}
+            member_contract[member_name] = {
+                "returns": list(dict.fromkeys(returns)),
+                "callbackKinds": list(dict.fromkeys(callback_kinds)),
+            }
         contract[interface_name] = member_contract
 
     return {"interfaces": contract, "aliases": aliases}
@@ -208,8 +218,19 @@ def public_api_coverage() -> dict[str, Any]:
 
     installed = set(interfaces)
     missing = sorted(installed - reachable)
+    callback_members: list[dict[str, Any]] = []
+    unsupported_callbacks: list[str] = []
+    for interface_name, members in interfaces.items():
+        for member_name, member in members.items():
+            kinds = list(member.get("callbackKinds") or [])
+            if not kinds:
+                continue
+            qualified = f"{interface_name}.{member_name}"
+            callback_members.append({"member": qualified, "kinds": kinds})
+            if any(kind != "zero-arg-async" for kind in kinds):
+                unsupported_callbacks.append(qualified)
     return {
-        "complete": not missing,
+        "complete": not missing and not unsupported_callbacks,
         "surfaceInterfaces": PUBLIC_API_SURFACES,
         "installedInterfaces": sorted(installed),
         "directRootInterfaces": sorted(
@@ -217,6 +238,8 @@ def public_api_coverage() -> dict[str, Any]:
         ),
         "reachableInterfaces": sorted(reachable),
         "unreachableInterfaces": missing,
+        "callbackMembers": callback_members,
+        "unsupportedCallbackMembers": sorted(unsupported_callbacks),
     }
 
 

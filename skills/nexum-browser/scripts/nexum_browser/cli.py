@@ -28,14 +28,53 @@ from .runtime import (
 
 def add_locator(parser: argparse.ArgumentParser) -> None:
     group = parser.add_mutually_exclusive_group(required=True)
+    add_locator_arguments(group)
+    add_locator_options(parser)
+
+
+def add_locator_arguments(group: Any) -> None:
     group.add_argument("--selector", help="CSS selector")
     group.add_argument("--role", help="ARIA role, optionally combined with --name")
     group.add_argument("--locator-text", dest="locatorText", help="Visible text")
     group.add_argument("--label", help="Associated label text")
     group.add_argument("--placeholder", help="Input placeholder text")
     group.add_argument("--test-id", dest="testId", help="data-testid value")
+
+
+def add_locator_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--name", help="Accessible name used with --role")
     parser.add_argument("--exact", action="store_true", help="Require an exact semantic match")
+
+
+def add_action_target(
+    parser: argparse.ArgumentParser,
+    *,
+    allow_ax: bool = True,
+    allow_dom: bool = True,
+    allow_point: bool = True,
+) -> None:
+    group = parser.add_mutually_exclusive_group(required=True)
+    add_locator_arguments(group)
+    if allow_ax:
+        group.add_argument(
+            "--ax-index",
+            dest="axIndex",
+            type=int,
+            help="Accessibility element index returned by an AX observation",
+        )
+    if allow_dom:
+        group.add_argument(
+            "--node-id",
+            dest="nodeId",
+            help="DOM node id returned by a DOM-CUA observation",
+        )
+    if allow_point:
+        group.add_argument(
+            "--point",
+            type=parse_json_array,
+            help='Viewport point as JSON [x,y]; uses AX or CUA when available',
+        )
+    add_locator_options(parser)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -112,18 +151,35 @@ def build_parser() -> argparse.ArgumentParser:
     mark.add_argument("--tab", required=True)
     mark.add_argument("--mode", choices=["handoff", "deliverable"], required=True)
 
-    click = sub.add_parser("click", help="Click through a simple Playwright locator")
+    click = sub.add_parser(
+        "click",
+        help="Click through a semantic locator, AX index, DOM node id, or viewport point",
+    )
     click.add_argument("--tab", required=True)
-    add_locator(click)
+    add_action_target(click)
 
-    fill = sub.add_parser("fill", help="Fill through a simple Playwright locator")
+    fill = sub.add_parser(
+        "fill",
+        help="Replace an input value through a semantic locator or AX index",
+    )
     fill.add_argument("--tab", required=True)
-    add_locator(fill)
+    add_action_target(fill, allow_dom=False, allow_point=False)
     fill.add_argument("--text", required=True)
 
-    press = sub.add_parser("press", help="Press a key through a simple Playwright locator")
+    typed = sub.add_parser(
+        "type",
+        help="Type text without clearing existing content through a supported interaction surface",
+    )
+    typed.add_argument("--tab", required=True)
+    add_action_target(typed)
+    typed.add_argument("--text", required=True)
+
+    press = sub.add_parser(
+        "press",
+        help="Press a key through a semantic locator, AX index, DOM node id, or viewport point",
+    )
     press.add_argument("--tab", required=True)
-    add_locator(press)
+    add_action_target(press)
     press.add_argument("--key", required=True)
 
     upload = sub.add_parser("upload", help="Advanced file chooser flow: click a file input/control and set local files")
@@ -144,10 +200,23 @@ def build_parser() -> argparse.ArgumentParser:
     click_nav.add_argument("--wait-until", dest="waitUntil", choices=["commit", "domcontentloaded", "load", "networkidle"])
     click_nav.add_argument("--timeout-ms", dest="timeoutMs", type=int, default=10000)
 
-    scroll = sub.add_parser("scroll", help="Scroll the page by CSS pixels")
+    scroll = sub.add_parser(
+        "scroll",
+        help="Scroll the page by CSS pixels through DOM-CUA, CUA, or CDP as available",
+    )
     scroll.add_argument("--tab", required=True)
     scroll.add_argument("--dx", type=int, default=0)
     scroll.add_argument("--dy", type=int, required=True)
+    scroll.add_argument(
+        "--point",
+        type=parse_json_array,
+        help='Optional viewport anchor as JSON [x,y] for CUA scrolling',
+    )
+    scroll.add_argument(
+        "--node-id",
+        dest="nodeId",
+        help="Optional DOM-CUA node id to scroll within",
+    )
 
     evaluate = sub.add_parser("evaluate", help="Evaluate JavaScript in the page through CDP Runtime.evaluate")
     evaluate.add_argument("--tab", required=True)
@@ -280,12 +349,22 @@ def main() -> int:
                 response = send_request("status", {}, timeout=120)
                 if response.get("code") != "ok":
                     raise RuntimeError(str(response.get("message") or response))
+                broker = broker_status()
+                active_backend = broker.get("runtimeBackend")
+                if active_backend and active_backend != runtime.get("backend"):
+                    runtime = {
+                        **runtime,
+                        "preparedBackend": runtime.get("backend"),
+                        "backend": active_backend,
+                    }
+                if broker.get("runtimeFallbackReason"):
+                    runtime["fallbackReason"] = broker["runtimeFallbackReason"]
             emit(
                 {
                     "code": "ok",
                     "data": {
                         "runtime": runtime,
-                        "broker": broker_status(),
+                        "broker": broker,
                         "browser": response.get("data") or {},
                     },
                 }

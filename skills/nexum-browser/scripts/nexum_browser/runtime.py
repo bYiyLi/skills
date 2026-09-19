@@ -40,6 +40,16 @@ _STATE_VERSION = 1
 _BACKEND_MANAGED = "managed-daemon"
 _BACKEND_LOCAL = "local-websocket"
 _WINDOWS_ELEVATION_ERROR = "start the windows daemon from a non-elevated terminal"
+_WINDOWS_FALLBACK_REASON = (
+    "Codex refuses a shared managed daemon from an elevated Windows caller; "
+    "nexum-browser will use a broker-owned authenticated loopback app-server instead."
+)
+_CONFIG_FALLBACK_REASON = (
+    "The shared Codex daemon could not create the Browser Runtime thread because "
+    "the user's Codex configuration references a missing local path; nexum-browser "
+    "will isolate its browser-only runtime in a broker-owned authenticated loopback "
+    "app-server with Codex Skill loading disabled."
+)
 _WINDOWS_UNTRUSTED_BROWSER_CLIENT = (
     "privileged native pipe bridge is not available; browser-client is not trusted"
 )
@@ -170,6 +180,14 @@ def _is_windows_elevation_error(message: str) -> bool:
     return os.name == "nt" and _WINDOWS_ELEVATION_ERROR in message.lower()
 
 
+def _is_missing_config_path_error(message: str) -> bool:
+    lower = message.lower()
+    return (
+        "failed to load configuration" in lower
+        and "no such file or directory" in lower
+    )
+
+
 def prepare_runtime(codex: Path) -> dict[str, Any]:
     daemon, daemon_error = daemon_version(codex)
     if not daemon_error:
@@ -185,11 +203,7 @@ def prepare_runtime(codex: Path) -> dict[str, Any]:
             raise
         return {
             "backend": _BACKEND_LOCAL,
-            "fallbackReason": (
-                "Codex refuses a shared managed daemon from an elevated Windows "
-                "caller; nexum-browser will use a broker-owned authenticated "
-                "loopback app-server instead."
-            ),
+            "fallbackReason": _WINDOWS_FALLBACK_REASON,
         }
     return {
         "backend": _BACKEND_MANAGED,
@@ -230,6 +244,8 @@ def _start_local_app_server(
     port = _pick_loopback_port()
     args = [
         str(_standalone_codex(codex)),
+        "-c",
+        "skills.config=[]",
         "app-server",
         "--listen",
         f"ws://127.0.0.1:{port}",
@@ -498,6 +514,7 @@ class AppServer:
         self.log_file = open(LOG_PATH, "a", encoding="utf-8", buffering=1)
         self.proxy: ProxyWebSocket | SocketWebSocket | None = None
         self.backend = ""
+        self.fallback_reason: str | None = None
         self.local_process: subprocess.Popen[Any] | None = None
         self.seq = 0
         self.thread_id = ""
@@ -525,6 +542,7 @@ class AppServer:
                 ):
                     raise
                 self.backend = _BACKEND_LOCAL
+                self.fallback_reason = _WINDOWS_FALLBACK_REASON
                 self.proxy, self.local_process = _start_local_app_server(
                     launcher,
                     log_file=self.log_file,
@@ -535,7 +553,42 @@ class AppServer:
                 self.proxy = ProxyWebSocket(proxy_codex, stderr=self.log_file)
             self._initialize_connection()
             if create_thread:
-                self._create_thread()
+                try:
+                    self._create_thread()
+                except RuntimeError as exc:
+                    if not (
+                        allow_local_fallback
+                        and self.backend == _BACKEND_MANAGED
+                        and _is_missing_config_path_error(str(exc))
+                    ):
+                        raise
+                    if (
+                        stale_backend == _BACKEND_MANAGED
+                        and stale.get("active")
+                        and stale_session_id
+                        and stale_turn_id
+                    ):
+                        with contextlib.suppress(Exception):
+                            self._signal_specific_browser_turn_ended(
+                                session_id=stale_session_id,
+                                turn_id=stale_turn_id,
+                            )
+                    if self.proxy is not None:
+                        self.proxy.close()
+                    self.proxy = None
+                    self.seq = 0
+                    self.thread_id = ""
+                    self.browser_turn_id = ""
+                    self._active = False
+                    self._released = False
+                    self.backend = _BACKEND_LOCAL
+                    self.fallback_reason = _CONFIG_FALLBACK_REASON
+                    self.proxy, self.local_process = _start_local_app_server(
+                        launcher,
+                        log_file=self.log_file,
+                    )
+                    self._initialize_connection()
+                    self._create_thread()
             if (
                 create_thread
                 and stale_backend == _BACKEND_MANAGED
@@ -589,6 +642,7 @@ class AppServer:
                 "browserTurnId": self.browser_turn_id if active else "",
                 "browserClient": str(self.browser_client),
                 "backend": self.backend,
+                "fallbackReason": self.fallback_reason,
                 "localProcessId": (
                     self.local_process.pid
                     if self.local_process is not None and active
@@ -1015,6 +1069,31 @@ globalThis.__nexumResolveDescriptorTarget = async (descriptor) => {{
     return {{receiver: globalThis.__nexumBrowserHandles.get(handleId), interfaceName: meta.interface}};
   }}
 
+  if (surface === 'browser-capability' || surface === 'tab-capability') {{
+    const capability = descriptor.capability;
+    if (typeof capability !== 'string' || !capability) {{
+      throw new Error(`capability is required for callback surface ${{surface}}`);
+    }}
+    let collection;
+    if (surface === 'tab-capability') {{
+      const tabId = descriptor.tab;
+      if (typeof tabId !== 'string' || !tabId) {{
+        throw new Error('tab is required for callback surface tab-capability');
+      }}
+      const tab = await globalThis.__nexumBrowser.tabs.get(tabId);
+      collection = tab.capabilities;
+    }} else {{
+      collection = globalThis.__nexumBrowser.capabilities;
+    }}
+    const advertised = await collection.list();
+    if (!advertised.some(item => item?.id === capability)) {{
+      throw new Error(`Browser capability ${{capability}} is unavailable on the selected backend`);
+    }}
+    const receiver = await collection.get(capability);
+    try {{ await receiver.documentation(); }} catch {{}}
+    return {{receiver, interfaceName: null, dynamicCapability: true}};
+  }}
+
   const interfaceName = globalThis.__nexumPublicSurfaces[surface];
   if (!interfaceName) throw new Error(`Unsupported callback Browser API surface: ${{String(surface)}}`);
   if (surface === 'agent') return {{receiver: globalThis.__nexumBrowserAgent, interfaceName}};
@@ -1022,7 +1101,11 @@ globalThis.__nexumResolveDescriptorTarget = async (descriptor) => {{
   if (surface === 'docs-api') return {{receiver: globalThis.__nexumBrowserAgent.documentation, interfaceName}};
   if (surface === 'browser') return {{receiver: globalThis.__nexumBrowser, interfaceName}};
   if (surface === 'tabs') return {{receiver: globalThis.__nexumBrowser.tabs, interfaceName}};
-  if (surface === 'user') return {{receiver: globalThis.__nexumBrowser.user, interfaceName}};
+  if (surface === 'user') {{
+    const receiver = globalThis.__nexumBrowser.user;
+    if (receiver == null) throw new Error('Browser API surface user is unavailable on the selected backend');
+    return {{receiver, interfaceName}};
+  }}
 
   const tabId = descriptor.tab;
   if (typeof tabId !== 'string' || !tabId) throw new Error(`tab is required for callback surface ${{surface}}`);
@@ -1048,7 +1131,19 @@ globalThis.__nexumInvokeDescriptor = async (descriptor) => {{
   if (descriptor.args != null && !Array.isArray(descriptor.args)) {{
     throw new Error('$call descriptor args must be an array');
   }}
-  const {{receiver, interfaceName}} = await globalThis.__nexumResolveDescriptorTarget(descriptor);
+  const {{receiver, interfaceName, dynamicCapability}} = await globalThis.__nexumResolveDescriptorTarget(descriptor);
+  if (dynamicCapability) {{
+    if (descriptor.method.includes('.')) {{
+      throw new Error('Optional capability callbacks must use one documented member name at a time');
+    }}
+    if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(descriptor.method) ||
+        ['constructor', 'prototype', '__proto__'].includes(descriptor.method)) {{
+      throw new Error(`Optional capability callback member is invalid: ${{descriptor.method}}`);
+    }}
+    if (!(descriptor.method in receiver)) {{
+      throw new Error(`Browser capability member is unavailable: ${{descriptor.method}}`);
+    }}
+  }}
   return await globalThis.__nexumCallRaw(
     receiver,
     interfaceName,

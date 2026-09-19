@@ -14,9 +14,10 @@ capabilities. A schema member can exist while the selected backend disables its
 surface.
 
 For page observation, prefer `observe --mode auto`. It returns the Runtime
-surface used in `source`. Use `snapshot` when the task specifically needs
-the Playwright semantic DOM. `visible-dom` is retained for compatibility and
-adapts when legacy DOM CUA is unavailable.
+surface used in `source` and the compatible stable-command target form in
+`targetKind`. Use `snapshot` when the task specifically needs the Playwright
+semantic DOM. `visible-dom` is retained for compatibility and adapts when
+legacy DOM CUA is unavailable.
 
 ## Discover the public API before calling it
 
@@ -33,7 +34,9 @@ Treat the installed manifest as the available public interface description for t
 
 Use `browser api-coverage` when validating a Runtime upgrade or this Skill.
 `complete: true` means every installed public interface is reachable through a
-direct bridge root or through a typed object returned by another public member.
+direct bridge root or through a typed object returned by another public member,
+and every directly-declared callback shape is representable by the bridge. The
+report lists callback members and any unsupported callback shapes separately.
 It is a bridge-coverage check, not a backend-support check.
 
 Before using a backend-specific tab API, inspect the live surfaces:
@@ -135,8 +138,11 @@ handle:
 ```
 
 The nested descriptor may target any direct public surface listed by
-`api-call --help` or a typed `handle`. Backend-disabled surfaces still fail
-normally.
+`api-call --help`, an advertised `browser-capability` or
+`tab-capability`, or a typed `handle`. Capability descriptors must name the
+capability and one documented member; the adapter verifies that the capability
+is currently advertised before invoking it. Backend-disabled surfaces still
+fail normally.
 
 Use `$value` to inspect a handle's safe metadata, `$release` when it is no longer needed, and `$image` only for a handle representing `Uint8Array` image bytes. The adapter does not expose arbitrary object internals through handle inspection.
 

@@ -41,6 +41,41 @@ def _locator_js(args: dict[str, Any]) -> str:
     raise RuntimeError("A locator is required")
 
 
+def _has_locator(args: dict[str, Any]) -> bool:
+    return any(
+        args.get(key) is not None
+        for key in (
+            "selector",
+            "role",
+            "locatorText",
+            "label",
+            "placeholder",
+            "testId",
+        )
+    )
+
+
+def _point(args: dict[str, Any]) -> list[int | float] | None:
+    value = args.get("point")
+    if value is None:
+        return None
+    if (
+        not isinstance(value, list)
+        or len(value) != 2
+        or any(
+            isinstance(item, bool) or not isinstance(item, (int, float))
+            for item in value
+        )
+    ):
+        raise RuntimeError("--point must be a JSON array with two numeric values: [x,y]")
+    return value
+
+
+def _key_sequence(key: str) -> list[str]:
+    parts = [part for part in key.split("+") if part]
+    return parts or [key]
+
+
 class BrowserOperations:
     def __init__(self, server: AppServer) -> None:
         self.server = server
@@ -64,29 +99,40 @@ class BrowserOperations:
         if command == "select":
             mode = "url" if args.get("url") else ("default" if args.get("browser") == "default" else "selector")
             value = args.get("url") or args.get("browser")
-            code = f"const __selected=await globalThis.__nexumSelectBrowser({json.dumps(mode)},{json.dumps(value)});" + _output_js(
+            code = f"var __selected=await globalThis.__nexumSelectBrowser({json.dumps(mode)},{json.dumps(value)});" + _output_js(
                 "{selectedBrowserId:globalThis.__nexumBrowser.browserId,selected:__selected}"
             )
             return self._js(code, title="Select browser")
 
         if command == "docs":
-            code = f"const __doc=await globalThis.__nexumReadDoc({json.dumps(args['name'])});" + _output_js("{name:" + json.dumps(args["name"]) + ",content:__doc}")
+            code = f"var __doc=await globalThis.__nexumReadDoc({json.dumps(args['name'])});" + _output_js("{name:" + json.dumps(args["name"]) + ",content:__doc}")
             return self._js(code, title="Read browser documentation")
 
         if command == "tabs":
             return self._js(
-                _output_js("{controlled:await %s.tabs.list(),user:await %s.user.openTabs()}" % (b, b)),
+                (
+                    "var __controlled=await globalThis.__nexumBrowser.tabs.list();"
+                    "var __userApi=globalThis.__nexumBrowser.user;"
+                    "var __userTabs=__userApi!=null?await __userApi.openTabs():[];"
+                    + _output_js(
+                        "{controlled:__controlled,user:__userTabs,"
+                        "userTabsSupported:__userApi!=null}"
+                    )
+                ),
                 title="List browser tabs",
             )
 
         if command == "selected":
-            code = f"const __tab=await {b}.tabs.selected();" + _output_js(
+            code = f"var __tab=await {b}.tabs.selected();" + _output_js(
                 "__tab?{tabId:__tab.id,title:await __tab.title(),url:await __tab.url()}:{selected:null}"
             )
             return self._js(code, title="Get selected browser tab")
 
         if command == "claim":
-            code = f"const __tab=await {b}.user.claimTab({json.dumps(str(args['tab']))});" + _output_js(
+            code = (
+                f"if({b}.user==null)throw new Error('User-tab claiming is unavailable on the selected backend');"
+                f"var __tab=await {b}.user.claimTab({json.dumps(str(args['tab']))});"
+            ) + _output_js(
                 "{tabId:__tab.id,title:await __tab.title(),url:await __tab.url()}"
             )
             return self._js(code, title="Claim browser tab")
@@ -94,7 +140,7 @@ class BrowserOperations:
         if command == "open":
             url = json.dumps(args["url"])
             code = (
-                f"const __tab=await {b}.tabs.new();"
+                f"var __tab=await {b}.tabs.new();"
                 f"try {{ await __tab.goto({url}); }} catch (__error) {{ try {{ await __tab.close(); }} catch {{}} throw __error; }}"
                 + _output_js("{tabId:__tab.id,title:await __tab.title(),url:await __tab.url()}")
             )
@@ -115,12 +161,22 @@ class BrowserOperations:
         if command == "mark":
             code = _tab(args["tab"])
             method = "markHandoff" if args["mode"] == "handoff" else "markDeliverable"
-            code += f"await __tab.{method}();" + _output_js("{tabId:__tab.id,mode:" + json.dumps(args["mode"]) + "}")
+            code += (
+                f"if(typeof __tab.{method}!=='function')"
+                f"throw new Error('Tab {args['mode']} marking is unavailable on the selected backend');"
+                f"await __tab.{method}();"
+                + _output_js("{tabId:__tab.id,mode:" + json.dumps(args["mode"]) + "}")
+            )
             return self._js(code, title="Mark browser tab")
 
         if command == "snapshot":
-            code = _tab(args["tab"]) + "const __snapshot=await __tab.playwright.domSnapshot();" + _output_js(
-                "{tabId:__tab.id,title:await __tab.title(),url:await __tab.url(),snapshot:__snapshot}"
+            code = (
+                _tab(args["tab"])
+                + "if(__tab.playwright==null)throw new Error('Playwright semantic DOM is unavailable on the selected backend');"
+                + "var __snapshot=await __tab.playwright.domSnapshot();"
+                + _output_js(
+                    "{tabId:__tab.id,title:await __tab.title(),url:await __tab.url(),snapshot:__snapshot}"
+                )
             )
             return self._js(code, title="Inspect browser DOM")
 
@@ -148,15 +204,106 @@ class BrowserOperations:
             )
             return self._js(code, title="Inspect browser API surfaces")
 
-        if command in {"click", "fill", "press"}:
-            code = _tab(args["tab"]) + f"const __loc={_locator_js(args)};"
-            if command == "click":
-                code += "await __loc.click();"
-            elif command == "fill":
-                code += f"await __loc.fill({json.dumps(args['text'])});"
+        if command in {"click", "fill", "type", "press"}:
+            code = _tab(args["tab"]) + "var __source=null;"
+            point = _point(args)
+            if _has_locator(args):
+                code += (
+                    "if(__tab.playwright==null)throw new Error('Playwright interaction is unavailable on the selected backend');"
+                    f"var __loc={_locator_js(args)};"
+                    "__source='playwright';"
+                )
+                if command == "click":
+                    code += "await __loc.click();"
+                elif command == "fill":
+                    code += f"await __loc.fill({json.dumps(args['text'])});"
+                elif command == "type":
+                    code += f"await __loc.type({json.dumps(args['text'])});"
+                else:
+                    code += f"await __loc.press({json.dumps(args['key'])});"
+            elif args.get("axIndex") is not None:
+                index = int(args["axIndex"])
+                code += (
+                    "if(__tab.ax==null)throw new Error('Accessibility interaction is unavailable on the selected backend');"
+                    "try{await globalThis.__nexumReadDoc('accessibility')}catch{};"
+                    "__source='ax';"
+                )
+                if command == "click":
+                    code += f"await __tab.ax.click({index});"
+                elif command == "fill":
+                    code += f"await __tab.ax.setValue({index},{json.dumps(args['text'])});"
+                elif command == "type":
+                    code += f"await __tab.ax.typeText({index},{json.dumps(args['text'])});"
+                else:
+                    code += f"await __tab.ax.pressKey({index},{json.dumps(args['key'])});"
+            elif args.get("nodeId") is not None:
+                if command == "fill":
+                    raise RuntimeError(
+                        "fill requires a Playwright locator or AX index because DOM-CUA type does not replace the existing value"
+                    )
+                node_id = str(args["nodeId"])
+                code += (
+                    "if(__tab.dom_cua==null)throw new Error('DOM-CUA interaction is unavailable on the selected backend');"
+                    "__source='dom-cua';"
+                )
+                if command == "click":
+                    code += f"await __tab.dom_cua.click({json.dumps({'node_id': node_id})});"
+                elif command == "type":
+                    code += (
+                        f"await __tab.dom_cua.click({json.dumps({'node_id': node_id})});"
+                        f"await __tab.dom_cua.type({json.dumps({'text': args['text']})});"
+                    )
+                else:
+                    code += (
+                        f"await __tab.dom_cua.click({json.dumps({'node_id': node_id})});"
+                        f"await __tab.dom_cua.keypress({json.dumps({'keys': _key_sequence(str(args['key']))})});"
+                    )
+            elif point is not None:
+                if command == "fill":
+                    raise RuntimeError(
+                        "fill requires a Playwright locator or AX index; use type for coordinate-based text entry"
+                    )
+                point_json = json.dumps(point)
+                cua_point = {"x": point[0], "y": point[1]}
+                code += (
+                    "if(__tab.ax!=null){"
+                    "try{await globalThis.__nexumReadDoc('accessibility')}catch{};"
+                    "__source='ax';"
+                )
+                if command == "click":
+                    code += f"await __tab.ax.click({point_json});"
+                elif command == "type":
+                    code += (
+                        f"await __tab.ax.click({point_json});"
+                        f"await __tab.ax.typeText(null,{json.dumps(args['text'])});"
+                    )
+                else:
+                    code += (
+                        f"await __tab.ax.click({point_json});"
+                        f"await __tab.ax.pressKey(null,{json.dumps(args['key'])});"
+                    )
+                code += "}else if(__tab.cua!=null){__source='cua';"
+                if command == "click":
+                    code += f"await __tab.cua.click({json.dumps(cua_point)});"
+                elif command == "type":
+                    code += (
+                        f"await __tab.cua.click({json.dumps(cua_point)});"
+                        f"await __tab.cua.type({json.dumps({'text': args['text']})});"
+                    )
+                else:
+                    code += (
+                        f"await __tab.cua.click({json.dumps(cua_point)});"
+                        f"await __tab.cua.keypress({json.dumps({'keys': _key_sequence(str(args['key']))})});"
+                    )
+                code += (
+                    "}else{throw new Error('Coordinate interaction requires AX or CUA on the selected backend');}"
+                )
             else:
-                code += f"await __loc.press({json.dumps(args['key'])});"
-            code += _output_js("{tabId:__tab.id,title:await __tab.title(),url:await __tab.url(),action:" + json.dumps(command) + "}")
+                raise RuntimeError("An interaction target is required")
+            code += _output_js(
+                "{tabId:__tab.id,title:await __tab.title(),url:await __tab.url(),"
+                "action:" + json.dumps(command) + ",source:__source}"
+            )
             return self._js(code, title=f"Browser {command}")
 
         if command == "upload":
@@ -165,15 +312,16 @@ class BrowserOperations:
             code = (
                 "try { await globalThis.__nexumReadDoc('file-uploads'); } catch {}"
                 + _tab(args["tab"])
-                + f"const __loc={_locator_js(args)};"
-                + f"const __chooserPromise=__tab.playwright.waitForEvent('filechooser',{{timeoutMs:{timeout_ms}}});"
-                + "const __chooserGuarded=__chooserPromise.then(value=>({ok:true,value}),error=>({ok:false,error:String(error?.message||error)}));"
+                + "if(__tab.playwright==null)throw new Error('File upload requires the Playwright surface on the selected backend');"
+                + f"var __loc={_locator_js(args)};"
+                + f"var __chooserPromise=__tab.playwright.waitForEvent('filechooser',{{timeoutMs:{timeout_ms}}});"
+                + "var __chooserGuarded=__chooserPromise.then(value=>({ok:true,value}),error=>({ok:false,error:String(error?.message||error)}));"
                 + "await __loc.click();"
-                + "const __chooserSettled=await __chooserGuarded;"
+                + "var __chooserSettled=await __chooserGuarded;"
                 + "if (!__chooserSettled.ok) throw new Error(__chooserSettled.error);"
-                + "const __chooser=__chooserSettled.value;"
-                + "const __multiple=await __chooser.isMultiple();"
-                + f"const __files={json.dumps(files)};"
+                + "var __chooser=__chooserSettled.value;"
+                + "var __multiple=await __chooser.isMultiple();"
+                + f"var __files={json.dumps(files)};"
                 + "if (__files.length>1 && !__multiple) throw new Error('File chooser does not accept multiple files');"
                 + f"await __chooser.setFiles(__files,{{timeoutMs:{timeout_ms}}});"
                 + _output_js("{tabId:__tab.id,files:__files,multiple:__multiple}")
@@ -184,14 +332,15 @@ class BrowserOperations:
             timeout_ms = int(args.get("timeoutMs") or 10000)
             code = (
                 _tab(args["tab"])
-                + f"const __loc={_locator_js(args)};"
-                + f"const __downloadPromise=__tab.playwright.waitForEvent('download',{{timeoutMs:{timeout_ms}}});"
-                + "const __downloadGuarded=__downloadPromise.then(value=>({ok:true,value}),error=>({ok:false,error:String(error?.message||error)}));"
+                + "if(__tab.playwright==null)throw new Error('Download event handling requires the Playwright surface on the selected backend');"
+                + f"var __loc={_locator_js(args)};"
+                + f"var __downloadPromise=__tab.playwright.waitForEvent('download',{{timeoutMs:{timeout_ms}}});"
+                + "var __downloadGuarded=__downloadPromise.then(value=>({ok:true,value}),error=>({ok:false,error:String(error?.message||error)}));"
                 + "await __loc.click();"
-                + "const __downloadSettled=await __downloadGuarded;"
+                + "var __downloadSettled=await __downloadGuarded;"
                 + "if (!__downloadSettled.ok) throw new Error(__downloadSettled.error);"
-                + "const __download=__downloadSettled.value;"
-                + "const __path=await __download.path();"
+                + "var __download=__downloadSettled.value;"
+                + "var __path=await __download.path();"
                 + _output_js("{tabId:__tab.id,path:__path}")
             )
             return self._js(code, title="Download browser file", timeout_ms=timeout_ms + 5000)
@@ -205,7 +354,8 @@ class BrowserOperations:
                 nav_options["waitUntil"] = args["waitUntil"]
             code = (
                 _tab(args["tab"])
-                + f"const __loc={_locator_js(args)};"
+                + "if(__tab.playwright==null)throw new Error('Navigation-coupled clicking requires the Playwright surface on the selected backend');"
+                + f"var __loc={_locator_js(args)};"
                 + f"await __tab.playwright.expectNavigation(async()=>await __loc.click(),{json.dumps(nav_options)});"
                 + (f"await __tab.playwright.waitForURL({json.dumps(args['url'])},{json.dumps({'timeoutMs': timeout_ms, 'waitUntil': args.get('waitUntil') or 'load'})});" if args.get("url") else "")
                 + "await __tab.playwright.waitForTimeout(50);"
@@ -214,18 +364,54 @@ class BrowserOperations:
             return self._js(code, title="Click and wait for navigation", timeout_ms=timeout_ms + 5000)
 
         if command == "scroll":
-            expression = f"window.scrollBy({int(args['dx'])},{int(args['dy'])}); ({{x:window.scrollX,y:window.scrollY}})"
-            code = _tab(args["tab"]) + "const __cdp=await __tab.capabilities.get('cdp'); await __cdp.documentation();" + (
-                "const __result=await __cdp.send('Runtime.evaluate',"
-                + json.dumps({"expression": expression, "returnByValue": True})
-                + ");"
-                + _output_js("{tabId:__tab.id,result:__result}")
+            dx = int(args["dx"])
+            dy = int(args["dy"])
+            point = _point(args)
+            node_id = args.get("nodeId")
+            code = _tab(args["tab"]) + "var __source=null;var __result=null;"
+            if node_id is not None:
+                code += (
+                    "if(__tab.dom_cua==null)throw new Error('Node-targeted scrolling requires DOM-CUA on the selected backend');"
+                    "__source='dom-cua';"
+                    f"await __tab.dom_cua.scroll({json.dumps({'node_id': str(node_id), 'x': dx, 'y': dy})});"
+                    "__result={x:null,y:null};"
+                )
+            elif point is not None:
+                code += (
+                    "if(__tab.cua==null)throw new Error('Point-targeted pixel scrolling requires CUA on the selected backend');"
+                    "__source='cua';"
+                    f"await __tab.cua.scroll({json.dumps({'x': point[0], 'y': point[1], 'scrollX': dx, 'scrollY': dy})});"
+                    "__result={x:null,y:null};"
+                )
+            else:
+                expression = (
+                    f"window.scrollBy({dx},{dy}); "
+                    "({x:window.scrollX,y:window.scrollY})"
+                )
+                code += (
+                    "if(__tab.dom_cua!=null){__source='dom-cua';"
+                    f"await __tab.dom_cua.scroll({json.dumps({'x': dx, 'y': dy})});"
+                    "__result={x:null,y:null};"
+                    "}else{"
+                    "var __caps=await __tab.capabilities.list();"
+                    "if(!__caps.some(x=>x.id==='cdp'))throw new Error('Pixel page scrolling requires DOM-CUA or the cdp capability on the selected backend');"
+                    "__source='cdp';"
+                    "var __cdp=await __tab.capabilities.get('cdp');await __cdp.documentation();"
+                    "var __cdpResult=await __cdp.send('Runtime.evaluate',"
+                    + json.dumps({"expression": expression, "returnByValue": True})
+                    + ");__result=__cdpResult;}"
+                )
+            code += _output_js(
+                "{tabId:__tab.id,source:__source,result:__result}"
             )
             return self._js(code, title="Scroll browser page")
 
         if command == "evaluate":
-            code = _tab(args["tab"]) + "const __cdp=await __tab.capabilities.get('cdp'); await __cdp.documentation();" + (
-                "const __result=await __cdp.send('Runtime.evaluate',"
+            code = _tab(args["tab"]) + (
+                "var __caps=await __tab.capabilities.list();"
+                "if(!__caps.some(x=>x.id==='cdp'))throw new Error('JavaScript evaluation requires the cdp capability on the selected backend');"
+                "var __cdp=await __tab.capabilities.get('cdp');await __cdp.documentation();"
+                "var __result=await __cdp.send('Runtime.evaluate',"
                 + json.dumps({"expression": args["expression"], "awaitPromise": True, "returnByValue": True})
                 + ");"
                 + _output_js("{tabId:__tab.id,result:__result}")
@@ -236,19 +422,28 @@ class BrowserOperations:
             return self._screenshot(args)
 
         if command == "dev-logs":
-            code = _tab(args["tab"]) + f"const __logs=await __tab.dev.logs({json.dumps(args.get('options') or {})});" + _output_js("{tabId:__tab.id,logs:__logs}")
+            code = (
+                _tab(args["tab"])
+                + "if(__tab.dev==null)throw new Error('Developer logs are unavailable on the selected backend');"
+                + f"var __logs=await __tab.dev.logs({json.dumps(args.get('options') or {})});"
+                + _output_js("{tabId:__tab.id,logs:__logs}")
+            )
             return self._js(code, title="Read browser developer logs")
 
         if command == "history":
             history_args = {k: v for k, v in args.items() if v is not None}
-            code = f"const __history=await {b}.history({json.dumps(history_args)});" + _output_js("{items:__history}")
+            code = (
+                f"if(typeof {b}.history!=='function')throw new Error('Browser history is unavailable on the selected backend');"
+                f"var __history=await {b}.history({json.dumps(history_args)});"
+                + _output_js("{items:__history}")
+            )
             return self._js(code, title="Read browser history")
 
         if command == "capabilities":
             if args.get("tab"):
-                code = _tab(args["tab"]) + "const __caps=await __tab.capabilities.list();" + _output_js("{scope:'tab',tabId:__tab.id,capabilities:__caps}")
+                code = _tab(args["tab"]) + "var __caps=await __tab.capabilities.list();" + _output_js("{scope:'tab',tabId:__tab.id,capabilities:__caps}")
             else:
-                code = "const __caps=await globalThis.__nexumBrowser.capabilities.list();" + _output_js("{scope:'browser',browserId:globalThis.__nexumBrowser.browserId,capabilities:__caps}")
+                code = "var __caps=await globalThis.__nexumBrowser.capabilities.list();" + _output_js("{scope:'browser',browserId:globalThis.__nexumBrowser.browserId,capabilities:__caps}")
             return self._js(code, title="List browser capabilities")
 
         if command == "api-call":
@@ -266,38 +461,39 @@ class BrowserOperations:
         code = (
             _tab(args["tab"])
             + f"var __mode={json.dumps(mode)};"
-            + "var __source=null;var __kind=null;var __observation=null;"
+            + "var __source=null;var __kind=null;var __targetKind=null;var __observation=null;"
             + "if(__mode==='semantic'){"
             + "if(__tab.playwright==null)throw new Error('Playwright observation is unavailable on the selected backend');"
-            + "__source='playwright';__kind='semantic-dom';__observation=await __tab.playwright.domSnapshot();"
+            + "__source='playwright';__kind='semantic-dom';__targetKind='locator';__observation=await __tab.playwright.domSnapshot();"
             + "}else if(__mode==='accessibility'){"
             + "if(__tab.ax!=null){try{await globalThis.__nexumReadDoc('accessibility')}catch{};"
-            + "__source='ax';__kind='accessibility';__observation=await __tab.ax.get('state');"
-            + "}else if(__tab.dom_cua!=null){__source='dom-cua';__kind='visible-dom';__observation=await __tab.dom_cua.get_visible_dom();"
+            + "__source='ax';__kind='accessibility';__targetKind='ax-index';__observation=await __tab.ax.get('state');"
+            + "}else if(__tab.dom_cua!=null){__source='dom-cua';__kind='visible-dom';__targetKind='node-id';__observation=await __tab.dom_cua.get_visible_dom();"
             + "}else{throw new Error('Accessibility observation is unavailable on the selected backend');}"
             + "}else if(__mode==='visible'){"
-            + "if(__tab.dom_cua!=null){__source='dom-cua';__kind='visible-dom';__observation=await __tab.dom_cua.get_visible_dom();"
+            + "if(__tab.dom_cua!=null){__source='dom-cua';__kind='visible-dom';__targetKind='node-id';__observation=await __tab.dom_cua.get_visible_dom();"
             + "}else if(__tab.ax!=null){try{await globalThis.__nexumReadDoc('accessibility')}catch{};"
-            + "__source='ax';__kind='accessibility';__observation=await __tab.ax.get('state');"
-            + "}else if(__tab.playwright!=null){__source='playwright';__kind='semantic-dom';__observation=await __tab.playwright.domSnapshot();"
+            + "__source='ax';__kind='accessibility';__targetKind='ax-index';__observation=await __tab.ax.get('state');"
+            + "}else if(__tab.playwright!=null){__source='playwright';__kind='semantic-dom';__targetKind='locator';__observation=await __tab.playwright.domSnapshot();"
             + "}else{throw new Error('No supported observation surface is available on the selected backend');}"
             + "}else{"
             + "if(__tab.ax!=null){try{await globalThis.__nexumReadDoc('accessibility')}catch{};"
-            + "__source='ax';__kind='accessibility';__observation=await __tab.ax.get('state');"
-            + "}else if(__tab.dom_cua!=null){__source='dom-cua';__kind='visible-dom';__observation=await __tab.dom_cua.get_visible_dom();"
-            + "}else if(__tab.playwright!=null){__source='playwright';__kind='semantic-dom';__observation=await __tab.playwright.domSnapshot();"
+            + "__source='ax';__kind='accessibility';__targetKind='ax-index';__observation=await __tab.ax.get('state');"
+            + "}else if(__tab.dom_cua!=null){__source='dom-cua';__kind='visible-dom';__targetKind='node-id';__observation=await __tab.dom_cua.get_visible_dom();"
+            + "}else if(__tab.playwright!=null){__source='playwright';__kind='semantic-dom';__targetKind='locator';__observation=await __tab.playwright.domSnapshot();"
             + "}else{throw new Error('No supported observation surface is available on the selected backend');}"
             + "}"
         )
         if legacy_visible_dom:
             code += _output_js(
                 "{tabId:__tab.id,title:await __tab.title(),url:await __tab.url(),"
-                "source:__source,kind:__kind,dom:__observation}"
+                "source:__source,kind:__kind,targetKind:__targetKind,dom:__observation}"
             )
             return self._js(code, title="Inspect visible browser state")
         code += _output_js(
             "{tabId:__tab.id,title:await __tab.title(),url:await __tab.url(),"
-            "mode:__mode,source:__source,kind:__kind,observation:__observation}"
+            "mode:__mode,source:__source,kind:__kind,targetKind:__targetKind,"
+            "observation:__observation}"
         )
         return self._js(code, title="Observe browser tab")
 
@@ -315,7 +511,7 @@ class BrowserOperations:
         code = (
             f"try {{ await globalThis.__nexumReadDoc('screenshots'); }} catch {{}}"
             + _tab(args["tab"])
-            + f"const __image=await __tab.screenshot({json.dumps(options)}); await nodeRepl.emitImage(__image);"
+            + f"var __image=await __tab.screenshot({json.dumps(options)}); await nodeRepl.emitImage(__image);"
             + _output_js("{tabId:__tab.id,title:await __tab.title(),url:await __tab.url(),byteLength:__image.byteLength}")
         )
         data, content = self.server.execute_js(code, title="Capture browser screenshot")
@@ -355,6 +551,10 @@ class BrowserOperations:
         elif surface == "user":
             receiver = "globalThis.__nexumBrowser.user"
             interface_name = "BrowserUser"
+            setup.append(
+                "if (globalThis.__nexumBrowser.user == null) "
+                "throw new Error('Browser API surface user is unavailable on the selected backend');"
+            )
         elif surface in {"tab", "playwright", "cua", "dom-cua", "ax", "content", "clipboard", "dev"}:
             if not args.get("tab"):
                 raise RuntimeError(f"--tab is required for surface {surface}")
@@ -398,10 +598,14 @@ class BrowserOperations:
                 if not args.get("tab"):
                     raise RuntimeError("--tab is required for tab-capability")
                 setup.append(_tab(args["tab"]))
-                setup.append(f"const __cap=await __tab.capabilities.get({json.dumps(capability)});")
+                setup.append(f"var __cap=await __tab.capabilities.get({json.dumps(capability)});")
             else:
-                setup.append(f"const __cap=await globalThis.__nexumBrowser.capabilities.get({json.dumps(capability)});")
+                setup.append(f"var __cap=await globalThis.__nexumBrowser.capabilities.get({json.dumps(capability)});")
             setup.append("try { await __cap.documentation(); } catch {}")
+            setup.append(
+                f"if (!({json.dumps(method)} in __cap)) "
+                f"throw new Error('Browser capability member is unavailable: {method}');"
+            )
             receiver = "__cap"
         elif surface == "handle":
             handle_id = args.get("handle")
@@ -421,7 +625,7 @@ class BrowserOperations:
         if method == "$value":
             if surface != "handle":
                 raise RuntimeError("$value requires surface handle")
-            code = prefix + f"const __info=globalThis.__nexumHandleInfo({json.dumps(handle_id)});" + _output_js("{result:__info}")
+            code = prefix + f"var __info=globalThis.__nexumHandleInfo({json.dumps(handle_id)});" + _output_js("{result:__info}")
             return self._js(code, title="Inspect browser handle")
 
         if method == "$await":
@@ -429,13 +633,13 @@ class BrowserOperations:
                 raise RuntimeError("$await requires surface handle")
             if result_mode == "image":
                 raise RuntimeError("Use $await first, then $image on the returned binary handle")
-            code = prefix + f"const __result=await globalThis.__nexumAwaitHandle({json.dumps(handle_id)});" + _output_js("{result:__result}")
+            code = prefix + f"var __result=await globalThis.__nexumAwaitHandle({json.dumps(handle_id)});" + _output_js("{result:__result}")
             return self._js(code, title="Await browser handle", timeout_ms=int(args.get("timeoutMs") or 30000))
 
         if method == "$image":
             if surface != "handle":
                 raise RuntimeError("$image requires surface handle")
-            code = prefix + f"if (!globalThis.__nexumBrowserHandles.has({json.dumps(handle_id)})) throw new Error('Unknown browser handle: '+{json.dumps(handle_id)}); const __raw={receiver}; if (!(__raw instanceof Uint8Array)) throw new Error('Handle is not Uint8Array'); await nodeRepl.emitImage(__raw);" + _output_js("{handle:" + json.dumps(handle_id) + ",byteLength:__raw.byteLength}")
+            code = prefix + f"if (!globalThis.__nexumBrowserHandles.has({json.dumps(handle_id)})) throw new Error('Unknown browser handle: '+{json.dumps(handle_id)}); var __raw={receiver}; if (!(__raw instanceof Uint8Array)) throw new Error('Handle is not Uint8Array'); await nodeRepl.emitImage(__raw);" + _output_js("{handle:" + json.dumps(handle_id) + ",byteLength:__raw.byteLength}")
             data, content = self.server.execute_js(code, title="Read browser image handle")
             images = save_images(content, "api")
             if not images:
@@ -450,7 +654,7 @@ class BrowserOperations:
                 image_expr = f"globalThis.__nexumCallHandleRaw({json.dumps(handle_id)},{json.dumps(method)},{json.dumps(call_args)})"
             else:
                 image_expr = f"globalThis.__nexumCallRaw({receiver},{json.dumps(interface_name) if interface_name else 'null'},{json.dumps(method)},{json.dumps(call_args)})"
-            code = prefix + f"const __raw=await ({image_expr}); if (!(__raw instanceof Uint8Array)) throw new Error('API result is not Uint8Array'); await nodeRepl.emitImage(__raw);" + _output_js("{byteLength:__raw.byteLength}")
+            code = prefix + f"var __raw=await ({image_expr}); if (!(__raw instanceof Uint8Array)) throw new Error('API result is not Uint8Array'); await nodeRepl.emitImage(__raw);" + _output_js("{byteLength:__raw.byteLength}")
             data, content = self.server.execute_js(code, title=f"Browser API {method}", timeout_ms=int(args.get("timeoutMs") or 30000))
             images = save_images(content, "api")
             if not images:
@@ -462,5 +666,5 @@ class BrowserOperations:
             raw_expr = f"globalThis.__nexumCallHandle({json.dumps(handle_id)},{json.dumps(method)},{json.dumps(call_args)},{str(await_result).lower()})"
         else:
             raw_expr = f"globalThis.__nexumCall({receiver},{json.dumps(interface_name) if interface_name else 'null'},{json.dumps(method)},{json.dumps(call_args)},{str(await_result).lower()})"
-        code = prefix + f"const __result=await ({raw_expr});" + _output_js("{result:__result}")
+        code = prefix + f"var __result=await ({raw_expr});" + _output_js("{result:__result}")
         return self._js(code, title=f"Browser API {method}", timeout_ms=int(args.get("timeoutMs") or 30000))
