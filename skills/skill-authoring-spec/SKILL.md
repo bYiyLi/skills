@@ -56,6 +56,11 @@ push, deploy, or cause another external side effect, state the authorization
 boundary needed before that action. Use a verified runtime control when one
 exists. Do not claim that model-visible text alone enforces authorization.
 
+An owned result ends this Skill's responsibility, not the host's larger task.
+Preserve authority already established in the current task; do not turn ordinary
+engineering choices, internal checkpoints, or Skill transitions into approval
+gates. Keep actual host approvals and user-reserved decisions explicit.
+
 ## Define the Skill
 
 Before choosing a name, complete:
@@ -127,6 +132,10 @@ resources reachable on the selected path, explicitly declared dependencies,
 verified invocation and authorization behavior affecting that path, and explicit
 runtime guarantees. Do not supply missing rules, resources, permissions, or host
 capabilities from general knowledge or author intent.
+
+Include model-visible invocation prompts and output instruction templates when
+they can run independently. An updated body does not fix an older UI prompt
+that still asks the model to stop or request unnecessary confirmation.
 
 When reviewing a Skill or before calling an authored or revised Skill complete,
 read [Skill Contract Validation](references/skill-contract-validation.md). Derive

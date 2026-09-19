@@ -2,8 +2,8 @@
 name: software-doc-writing-standards
 description: >
   当软件文档宿主任务需要跨类型分类或共同质量约束时，提供证据、可追溯性和写作规范。
-  用于判断 requirements、design、tutorial、how-to、operator guide、reference 或
-  explanation 的类型，或约束多种软件文档的共同质量。它不负责交付单一需求、设计或
+  用于判断 requirements、design、development plan、tutorial、how-to、operator guide、
+  reference 或 explanation 的类型，或约束多种软件文档的共同质量。它不负责交付单一需求、设计或
   使用文档，也不负责同步多文档套件；类型已明确的文档操作由对应文档 Skill 负责。
 ---
 
@@ -44,11 +44,13 @@ description: >
 
 用读者需要完成的工作判断类型，不按文件名或作者习惯判断：
 
-- 决定做什么、约束什么、如何验收：requirements。
+- 定义产品必须提供什么、受什么约束、如何验收：requirements。
 - 说明系统如何组织、为何这样设计、如何指导实现：design。
+- 把已明确的目标与设计安排成工作、依赖、交付物、验收和进度：development plan，
+  由 `software-development-plan` 负责；安装、运行、调试说明仍属于使用文档。
 - 让新读者沿一条学习路径建立技能：tutorial。
-- 让已有目标的读者完成一个任务：how-to；管理或运维任务需要操作者权限、执行前检查点，
-  或 rollback、recovery 或 escalation 边界时使用 operator guide。
+- 让已有目标的读者完成一个任务：how-to；管理或运维任务需要操作者权限、环境判断
+  或恢复路径时使用 operator guide。
 - 让读者快速查询接口、命令、字段、返回或错误：reference。
 - 解释背景、原理或取舍而不指导操作：explanation。
 
@@ -79,9 +81,12 @@ description: >
 4. 来源冲突无法按权威、范围或 freshness 裁决时，保留冲突并限制结论，不选择方便的
    一方。
 
-缺少分类所需的读者目标时，请求能区分相邻类型的最小信息。缺少事实证据时，宿主任务
+先从请求、内容和仓库来源确定读者目标；只有仍缺少会改变分类的信息时才提问。分类表
+不是覆盖所有软件产物的封闭集合，未匹配结果保留准确职责，不硬塞进最近类别。
+缺少事实证据时，宿主任务
 可以交付明确标注的草稿或评审缺口，但不能交付正式事实基线。涉及未授权写入、状态变更、
 移动、归档、删除、提交或推送时，停止该副作用并报告未执行动作。
 
 本 Skill 的责任在宿主任务获得可执行的类型判断和共同约束后结束。文档产物、评审
-结果、仓库修改及其验证仍由宿主任务或对应文档 Skill 完成。
+结果、仓库修改及其验证仍由宿主任务或对应文档 Skill 完成；继续本次已授权任务，
+不把分类完成当成任务完成，也不以 Skill 切换为由重复确认。

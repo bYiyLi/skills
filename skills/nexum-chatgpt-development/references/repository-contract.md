@@ -15,6 +15,8 @@ remote. A read-only file assessment can still proceed without Git history.
 | AGENTS.md | Repository execution rules, source map, commands, boundaries | Product behavior or historical status |
 | docs/design.md | Current product behavior and technical contract | Task progress and retrospective history |
 | docs/development/README.md | Current scope, dependencies, acceptance, status | Redefinition of product behavior |
+| docs/development/phases/ | Phase work, design inputs, acceptance, review and completion evidence | Setup/run instructions or duplicate design |
+| docs/guides/ | Developer or user setup, run and troubleshooting instructions | Phase completion and task progress |
 | docs/research/ | External evidence with source/version and limits | Unapproved product decisions |
 | docs/vlog/ | Dated decisions, changes, verification, blockers | The current design contract |
 | docs/chatgpt-project.md | Maintained source for ChatGPT Project Instructions | Evidence that the UI copy is installed |

@@ -6,18 +6,14 @@ requirement；限定范围的 revise 或 review 只检查请求改变、指定�
 
 ## Select the Document Mode
 
-1. 用户明确要求 SRS 时采用 SRS。用户明确要求 feature spec 且未命中下方任一 SRS 条件时
-   采用 feature spec；若命中，停止 drafting 并请求用户选择改为 SRS，或提供能消除该条件的
-   更窄范围。不要静默覆盖用户指定模式，也不要带着未解决的模式冲突继续。
-2. `PRD` 只是用户或目标仓库可能使用的文档标签，不构成第三种内容模式。目标仓库定义
-   了 PRD 格式时保留其格式；内容范围仍按下列条件选择 feature spec 或 SRS 合同。目标
-   仓库没有 PRD 合同时，不自行发明一个 PRD schema。
-3. 用户未指定内容模式时，出现任一以下可观察条件就选择 SRS：
-   - 来源明确指出失败会造成安全、隐私、合规、重大财务或运营、合同或人身安全后果；
-   - 多个 actor group 有不同的权限、责任或验收要求；
-   - 文档要作为跨版本、跨团队或需正式批准的长期系统或子系统基线。
-4. 不满足 SRS 条件，且请求只覆盖一个边界明确的 feature 时选择 feature spec。
-5. 同时命中 feature 与 SRS 条件时选择 SRS。仍无法从现有事实判断时，询问会区分两种模式的缺失事实，不要任意选择。
+1. 保留用户明确选择及目标仓库适用格式。PRD 是项目标签，可按其已有结构表达产品需求，
+   不强行改名或创造新的 schema。
+2. 一个边界明确的 feature 默认使用 feature spec；需要完整系统/子系统基线、跨团队
+   接口与长期追溯时使用 SRS。两者都可以覆盖多个角色、权限和安全要求。
+3. 风险决定需要覆盖哪些要求和验证，不单凭安全词或角色数量强制升级文档。实际法规、
+   合同或仓库明确要求特定格式时才受其约束，并给出来源。
+4. 未指定模式时按实际范围选择能覆盖要求的简单结构。先从材料查明范围，只在不同
+   解释会改变产品承诺或交付范围时提问，不为模板选择制造审批。
 
 `review` 不自动转换被审文档；按上述条件报告当前模式是否适配。
 
@@ -40,14 +36,16 @@ SRS 至少覆盖 purpose、scope、audience、stakeholders/actors、system conte
 
 ## Use One Formal Requirement Record
 
-每条正式 requirement 都使用同一组字段：
+每条正式 requirement 必须能恢复以下信息；沿用仓库字段，不要求固定标题：
 
 - `ID`：在当前 artifact 中唯一且稳定。
-- `Class`：使用适用的 requirement 类别。
 - `Statement`：一个可判断的规范性要求。
 - `Source`：可定位的来源或 draft 中明确的 unresolved source。
-- `Priority`：来自适用来源或明确决策；没有证据时不要发明枚举或优先级，draft 中标为 unresolved，formal baseline 中作为 blocker。
 - `Verification`：可观察的检查、测试、分析、评审或验收入口。
+
+`Class` 可以通过章节或记录表达，用于类别覆盖检查。`Priority` 仅在项目需要排序或
+分期取舍时添加，值来自明确决定；没有优先级不阻止一组全部必须满足的要求形成基线。
+不得为凑字段发明优先级、负责人或批准状态。稳定 ID 可沿用已有编号或可定位锚点。
 
 创建的 artifact 及每条新增或修订的正式 requirement 都要让这些字段可恢复，不要求目标仓库采用固定标题。全文 `review` 对所有正式 requirements 检查这些字段；用户明确限定的 review 只检查指定 requirements 和判断它们所需的依赖，并把其余内容列为 out-of-scope。范围受限的 `revise` 报告未修改的既有缺陷，不要借机扩大变更。不要使用未定义的“关键”或“重要”子集。约束如果会规范目标系统行为，也要写成正式 requirement；只描述既定外部条件时，可作为有来源的 constraint 单独列出。
 

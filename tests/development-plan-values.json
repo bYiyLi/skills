@@ -1,0 +1,33 @@
+{
+  "roadmap-template.md.tmpl": {
+    "output": "docs/development/README.md",
+    "values": {
+      "PROJECT_NAME": "Example",
+      "GOAL_SCOPE_AND_DESIGN_INPUTS": "Build the agreed environment from [design](../design.md).",
+      "PHASE": "Phase 0",
+      "DELIVERABLE": "A reproducible development environment",
+      "DEPENDENCIES": "Confirmed toolchain design",
+      "STATUS": "Planned; implementation has not started",
+      "PLAN_LINK": "[Phase 0](phases/00-foundation.md)",
+      "CROSS_PHASE_ACCEPTANCE_AND_BLOCKERS": "A fresh checkout can install, build and run the required checks. No external blocker is currently known."
+    }
+  },
+  "phase-plan-template.md.tmpl": {
+    "output": "docs/development/phases/00-foundation.md",
+    "values": {
+      "PLAN_TITLE": "Phase 0: development environment",
+      "GOAL_AND_SCOPE": "Establish the agreed build and test entry points. Product features are outside this phase.",
+      "DESIGN_INPUTS": "[Current toolchain contract](../../design.md)",
+      "PREREQUISITES": "The agreed runtime and package manager must be available.",
+      "WORK_ITEM": "W1: build setup",
+      "DELIVERABLE": "A repeatable production build command",
+      "DEPENDENCY_AND_SOURCE": "Toolchain contract above",
+      "ACCEPTANCE_LINK": "A1",
+      "ACCEPTANCE_CRITERIA_AND_METHODS": "A1: In a fresh checkout, install locked dependencies and build. Verify the produced entry point starts. The concrete command will be established in W1.",
+      "REVIEW_SCOPE_AND_RECHECKS": "Review reproducibility and the built entry point; repair findings and rerun affected checks.",
+      "COMPLETION_CRITERIA": "W1 and A1 have current evidence and no unresolved acceptance findings.",
+      "STATUS_AND_EVIDENCE": "Planned. No implementation or command execution is claimed.",
+      "BLOCKERS_OR_NONE": "None identified from the supplied design."
+    }
+  }
+}

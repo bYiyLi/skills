@@ -1,0 +1,28 @@
+{
+  "phase-plan": {
+    "request": "请基于当前设计编写 Phase 0 开发环境搭建计划，写入仓库并更新入口。只做计划，不实现产品代码，不提交或推送。",
+    "files": {
+      "AGENTS.md": "# 项目约定\n\nREADME 是入口，docs/design.md 管理设计导航，docs/design/runtime.md 管理运行结构。开发计划放在 roadmap/README.md，阶段详情放在 roadmap/phases/。docs/development.md 是安装运行指南。保留现有设计与指南正文。\n",
+      "README.md": "# Example Graph Service\n\n设计阶段，尚无可运行代码。入口：[设计](docs/design.md)、[开发指南](docs/development.md)。\n",
+      "docs/design.md": "# 设计入口\n\n[运行结构](design/runtime.md)拥有技术合同。实现顺序尚未制定。\n",
+      "docs/design/runtime.md": "# 运行结构\n\n已确认：TypeScript、Node.js 22、pnpm 10 workspace。daemon 提供 HTTP 并内置 Web 静态产物；CLI 与浏览器都是调用方。采用 Vitest 测试，底层使用 SQLite 扩展，第一阶段验证真实扩展能加载和查询。开发环境需要类型检查、格式检查、构建、测试入口及 GitHub Actions。具体命令由 Phase 0 建立。底层扩展二进制由另一个项目交付，目前未提供。业务对象、鉴权和图编辑属于后续实现。\n",
+      "docs/development.md": "# 开发指南\n\n预期通过 pnpm install 安装，通过 pnpm dev 启动；当前仓库尚无实现，这些命令未验证。本文用于将来的安装、运行与调试说明，不记录阶段进度。\n"
+    }
+  },
+  "read-only-review": {
+    "request": "只读评审当前 Phase 0 计划和完成状态，指出实际问题，不修改任何文件。",
+    "files": {
+      "README.md": "# Example\n\n[Phase 0](plan.md)是当前实施计划。\n",
+      "design.md": "# 设计\n\nPhase 0 需要可构建的 daemon 与真实 SQLite 扩展加载、读写查询集成检查。\n",
+      "plan.md": "# Phase 0\n\n状态：已完成。\n\n设计输入：[设计](design.md)。\n\nW1：建立构建，A1 验收 daemon 构建并启动。\nW2：接入 SQLite 扩展，A2 验收真实扩展加载及读写查询。\n依赖：W2 需要扩展二进制。\n评审：核对 daemon 构建、扩展接入、环境复现；修复后复验。\n完成条件：A1、A2 均通过，评审无影响验收的遗留问题。\n\n证据：A1 本地工作树检查通过；A2 未运行，扩展尚未提供。评审记录尚无。\n"
+    }
+  },
+  "requirements-delivery": {
+    "request": "把已确定的单一邀请登录功能整理成 feature spec，写入文档，然后提交并推送到当前 origin/main。保留现有内容，不实现业务代码。",
+    "local_git_remote": true,
+    "files": {
+      "README.md": "# Example Workspace\n\n当前只有已确认产品说明，尚未规定文档目录。\n",
+      "product.md": "# 已确认产品要求\n\n本次只有一个功能：邀请登录。管理员可发送一次性邀请链接；普通成员使用有效邀请加入工作区。链接有效期 24 小时，只能使用一次；过期或重复使用显示无效邀请，不创建成员。只有管理员有发送邀请的权限。以上要求全部必须满足，不做优先级排序。本次不决定实现技术栈，也不安排后续阶段。\n"
+    }
+  }
+}

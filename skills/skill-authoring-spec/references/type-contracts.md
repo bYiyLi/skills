@@ -107,7 +107,9 @@ type-named headings in an authored Skill.
 - Define the condition selecting each reachable branch.
 - End every path at the owned result or a real blocker.
 - Match completion claims to obtainable evidence.
-- Stop at the declared result instead of appending downstream work.
+- End this Skill's responsibility at its declared result and return control to
+  the host. Continue downstream work when the host task already authorizes it;
+  do not infer new authority or ask for existing authority again.
 - On recovery, inspect current state instead of repeating completed side effects.
 
 ### Guidance

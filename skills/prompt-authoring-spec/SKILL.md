@@ -61,8 +61,9 @@ selection, interpretation, judgment, action, evaluation, or evidence requirement
   ambiguity that changes a decision; it does not remove useful discretion.
 - Identify the recipient or intended use only when it changes terminology,
   depth, tone, or output form.
-- Identify each required input, capability, and authority. Treat it as missing
-  unless supplied or guaranteed by the host contract.
+- Identify required inputs, capabilities, and authority. Check the request,
+  available context, and authorized sources before declaring them missing;
+  absence from the latest message alone is not a blocker.
 - Define behavior for reachable missing, invalid, conflicting, unavailable,
   denied, and post-start failure states when they change the result.
 - Add a rule only when the executor or host task owns the behavior and omission
@@ -72,6 +73,12 @@ selection, interpretation, judgment, action, evaluation, or evidence requirement
   your time.
 - State a stopping point or completion evidence when the instruction governs
   progression or a completion claim.
+- Distinguish an internal checkpoint from task completion or a real approval
+  boundary. Preserve the current goal through status questions and context
+  recovery; change it when the user actually changes scope or cancels the task.
+- Keep clarification proportional: state the current fact, concrete consequence,
+  and decision needed. Do not make the user decide routine choices already
+  determined by the contract or inspect an internal checklist as the answer.
 
 ## Load Only Applicable Rules
 

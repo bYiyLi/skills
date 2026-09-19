@@ -78,7 +78,8 @@ Windows 使用虚拟环境的 `Scripts/python.exe` 和对应 `skills-ref` 可执
 
 [测试](../../tests/nexum-chatgpt-development/test_package.py) 覆盖官方格式、直接资源路由、
 路径大小写、缺失/孤立/越界资源、模板字段与临时输出。主入口 150 行是本包维护预算，
-不是 Agent Skills 格式强制上限。CI 只检查这个 Skill，复用这些命令。
+不是 Agent Skills 格式强制上限。[集合 CI](../../.github/workflows/skills.yml) 同时检查
+全部 Skill，并保留上述专项测试；全量命令见[仓库入口](../../README.md)。
 
 [场景集](../../tests/nexum-chatgpt-development/scenarios.md) 用于闭合合同评审，
 不作为真实模型行为测试的证明。需要验证模型选择、长任务表现或 UI 操作时，

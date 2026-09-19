@@ -1,4 +1,4 @@
 interface:
   display_name: "Skill Authoring Spec"
   short_description: "Design and review portable Agent Skill contracts"
-  default_prompt: "Use $skill-authoring-spec only in the Agent Skill authoring, revision, or read-only review mode requested by the user; naming the Skill or target alone does not choose a mode, so ask before assessing or changing it."
+  default_prompt: "Use $skill-authoring-spec to author, revise, or review the Agent Skill in the current task, preserving its scope and continuing authorized work."

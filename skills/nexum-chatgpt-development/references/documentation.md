@@ -12,6 +12,20 @@ Use phases only when dependencies or independently verifiable milestones justify
 them. Link each acceptance criterion to a test, inspection, or runtime result;
 an unchecked promise is not evidence.
 
+When planning a phase, record its goal/scope, design inputs, prerequisites,
+work items and deliverables, acceptance criteria, review/fix/recheck work, and
+completion conditions. Keep criteria separate from observed results and current
+status. A roadmap owns phase order and status summaries; a phase file owns its
+work and evidence. A setup/run guide or an implementation-notes chapter is not a
+phase plan merely because its filename says development or implementation.
+Use the available `software-development-plan` skill for that artifact when
+applicable; this workflow remains responsible for the complete authorized task.
+
+Preserve original acceptance when recording completion. Do not rewrite a plan
+as a retrospective, weaken criteria to match existing code, or substitute a log
+entry for current completion evidence. Existing project ownership governs;
+another repository's layout is a reference, not a mandatory migration.
+
 When implementation exposes an undefined behavior, inspect the current contract,
 existing code/tests, and applicable primary references. Within implementation
 authority, resolve the affected behavior using established goals and document
