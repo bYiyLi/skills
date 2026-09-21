@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import sys
 import time
 import uuid
 from typing import Any
@@ -137,7 +138,12 @@ def find_browser_client() -> Path:
 
 
 def load_api_manifest() -> dict[str, Any]:
-    p = find_browser_plugin_root() / "docs/api.json"
+    if sys.platform == "darwin":
+        from .direct_cua import direct_api_manifest_path
+
+        p = direct_api_manifest_path()
+    else:
+        p = find_browser_plugin_root() / "docs/api.json"
     if not p.is_file():
         raise RuntimeError(f"Browser API manifest was not found: {p}")
     value = json.loads(p.read_text(encoding="utf-8"))

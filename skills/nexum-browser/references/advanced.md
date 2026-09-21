@@ -32,6 +32,11 @@ browser api-type --name SelectOptionInput
 
 Treat the installed manifest as the available public interface description for this Runtime version. Runtime backends and optional capabilities may still reject an otherwise documented member.
 
+On the macOS direct-CUA backend the manifest comes from the Browser environment
+selected by the active OpenAI `cua_repl` launch contract (for example
+`environment-docs/codex-app/api.json`). Do not substitute a cached schema from a
+different Runtime environment.
+
 Use `browser api-coverage` when validating a Runtime upgrade or this Skill.
 `complete: true` means every installed public interface is reachable through a
 direct bridge root or through a typed object returned by another public member,
@@ -95,18 +100,24 @@ Do not treat `cdp` as unrestricted Chrome DevTools access. The Browser Runtime m
 
 ## Handles and chaining
 
-Runtime objects such as Playwright locators, frame locators, dialogs, downloads, file choosers, and other class instances are returned as handles such as `h_1`. When the Runtime declaration identifies the result interface, the handle also carries that public interface so subsequent calls can be checked against the installed API contract.
+Runtime objects such as Playwright locators, frame locators, dialogs, downloads,
+file choosers, and other class instances are returned as opaque handles such as
+`g1:h_1`. The generation prefix changes when the persistent JavaScript Runtime
+is reset, so an older-generation handle must be treated as stale rather than
+retried. When the Runtime declaration identifies the result interface, the
+handle also carries that public interface so subsequent calls can be checked
+against the installed API contract.
 
 Call a method on a returned handle with:
 
 ```text
-browser api-call --surface handle --handle h_1 --method click --args-json '[{}]'
+browser api-call --surface handle --handle <returnedHandle> --method click --args-json '[{}]'
 ```
 
 When an API argument itself must be another Runtime object, pass a handle reference in JSON:
 
 ```json
-{"$handle":"h_2"}
+{"$handle":"<returnedHandle>"}
 ```
 
 This enables operations such as locator `and` / `or` without exposing arbitrary Node.js execution.
@@ -124,7 +135,7 @@ handle:
   {
     "$call": {
       "surface": "handle",
-      "handle": "h_1",
+      "handle": "<returnedHandle>",
       "method": "click",
       "args": []
     }
@@ -189,6 +200,14 @@ browser select --url https://example.com/
 ```
 
 Do not silently substitute another browser when the user explicitly named a browser family.
+
+## Runtime confirmations
+
+An advanced capability such as raw CDP can cause the Browser Runtime to pause
+the current call and return `confirmation_required` through the stable CLI.
+Apply the main Skill's authorization rules to the exact Runtime request and
+resume that same operation; do not rerun the original `api-call`, because its
+result may be unknown or its side effects may already have started.
 
 ## Boundary
 

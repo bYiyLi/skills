@@ -5,6 +5,8 @@ import io
 import json
 from pathlib import Path
 import sys
+import tempfile
+import threading
 
 sys.dont_write_bytecode = True
 import unittest
@@ -15,9 +17,11 @@ REPO = Path(__file__).resolve().parents[1]
 ROOT = REPO / "skills/nexum-browser"
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from nexum_browser.cli import build_parser
-from nexum_browser.broker import Broker
+from nexum_browser.cli import build_internal_parser, build_parser
+from nexum_browser.broker import Broker, _compatible_ping
 from nexum_browser.common import codex_home, emit, public_api_coverage
+from nexum_browser.direct_cua import DirectCuaRuntime, _read_contract
+from nexum_browser.mcp import McpError, PendingElicitation, StdioMcpClient
 from nexum_browser.operations import BrowserOperations, _output_js
 from nexum_browser.runtime import (
     AppServer,
@@ -335,8 +339,10 @@ class RuntimeContractTests(unittest.TestCase):
             {"tab": "1", "axIndex": 4},
         )
         self.assertEqual(result["source"], "ax")
-        self.assertIn("__tab.ax==null", server.code)
-        self.assertIn("__tab.ax.click(4)", server.code)
+        self.assertIn("typeof __tab.click==='function'", server.code)
+        self.assertIn("await __tab.click(4)", server.code)
+        self.assertIn("__tab.ax!=null", server.code)
+        self.assertIn("await __tab.ax.click(4)", server.code)
 
     def test_fill_uses_ax_set_value_for_replace_semantics(self) -> None:
         class FakeServer:
@@ -349,6 +355,7 @@ class RuntimeContractTests(unittest.TestCase):
             "fill",
             {"tab": "1", "axIndex": 2, "text": "replacement"},
         )
+        self.assertIn('__tab.setValue(2,"replacement")', server.code)
         self.assertIn('__tab.ax.setValue(2,"replacement")', server.code)
         self.assertNotIn("__tab.ax.typeText", server.code)
 
@@ -378,6 +385,8 @@ class RuntimeContractTests(unittest.TestCase):
             "click",
             {"tab": "1", "point": [120, 80]},
         )
+        self.assertIn("typeof __tab.click==='function'", server.code)
+        self.assertIn("__tab.click([120, 80])", server.code)
         self.assertIn("__tab.ax!=null", server.code)
         self.assertIn("__tab.ax.click([120, 80])", server.code)
         self.assertIn("__tab.cua!=null", server.code)
@@ -516,11 +525,28 @@ class RuntimeContractTests(unittest.TestCase):
 
     def test_broker_reuses_one_app_server(self) -> None:
         first = object()
-        with patch("nexum_browser.broker.AppServer", return_value=first) as app_server:
+        with (
+            patch("nexum_browser.broker.is_direct_cua_platform", return_value=False),
+            patch("nexum_browser.broker.AppServer", return_value=first) as app_server,
+        ):
             broker = Broker()
             self.assertIs(broker.ensure_server(), first)
             self.assertIs(broker.ensure_server(), first)
         app_server.assert_called_once_with()
+
+    def test_broker_reuses_one_direct_cua_runtime(self) -> None:
+        first = object()
+        with (
+            patch("nexum_browser.broker.is_direct_cua_platform", return_value=True),
+            patch(
+                "nexum_browser.broker.DirectCuaRuntime",
+                return_value=first,
+            ) as direct,
+        ):
+            broker = Broker()
+            self.assertIs(broker.ensure_server(), first)
+            self.assertIs(broker.ensure_server(), first)
+        direct.assert_called_once_with()
 
     def test_broker_ping_reports_runtime_fallback_reason(self) -> None:
         class FakeServer:
@@ -535,6 +561,15 @@ class RuntimeContractTests(unittest.TestCase):
             response["data"]["runtimeFallbackReason"],
             "isolated browser runtime",
         )
+
+    def test_broker_protocol_distinguishes_legacy_and_current_ping(self) -> None:
+        legacy = {"code": "ok", "data": {"running": True}}
+        current = {
+            "code": "ok",
+            "data": {"running": True, "brokerProtocol": 2},
+        }
+        self.assertFalse(_compatible_ping(legacy))
+        self.assertTrue(_compatible_ping(current))
 
     def test_broker_close_releases_runtime(self) -> None:
         class FakeServer:
@@ -677,6 +712,293 @@ class RuntimeContractTests(unittest.TestCase):
                 else:
                     parsed = parser.parse_args([command])
                 self.assertEqual(parsed.command, command)
+
+    def test_cli_exposes_internal_elicitation_resume(self) -> None:
+        parser = build_internal_parser()
+        parsed = parser.parse_args(
+            [
+                "_resume",
+                "--operation",
+                "op_1",
+                "--decision",
+                "accept",
+                "--content-json",
+                '{"confirmed":true}',
+            ]
+        )
+        self.assertEqual(parsed.operation, "op_1")
+        self.assertEqual(parsed.decision, "accept")
+        self.assertEqual(parsed.content, {"confirmed": True})
+
+    def test_public_cli_help_omits_internal_operation_controls(self) -> None:
+        help_text = build_parser().format_help()
+        self.assertNotIn("_resume", help_text)
+        self.assertNotIn("_cancel-operation", help_text)
+
+    def test_mcp_initialize_rejects_unexpected_protocol_version(self) -> None:
+        client = object.__new__(StdioMcpClient)
+        client._startup_timeout = 1
+        client.request = lambda *args, **kwargs: {"protocolVersion": "2024-11-05"}
+        client.notify = lambda *args, **kwargs: None
+        client.refresh_tools = lambda *args, **kwargs: set()
+        with self.assertRaisesRegex(McpError, "unsupported MCP protocol version"):
+            client.initialize()
+
+    def test_direct_launch_contract_uses_openai_generated_environment(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            node = root / "node"
+            node_repl = root / "node_repl"
+            entry = root / "node_modules/@oai/cua-repl/bin/cua-repl.mjs"
+            api = (
+                root
+                / "node_modules/@oai/browser-desktop/environment-docs/codex-app/api.json"
+            )
+            for executable in (node, node_repl):
+                executable.parent.mkdir(parents=True, exist_ok=True)
+                executable.write_text("#!/bin/sh\n", encoding="utf-8")
+                executable.chmod(0o755)
+            entry.parent.mkdir(parents=True, exist_ok=True)
+            entry.write_text("", encoding="utf-8")
+            api.parent.mkdir(parents=True, exist_ok=True)
+            api.write_text('{"interfaces":{},"types":{}}', encoding="utf-8")
+            config = root / "26.1/.mcp.json"
+            config.parent.mkdir(parents=True, exist_ok=True)
+            config.write_text(
+                json.dumps(
+                    {
+                        "mcpServers": {
+                            "cua_repl": {
+                                "command": str(node),
+                                "args": [str(entry)],
+                                "enabled": True,
+                                "enabled_tools": ["js", "js_reset", "turn_ended"],
+                                "startup_timeout_sec": 17,
+                                "env_vars": [],
+                                "env": {
+                                    "CUA_REPL_NODE_REPL_PATH": str(node_repl),
+                                    "CUA_REPL_ENABLED_SURFACES": "browser,computer",
+                                    "NODE_REPL_NODE_MODULE_DIRS": str(
+                                        root / "node_modules"
+                                    ),
+                                },
+                            }
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            contract = _read_contract(config)
+
+        self.assertEqual(contract.command, str(node))
+        self.assertEqual(contract.runtime_version, "26.1")
+        self.assertEqual(contract.startup_timeout, 17)
+        self.assertEqual(contract.api_json, api)
+        self.assertEqual(
+            contract.enabled_tools,
+            frozenset({"js", "js_reset", "turn_ended"}),
+        )
+
+    def test_direct_metadata_stays_stable_across_operations(self) -> None:
+        runtime = object.__new__(DirectCuaRuntime)
+        runtime.session_id = "session-1"
+        runtime.turn_id = "turn-1"
+        first = json.loads(runtime._meta()["x-codex-turn-metadata"])
+        second = json.loads(runtime._meta()["x-codex-turn-metadata"])
+        self.assertEqual(first["session_id"], "session-1")
+        self.assertEqual(first["turn_id"], "turn-1")
+        self.assertEqual(first, second)
+
+    def test_direct_reset_invalidates_handle_generation(self) -> None:
+        class FakeClient:
+            def __init__(self) -> None:
+                self.calls = []
+
+            def call_tool(self, name, arguments, **kwargs):
+                self.calls.append((name, arguments, kwargs))
+                return {"content": [], "isError": False}
+
+        runtime = object.__new__(DirectCuaRuntime)
+        runtime.client = FakeClient()
+        runtime.session_id = "session-1"
+        runtime.turn_id = "turn-1"
+        runtime.runtime_state = "initialized"
+        runtime.handle_generation = 3
+        runtime._bridge_installed = True
+        runtime.reset()
+        self.assertEqual(runtime.runtime_state, "fresh")
+        self.assertFalse(runtime._bridge_installed)
+        self.assertEqual(runtime.handle_generation, 4)
+        self.assertEqual(runtime.client.calls[0][0], "js_reset")
+
+    def test_broker_pauses_and_resumes_direct_elicitation(self) -> None:
+        class FakeDirectRuntime(DirectCuaRuntime):
+            def __init__(self) -> None:
+                self._elicitation = None
+                self._resume = threading.Event()
+                self.backend = "direct-cua"
+                self.fallback_reason = None
+
+            def execute_js(self, _code, **_kwargs):
+                self._elicitation = PendingElicitation(
+                    "el_1",
+                    9,
+                    {
+                        "message": "Allow CDP?",
+                        "requestedSchema": {
+                            "type": "object",
+                            "properties": {},
+                        },
+                    },
+                )
+                self._resume.wait(2)
+                return {"available": True}, []
+
+            def pending_elicitation(self):
+                return self._elicitation
+
+            def respond_elicitation(self, elicitation_id, *, action, content=None):
+                self.assertions = (elicitation_id, action, content)
+                self._elicitation = None
+                self._resume.set()
+
+            def release(self):
+                pass
+
+            def close(self):
+                pass
+
+        runtime = FakeDirectRuntime()
+        broker = Broker()
+        broker.server = runtime
+        first = broker.handle({"command": "status", "args": {}})
+        self.assertEqual(first["code"], "confirmation_required")
+        operation_id = first["data"]["operationId"]
+        resumed = broker.handle(
+            {
+                "command": "_resume",
+                "args": {
+                    "operation": operation_id,
+                    "decision": "accept",
+                },
+            }
+        )
+        self.assertEqual(resumed, {"code": "ok", "data": {"available": True}})
+        self.assertEqual(runtime.assertions, ("el_1", "accept", None))
+
+    def test_broker_decline_and_cancel_cannot_report_operation_success(self) -> None:
+        class FakeDirectRuntime(DirectCuaRuntime):
+            def __init__(self) -> None:
+                self._elicitation = None
+                self._resume = threading.Event()
+                self.backend = "direct-cua"
+                self.fallback_reason = None
+                self.responses = []
+
+            def execute_js(self, _code, **_kwargs):
+                self._elicitation = PendingElicitation(
+                    "el_1",
+                    9,
+                    {"message": "Allow CDP?", "requestedSchema": {"type": "object"}},
+                )
+                self._resume.wait(2)
+                return {"wouldOtherwiseLookSuccessful": True}, []
+
+            def pending_elicitation(self):
+                return self._elicitation
+
+            def respond_elicitation(self, elicitation_id, *, action, content=None):
+                self.responses.append((elicitation_id, action, content))
+                self._elicitation = None
+                self._resume.set()
+
+            def release(self):
+                pass
+
+            def close(self):
+                pass
+
+        for mode, expected_code in (
+            ("decline", "operation_declined"),
+            ("cancel", "operation_cancelled"),
+        ):
+            with self.subTest(mode=mode):
+                runtime = FakeDirectRuntime()
+                broker = Broker()
+                broker.server = runtime
+                first = broker.handle({"command": "status", "args": {}})
+                operation_id = first["data"]["operationId"]
+                if mode == "decline":
+                    result = broker.handle(
+                        {
+                            "command": "_resume",
+                            "args": {
+                                "operation": operation_id,
+                                "decision": "decline",
+                            },
+                        }
+                    )
+                else:
+                    result = broker.handle(
+                        {
+                            "command": "_cancel-operation",
+                            "args": {"operation": operation_id},
+                        }
+                    )
+                self.assertEqual(result["code"], expected_code)
+                self.assertFalse(result["retryable"])
+                self.assertEqual(runtime.responses[0][1], mode)
+
+    def test_broker_stop_cancels_pending_elicitation_before_release(self) -> None:
+        class FakeDirectRuntime(DirectCuaRuntime):
+            def __init__(self) -> None:
+                self._elicitation = None
+                self._resume = threading.Event()
+                self.backend = "direct-cua"
+                self.fallback_reason = None
+                self.events = []
+
+            def execute_js(self, _code, **_kwargs):
+                self._elicitation = PendingElicitation(
+                    "el_1",
+                    9,
+                    {"message": "Allow CDP?"},
+                )
+                self._resume.wait(2)
+                self.events.append("operation-finished")
+                return {}, []
+
+            def pending_elicitation(self):
+                return self._elicitation
+
+            def respond_elicitation(self, elicitation_id, *, action, content=None):
+                self.events.append(f"elicitation-{action}")
+                self._elicitation = None
+                self._resume.set()
+
+            def release(self):
+                self.events.append("turn-ended")
+
+            def close(self):
+                self.events.append("runtime-closed")
+
+        runtime = FakeDirectRuntime()
+        broker = Broker()
+        broker.server = runtime
+        first = broker.handle({"command": "status", "args": {}})
+        self.assertEqual(first["code"], "confirmation_required")
+        broker.handle({"command": "__stop__", "args": {}})
+        broker.close()
+        self.assertEqual(
+            runtime.events,
+            [
+                "elicitation-cancel",
+                "operation-finished",
+                "turn-ended",
+                "runtime-closed",
+            ],
+        )
 
     def test_cli_interaction_targets_are_surface_neutral(self) -> None:
         parser = build_parser()

@@ -18,6 +18,11 @@ from .common import (
     public_api_coverage,
     validate_member_path,
 )
+from .direct_cua import (
+    direct_runtime_diagnostics,
+    discover_launch_contract,
+    is_direct_cua_platform,
+)
 from .runtime import (
     diagnose_browser_runtime_error,
     prepare_runtime,
@@ -82,7 +87,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
 
     sub.add_parser("status", help="Check Browser Runtime availability and selected browser")
-    sub.add_parser("setup", help="Configure and verify the Codex app-server runtime")
+    sub.add_parser("setup", help="Configure and verify the Browser Runtime transport")
     sub.add_parser("browsers", help="List Browser Runtime browser backends")
     select = sub.add_parser("select", help="Select the browser backend used by later commands")
     group = select.add_mutually_exclusive_group(required=True)
@@ -264,6 +269,27 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def build_internal_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="browser",
+        description="Internal nexum-browser operation controls",
+    )
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    resume = sub.add_parser("_resume")
+    resume.add_argument("--operation", required=True)
+    resume.add_argument(
+        "--decision",
+        required=True,
+        choices=["accept", "decline", "cancel"],
+    )
+    resume.add_argument("--content-json", dest="content", type=parse_json_object)
+
+    cancel_operation = sub.add_parser("_cancel-operation")
+    cancel_operation.add_argument("--operation", required=True)
+    return parser
+
+
 def api_list(args: argparse.Namespace) -> dict[str, Any]:
     manifest = load_api_manifest()
     interfaces = manifest.get("interfaces") or {}
@@ -305,7 +331,12 @@ def main() -> int:
     if len(sys.argv) >= 2 and sys.argv[1] == "_broker":
         return daemon_main()
 
-    parser = build_parser()
+    parser = (
+        build_internal_parser()
+        if len(sys.argv) >= 2
+        and sys.argv[1] in {"_resume", "_cancel-operation"}
+        else build_parser()
+    )
     ns = parser.parse_args()
 
     if ns.command == "api-list":
@@ -330,7 +361,11 @@ def main() -> int:
             fail("api_manifest_error", str(exc), retryable=False)
 
     if ns.command == "status":
-        data = runtime_diagnostics()
+        data = (
+            direct_runtime_diagnostics()
+            if is_direct_cua_platform()
+            else runtime_diagnostics()
+        )
         broker = broker_status()
         data["broker"] = broker
         if broker.get("running") and broker.get("runtimeActive"):
@@ -344,7 +379,10 @@ def main() -> int:
         broker_was_running = bool(broker_status().get("running"))
         try:
             with operation_lock(timeout=180):
-                runtime = prepare_runtime(find_codex())
+                if is_direct_cua_platform():
+                    runtime = discover_launch_contract().summary()
+                else:
+                    runtime = prepare_runtime(find_codex())
                 ensure_broker()
                 response = send_request("status", {}, timeout=120)
                 if response.get("code") != "ok":
@@ -382,7 +420,7 @@ def main() -> int:
         try:
             with operation_lock(timeout=60):
                 stopped = stop_broker()
-                if not stopped:
+                if not stopped and not is_direct_cua_platform():
                     released_stale = release_persisted_state()
                 else:
                     released_stale = False

@@ -1,10 +1,19 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, Protocol
 
 from .common import MARKER, PUBLIC_API_SURFACES, save_images
-from .runtime import AppServer
+
+
+class BrowserRuntime(Protocol):
+    def execute_js(
+        self,
+        code: str,
+        *,
+        title: str = "Browser action",
+        timeout_ms: int = 30000,
+    ) -> tuple[dict[str, Any], list[dict[str, Any]]]: ...
 
 
 def _output_js(expression: str) -> str:
@@ -77,7 +86,7 @@ def _key_sequence(key: str) -> list[str]:
 
 
 class BrowserOperations:
-    def __init__(self, server: AppServer) -> None:
+    def __init__(self, server: BrowserRuntime) -> None:
         self.server = server
 
     def _js(self, code: str, *, title: str, timeout_ms: int = 30000) -> dict[str, Any]:
@@ -196,7 +205,8 @@ class BrowserOperations:
                 + "var __browserInfo=__infos.find(x=>x.id===globalThis.__nexumBrowser.browserId)||{id:globalThis.__nexumBrowser.browserId};"
                 + _output_js(
                     "{tabId:__tab.id,browser:__browserInfo,"
-                    "surfaces:{playwright:__tab.playwright!=null,ax:__tab.ax!=null,"
+                    "surfaces:{unified:typeof __tab.getAXState==='function',"
+                    "playwright:__tab.playwright!=null,ax:__tab.ax!=null,"
                     "cua:__tab.cua!=null,domCua:__tab.dom_cua!=null,"
                     "content:__tab.content!=null,clipboard:__tab.clipboard!=null,"
                     "dev:__tab.dev!=null},capabilities:__caps}"
@@ -224,18 +234,32 @@ class BrowserOperations:
             elif args.get("axIndex") is not None:
                 index = int(args["axIndex"])
                 code += (
-                    "if(__tab.ax==null)throw new Error('Accessibility interaction is unavailable on the selected backend');"
-                    "try{await globalThis.__nexumReadDoc('accessibility')}catch{};"
                     "__source='ax';"
                 )
                 if command == "click":
-                    code += f"await __tab.ax.click({index});"
+                    code += (
+                        f"if(typeof __tab.click==='function')await __tab.click({index});"
+                        f"else if(__tab.ax!=null)await __tab.ax.click({index});"
+                        "else throw new Error('Accessibility interaction is unavailable on the selected backend');"
+                    )
                 elif command == "fill":
-                    code += f"await __tab.ax.setValue({index},{json.dumps(args['text'])});"
+                    code += (
+                        f"if(typeof __tab.setValue==='function')await __tab.setValue({index},{json.dumps(args['text'])});"
+                        f"else if(__tab.ax!=null)await __tab.ax.setValue({index},{json.dumps(args['text'])});"
+                        "else throw new Error('Accessibility value replacement is unavailable on the selected backend');"
+                    )
                 elif command == "type":
-                    code += f"await __tab.ax.typeText({index},{json.dumps(args['text'])});"
+                    code += (
+                        f"if(typeof __tab.typeText==='function')await __tab.typeText({index},{json.dumps(args['text'])});"
+                        f"else if(__tab.ax!=null)await __tab.ax.typeText({index},{json.dumps(args['text'])});"
+                        "else throw new Error('Accessibility text entry is unavailable on the selected backend');"
+                    )
                 else:
-                    code += f"await __tab.ax.pressKey({index},{json.dumps(args['key'])});"
+                    code += (
+                        f"if(typeof __tab.pressKey==='function')await __tab.pressKey({index},{json.dumps(args['key'])});"
+                        f"else if(__tab.ax!=null)await __tab.ax.pressKey({index},{json.dumps(args['key'])});"
+                        "else throw new Error('Accessibility key input is unavailable on the selected backend');"
+                    )
             elif args.get("nodeId") is not None:
                 if command == "fill":
                     raise RuntimeError(
@@ -266,10 +290,26 @@ class BrowserOperations:
                 point_json = json.dumps(point)
                 cua_point = {"x": point[0], "y": point[1]}
                 code += (
-                    "if(__tab.ax!=null){"
-                    "try{await globalThis.__nexumReadDoc('accessibility')}catch{};"
+                    "if(typeof __tab.click==='function'){"
                     "__source='ax';"
                 )
+                if command == "click":
+                    code += f"await __tab.click({point_json});"
+                elif command == "type":
+                    code += (
+                        f"await __tab.click({point_json});"
+                        f"if(typeof __tab.typeText==='function')await __tab.typeText(null,{json.dumps(args['text'])});"
+                        f"else if(__tab.ax!=null)await __tab.ax.typeText(null,{json.dumps(args['text'])});"
+                        "else throw new Error('Coordinate text entry is unavailable on the selected backend');"
+                    )
+                else:
+                    code += (
+                        f"await __tab.click({point_json});"
+                        f"if(typeof __tab.pressKey==='function')await __tab.pressKey(null,{json.dumps(args['key'])});"
+                        f"else if(__tab.ax!=null)await __tab.ax.pressKey(null,{json.dumps(args['key'])});"
+                        "else throw new Error('Coordinate key input is unavailable on the selected backend');"
+                    )
+                code += "}else if(__tab.ax!=null){__source='ax';"
                 if command == "click":
                     code += f"await __tab.ax.click({point_json});"
                 elif command == "type":
@@ -367,13 +407,13 @@ class BrowserOperations:
             dx = int(args["dx"])
             dy = int(args["dy"])
             point = _point(args)
-            node_id = args.get("nodeId")
+            scroll_node_id = args.get("nodeId")
             code = _tab(args["tab"]) + "var __source=null;var __result=null;"
-            if node_id is not None:
+            if scroll_node_id is not None:
                 code += (
                     "if(__tab.dom_cua==null)throw new Error('Node-targeted scrolling requires DOM-CUA on the selected backend');"
                     "__source='dom-cua';"
-                    f"await __tab.dom_cua.scroll({json.dumps({'node_id': str(node_id), 'x': dx, 'y': dy})});"
+                    f"await __tab.dom_cua.scroll({json.dumps({'node_id': str(scroll_node_id), 'x': dx, 'y': dy})});"
                     "__result={x:null,y:null};"
                 )
             elif point is not None:
@@ -466,18 +506,22 @@ class BrowserOperations:
             + "if(__tab.playwright==null)throw new Error('Playwright observation is unavailable on the selected backend');"
             + "__source='playwright';__kind='semantic-dom';__targetKind='locator';__observation=await __tab.playwright.domSnapshot();"
             + "}else if(__mode==='accessibility'){"
-            + "if(__tab.ax!=null){try{await globalThis.__nexumReadDoc('accessibility')}catch{};"
+            + "if(typeof __tab.getAXState==='function'){"
+            + "__source='ax';__kind='accessibility';__targetKind='ax-index';__observation=await __tab.getAXState({emit:false});"
+            + "}else if(__tab.ax!=null){try{await globalThis.__nexumReadDoc('accessibility')}catch{};"
             + "__source='ax';__kind='accessibility';__targetKind='ax-index';__observation=await __tab.ax.get('state');"
             + "}else if(__tab.dom_cua!=null){__source='dom-cua';__kind='visible-dom';__targetKind='node-id';__observation=await __tab.dom_cua.get_visible_dom();"
             + "}else{throw new Error('Accessibility observation is unavailable on the selected backend');}"
             + "}else if(__mode==='visible'){"
             + "if(__tab.dom_cua!=null){__source='dom-cua';__kind='visible-dom';__targetKind='node-id';__observation=await __tab.dom_cua.get_visible_dom();"
+            + "}else if(typeof __tab.getAXState==='function'){__source='ax';__kind='accessibility';__targetKind='ax-index';__observation=await __tab.getAXState({emit:false});"
             + "}else if(__tab.ax!=null){try{await globalThis.__nexumReadDoc('accessibility')}catch{};"
             + "__source='ax';__kind='accessibility';__targetKind='ax-index';__observation=await __tab.ax.get('state');"
             + "}else if(__tab.playwright!=null){__source='playwright';__kind='semantic-dom';__targetKind='locator';__observation=await __tab.playwright.domSnapshot();"
             + "}else{throw new Error('No supported observation surface is available on the selected backend');}"
             + "}else{"
-            + "if(__tab.ax!=null){try{await globalThis.__nexumReadDoc('accessibility')}catch{};"
+            + "if(typeof __tab.getAXState==='function'){__source='ax';__kind='accessibility';__targetKind='ax-index';__observation=await __tab.getAXState({emit:false});"
+            + "}else if(__tab.ax!=null){try{await globalThis.__nexumReadDoc('accessibility')}catch{};"
             + "__source='ax';__kind='accessibility';__targetKind='ax-index';__observation=await __tab.ax.get('state');"
             + "}else if(__tab.dom_cua!=null){__source='dom-cua';__kind='visible-dom';__targetKind='node-id';__observation=await __tab.dom_cua.get_visible_dom();"
             + "}else if(__tab.playwright!=null){__source='playwright';__kind='semantic-dom';__targetKind='locator';__observation=await __tab.playwright.domSnapshot();"

@@ -10,6 +10,7 @@ import signal
 import socket
 import subprocess
 import sys
+import threading
 import time
 import uuid
 from typing import Any
@@ -23,27 +24,59 @@ from .common import (
     SKILL_ROOT,
     find_codex,
 )
+from .direct_cua import DirectCuaRuntime, is_direct_cua_platform
 from .operations import BrowserOperations
 from .runtime import AppServer
 
 
 _STATE_VERSION = 1
+_BROKER_PROTOCOL = 2
 _MAX_MESSAGE_BYTES = 16 * 1024 * 1024
 _WINDOWS_TASK_ENV_PATH = RUNTIME_DIR / "broker-task-env.json"
+
+
+class ActiveOperation:
+    def __init__(self, command: str, args: dict[str, Any]) -> None:
+        self.id = "op_" + uuid.uuid4().hex
+        self.command = command
+        self.args = args
+        self.state = "running"
+        self.terminal_decision: str | None = None
+        self.result: dict[str, Any] | None = None
+        self.error: BaseException | None = None
+        self.done = threading.Event()
+        self.thread: threading.Thread | None = None
 
 
 class Broker:
     """Own one persistent Browser Runtime client connection."""
 
     def __init__(self) -> None:
-        self.server: AppServer | None = None
+        self.server: AppServer | DirectCuaRuntime | None = None
+        self.active_operation: ActiveOperation | None = None
+        self._operation_lock = threading.Lock()
         self.stop_requested = False
         self.last_activity = time.monotonic()
 
-    def ensure_server(self) -> AppServer:
+    def ensure_server(self) -> AppServer | DirectCuaRuntime:
         if self.server is None:
-            self.server = AppServer()
+            self.server = DirectCuaRuntime() if is_direct_cua_platform() else AppServer()
         return self.server
+
+    def has_active_operation(self) -> bool:
+        with self._operation_lock:
+            return self.active_operation is not None
+
+    def _operation_status(self) -> dict[str, Any] | None:
+        with self._operation_lock:
+            operation = self.active_operation
+            if operation is None:
+                return None
+            return {
+                "id": operation.id,
+                "command": operation.command,
+                "state": operation.state,
+            }
 
     def handle(self, request: dict[str, Any]) -> dict[str, Any]:
         command = str(request.get("command") or "")
@@ -52,6 +85,7 @@ class Broker:
                 "code": "ok",
                 "data": {
                     "running": True,
+                    "brokerProtocol": _BROKER_PROTOCOL,
                     "runtimeActive": self.server is not None,
                     "runtimeBackend": (
                         self.server.backend if self.server is not None else None
@@ -61,14 +95,28 @@ class Broker:
                         if self.server is not None
                         else None
                     ),
+                    "activeOperation": self._operation_status(),
                 },
             }
         if command == "__stop__":
+            self._cancel_pending_elicitation()
             self.stop_requested = True
             return {"code": "ok", "data": {"stopped": True}}
+        if command == "_resume":
+            self.last_activity = time.monotonic()
+            return self._resume_operation(request.get("args") or {})
+        if command == "_cancel-operation":
+            self.last_activity = time.monotonic()
+            return self._cancel_operation(request.get("args") or {})
         self.last_activity = time.monotonic()
+        server = self.ensure_server()
+        if isinstance(server, DirectCuaRuntime):
+            return self._start_direct_operation(
+                command,
+                request.get("args") or {},
+            )
         try:
-            data = BrowserOperations(self.ensure_server()).execute(
+            data = BrowserOperations(server).execute(
                 command, request.get("args") or {}
             )
             return {"code": "ok", "data": data}
@@ -79,15 +127,221 @@ class Broker:
                 "retryable": True,
             }
 
+    def _start_direct_operation(
+        self,
+        command: str,
+        args: dict[str, Any],
+    ) -> dict[str, Any]:
+        with self._operation_lock:
+            if self.active_operation is not None:
+                return {
+                    "code": "broker_busy",
+                    "message": "Another nexum-browser operation is still active",
+                    "retryable": True,
+                    "data": {"activeOperation": self._operation_status_unlocked()},
+                }
+            operation = ActiveOperation(command, args)
+            self.active_operation = operation
+
+        def run() -> None:
+            try:
+                assert self.server is not None
+                operation.result = BrowserOperations(self.server).execute(command, args)
+            except BaseException as exc:
+                operation.error = exc
+            finally:
+                operation.done.set()
+
+        operation.thread = threading.Thread(
+            target=run,
+            name=f"nexum-browser-operation-{operation.id}",
+            daemon=True,
+        )
+        operation.thread.start()
+        return self._wait_for_operation(operation)
+
+    def _operation_status_unlocked(self) -> dict[str, Any] | None:
+        operation = self.active_operation
+        if operation is None:
+            return None
+        return {
+            "id": operation.id,
+            "command": operation.command,
+            "state": operation.state,
+        }
+
+    def _wait_for_operation(self, operation: ActiveOperation) -> dict[str, Any]:
+        while True:
+            if operation.done.wait(0.05):
+                with self._operation_lock:
+                    if self.active_operation is operation:
+                        self.active_operation = None
+                if operation.terminal_decision is not None:
+                    code = (
+                        "operation_declined"
+                        if operation.terminal_decision == "decline"
+                        else "operation_cancelled"
+                    )
+                    return {
+                        "code": code,
+                        "message": (
+                            "Browser Runtime confirmation was declined"
+                            if operation.terminal_decision == "decline"
+                            else "Browser Runtime operation was cancelled"
+                        ),
+                        "retryable": False,
+                    }
+                if operation.error is not None:
+                    return {
+                        "code": "runtime_unavailable",
+                        "message": str(operation.error),
+                        "retryable": True,
+                    }
+                return {"code": "ok", "data": operation.result or {}}
+
+            server = self.server
+            if isinstance(server, DirectCuaRuntime):
+                elicitation = server.pending_elicitation()
+                if elicitation is not None:
+                    operation.state = "awaiting_confirmation"
+                    return {
+                        "code": "confirmation_required",
+                        "message": str(
+                            elicitation.params.get("message")
+                            or "Browser Runtime requires confirmation"
+                        ),
+                        "retryable": True,
+                        "data": {
+                            "operationId": operation.id,
+                            "elicitationId": elicitation.elicitation_id,
+                            "request": elicitation.params,
+                        },
+                    }
+
+    def _resume_operation(self, args: dict[str, Any]) -> dict[str, Any]:
+        operation_id = str(args.get("operation") or "")
+        decision = str(args.get("decision") or "")
+        content = args.get("content")
+        if content is not None and not isinstance(content, dict):
+            return {
+                "code": "invalid_request",
+                "message": "Elicitation content must be a JSON object",
+                "retryable": False,
+            }
+        with self._operation_lock:
+            operation = self.active_operation
+            if operation is None or operation.id != operation_id:
+                return {
+                    "code": "operation_lost",
+                    "message": f"Active operation was not found: {operation_id}",
+                    "retryable": False,
+                }
+            if operation.state != "awaiting_confirmation":
+                return {
+                    "code": "invalid_operation_state",
+                    "message": f"Operation is not awaiting confirmation: {operation.state}",
+                    "retryable": False,
+                }
+        server = self.server
+        if not isinstance(server, DirectCuaRuntime):
+            return {
+                "code": "operation_lost",
+                "message": "Direct Browser Runtime is no longer available",
+                "retryable": False,
+            }
+        elicitation = server.pending_elicitation()
+        if elicitation is None:
+            return {
+                "code": "operation_lost",
+                "message": "Pending Browser Runtime confirmation was lost",
+                "retryable": False,
+            }
+        try:
+            server.respond_elicitation(
+                elicitation.elicitation_id,
+                action=decision,
+                content=content,
+            )
+        except Exception as exc:
+            return {
+                "code": "runtime_unavailable",
+                "message": str(exc),
+                "retryable": True,
+            }
+        if decision == "accept":
+            operation.state = "running"
+        else:
+            operation.terminal_decision = decision
+            operation.state = "cancelled"
+        return self._wait_for_operation(operation)
+
+    def _cancel_operation(self, args: dict[str, Any]) -> dict[str, Any]:
+        operation_id = str(args.get("operation") or "")
+        with self._operation_lock:
+            operation = self.active_operation
+            if operation is None or operation.id != operation_id:
+                return {
+                    "code": "operation_lost",
+                    "message": f"Active operation was not found: {operation_id}",
+                    "retryable": False,
+                }
+            if operation.state != "awaiting_confirmation":
+                return {
+                    "code": "operation_not_cancellable",
+                    "message": "Only an operation awaiting Browser Runtime confirmation can be cancelled",
+                    "retryable": False,
+                }
+        server = self.server
+        if not isinstance(server, DirectCuaRuntime):
+            return {
+                "code": "operation_lost",
+                "message": "Direct Browser Runtime is no longer available",
+                "retryable": False,
+            }
+        elicitation = server.pending_elicitation()
+        if elicitation is None:
+            return {
+                "code": "operation_lost",
+                "message": "Pending Browser Runtime confirmation was lost",
+                "retryable": False,
+            }
+        server.respond_elicitation(elicitation.elicitation_id, action="cancel")
+        operation.terminal_decision = "cancel"
+        operation.state = "cancelled"
+        return self._wait_for_operation(operation)
+
+    def _cancel_pending_elicitation(self) -> None:
+        server = self.server
+        if not isinstance(server, DirectCuaRuntime):
+            return
+        elicitation = server.pending_elicitation()
+        if elicitation is None:
+            return
+        with self._operation_lock:
+            operation = self.active_operation
+            if operation is not None and operation.state == "awaiting_confirmation":
+                operation.terminal_decision = "cancel"
+                operation.state = "cancelled"
+        with contextlib.suppress(Exception):
+            server.respond_elicitation(elicitation.elicitation_id, action="cancel")
+
     def close(self) -> None:
         if self.server is None:
             return
+        with self._operation_lock:
+            active = self.active_operation
+        self._cancel_pending_elicitation()
+        if active is not None and active.state == "cancelled":
+            active.done.wait(2)
         try:
             self.server.release()
         except Exception:
             pass
         self.server.close()
         self.server = None
+        with self._operation_lock:
+            if self.active_operation is active:
+                self.active_operation = None
 
 
 def _recv_line(conn: socket.socket, timeout: float) -> bytes:
@@ -351,35 +605,61 @@ def _request(
     return response
 
 
-def _alive(state: dict[str, Any]) -> bool:
+def _ping_response(
+    state: dict[str, Any],
+    *,
+    timeout: float = 0.75,
+) -> dict[str, Any] | None:
     if not state:
-        return False
+        return None
     try:
-        response = _request(state, "__ping__", {}, timeout=0.75)
+        response = _request(state, "__ping__", {}, timeout=timeout)
     except Exception:
+        return None
+    return response if response.get("code") == "ok" else None
+
+
+def _compatible_ping(response: dict[str, Any] | None) -> bool:
+    if response is None:
         return False
-    return response.get("code") == "ok"
+    data = response.get("data") if isinstance(response, dict) else None
+    return (
+        isinstance(data, dict)
+        and data.get("brokerProtocol") == _BROKER_PROTOCOL
+    )
+
+
+def _alive(state: dict[str, Any]) -> bool:
+    return _compatible_ping(_ping_response(state))
 
 
 def broker_status() -> dict[str, Any]:
     state = _load_state()
     if not state:
         return {"running": False}
-    try:
-        response = _request(state, "__ping__", {}, timeout=0.75)
-    except Exception:
+    response = _ping_response(state)
+    if response is None:
         return {"running": False, "staleState": True, "pid": state.get("pid")}
     data = response.get("data") if isinstance(response, dict) else {}
-    if response.get("code") != "ok":
-        return {"running": False, "staleState": True, "pid": state.get("pid")}
+    if (
+        not isinstance(data, dict)
+        or data.get("brokerProtocol") != _BROKER_PROTOCOL
+    ):
+        return {
+            "running": False,
+            "incompatibleProtocol": True,
+            "pid": state.get("pid"),
+        }
     return {
         "running": True,
         "pid": state["pid"],
         "port": state["port"],
         "startedAt": state.get("startedAt"),
+        "brokerProtocol": data.get("brokerProtocol"),
         "runtimeActive": bool((data or {}).get("runtimeActive")),
         "runtimeBackend": (data or {}).get("runtimeBackend"),
         "runtimeFallbackReason": (data or {}).get("runtimeFallbackReason"),
+        "activeOperation": (data or {}).get("activeOperation"),
     }
 
 
@@ -410,11 +690,23 @@ def _spawn() -> subprocess.Popen[Any] | None:
 
 def ensure_broker() -> dict[str, Any]:
     state = _load_state()
-    if state and _alive(state):
-        return state
     if state:
-        with contextlib.suppress(FileNotFoundError):
-            BROKER_STATE_PATH.unlink()
+        ping = _ping_response(state)
+        if _compatible_ping(ping):
+            return state
+        if ping is not None:
+            _request(state, "__stop__", {}, timeout=2)
+            deadline = time.monotonic() + 2
+            while time.monotonic() < deadline:
+                if _ping_response(state, timeout=0.2) is None:
+                    break
+                time.sleep(0.05)
+            else:
+                raise RuntimeError(
+                    "An incompatible nexum-browser broker is still running; "
+                    "refusing to start a second broker"
+                )
+        _clear_state_if_token(str(state.get("token") or ""))
     if os.name == "nt":
         _remove_windows_task()
 
@@ -453,17 +745,16 @@ def stop_broker() -> bool:
         if os.name == "nt":
             _remove_windows_task()
         return False
-    if not _alive(state):
-        with contextlib.suppress(FileNotFoundError):
-            BROKER_STATE_PATH.unlink()
+    if _ping_response(state) is None:
+        _clear_state_if_token(str(state.get("token") or ""))
         if os.name == "nt":
             _remove_windows_task()
         return False
     _request(state, "__stop__", {}, timeout=5)
     deadline = time.monotonic() + 5
     while time.monotonic() < deadline:
-        current = _load_state()
-        if not current or current.get("token") != state.get("token"):
+        if _ping_response(state, timeout=0.2) is None:
+            _clear_state_if_token(str(state.get("token") or ""))
             if os.name == "nt":
                 _remove_windows_task()
             return True
@@ -500,7 +791,10 @@ def daemon_main() -> int:
 
     try:
         while not broker.stop_requested:
-            if time.monotonic() - broker.last_activity > IDLE_SECONDS:
+            if (
+                not broker.has_active_operation()
+                and time.monotonic() - broker.last_activity > IDLE_SECONDS
+            ):
                 break
             try:
                 conn, _ = sock.accept()
