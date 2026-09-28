@@ -13,9 +13,10 @@ remote. A read-only file assessment can still proceed without Git history.
 | --- | --- | --- |
 | README.md | Product introduction, supported status, getting started, document navigation | AI operating policy or the complete design |
 | AGENTS.md | Repository execution rules, source map, commands, boundaries | Product behavior or historical status |
-| docs/design.md | Current product behavior and technical contract | Task progress and retrospective history |
-| docs/development/README.md | Current scope, dependencies, acceptance, status | Redefinition of product behavior |
-| docs/development/phases/ | Phase work, design inputs, acceptance, review and completion evidence | Setup/run instructions or duplicate design |
+| Existing requirements source, when present | Product commitments and acceptance | Technical choices or implementation progress |
+| docs/design.md | Technical structure and behavior contract | Replacing product commitments, task progress or history |
+| docs/development/README.md | Overview of independent plans when needed | Redefinition of product behavior or duplicated task lists |
+| docs/development/phases/ | Implementation plans, including roadmap Phases; work and completion evidence | One file per internal step, setup guides or duplicate design |
 | docs/guides/ | Developer or user setup, run and troubleshooting instructions | Phase completion and task progress |
 | docs/research/ | External evidence with source/version and limits | Unapproved product decisions |
 | docs/vlog/ | Dated decisions, changes, verification, blockers | The current design contract |

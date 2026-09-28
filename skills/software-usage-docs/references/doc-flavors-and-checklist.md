@@ -14,15 +14,11 @@ governing source 为准。
 | 查询接口、命令、字段、输出或错误 | reference | 返回可定位的事实，不承担教学叙事。 |
 | 理解影响产品使用的概念或行为 | explanation | 解释使用层面的 why，不进入系统内部设计。 |
 
-面向普通用户的 troubleshooting 按恢复目标写成 how-to；面向管理员或运维的
-troubleshooting 按 operator guide 处理。FAQ 只是组织形式：每个问题按上表判型；
-不同目标默认拆成不同 artifact。用户明确要求单一 artifact 时，可以按类型和读者目标清楚
-分区，但每个分区仍遵守自己的结果边界，并说明组合带来的导航限制。
-
-如果一份现有文档混合多个目标，review 应指出边界；create 或 revise 只在用户授权
-范围内拆分，明确要求保留单文件时改为建立上述分区。一个请求明确要求同一产品 surface 的多个 usage/reference artifacts 时，
-分别选择类型、生成结果和验证；一个 artifact 失败不得抹去其他独立结果。由同一产品
-变更驱动的跨 requirements、design、usage 等类别同步不属于本 reference。
+面向普通用户的故障恢复通常用 how-to，运维权限与环境判断主导的恢复用 operator guide。
+FAQ 是组织形式，先识别每个问题服务的读者结果。同一任务需要的概念、步骤和参数可以
+在一个文档内协调；类型不同本身不要求拆文件。独立结果需要不同导航或维护时才考虑
+拆分，保留单文件要求与已有有效结构。评审指出实际误用或导航问题，不自动整理文件。
+同一产品可交付多个使用文档，分别验证并保留独立结果。跨文档同步由宿主协调。
 
 ## 共用检查
 
@@ -65,8 +61,8 @@ troubleshooting 按 operator guide 处理。FAQ 只是组织形式：每个问�
 
 ## CLI/API Reference 字段合同
 
-以下字段对 reference artifact 必需；当目标 surface 没有某项时，明确写“不适用”，
-当证据不足时写明 gap，不编造值：
+CLI/API reference 必须能恢复以下适用信息；可通过公共说明或引用共享，不要求每个条目
+重复字段。概念词汇表不强套 endpoint 合同。不适用项只有省略会误导时才说明，缺证据标明缺口：
 
 1. canonical identifier 与用途。
 2. 适用 baseline、版本或 availability。
@@ -84,6 +80,5 @@ troubleshooting 按 operator guide 处理。FAQ 只是组织形式：每个问�
 - 能由证据支持且可消除用法歧义的示例。
 - 已知 limits、compatibility、deprecation 和相关任务入口。
 
-全文 review 时逐项报告缺失、不适用、证据不足或与 governing source 冲突；用户明确限定
-范围时，只检查指定字段和判断它所需的依赖，把其他字段列为 out-of-scope。不要用字段数量
-代替内容正确性判断。
+全文 review 检查全部适用信息，报告会影响使用的缺失、歧义或来源冲突；限定评审只检查
+指定内容和必要依赖，并简述覆盖范围，不输出无关字段的逐项“不适用”清单。

@@ -98,5 +98,25 @@ class CollectionTests(unittest.TestCase):
                 CHECKS.local_targets(document, target)
 
 
+    def test_implementation_template_works_without_roadmap(self):
+        # This validates the asset, not a model's choice of plan cardinality.
+        fixture = json.loads((REPO / "tests/development-plan-values.json").read_text())
+        spec = fixture["phase-plan-template.md.tmpl"]
+        template = (REPO / "skills/software-development-plan/assets/phase-plan-template.md.tmpl").read_text()
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            design = target / "docs/design.md"
+            design.parent.mkdir(parents=True)
+            design.write_text("# Design\n\nConfirmed implementation input.\n")
+            output = target / spec["output"]
+            output.parent.mkdir(parents=True)
+            rendered = CHECKS.render_template(template, spec["values"])
+            output.write_text(rendered)
+            self.assertEqual(output.read_text(), rendered)
+            self.assertEqual(CHECKS.local_targets(output, target), {design.resolve()})
+            self.assertEqual(set((target / "docs/development").rglob("*.md")), {output})
+            self.assertFalse((target / "docs/development/README.md").exists())
+
+
 if __name__ == "__main__":
     unittest.main()

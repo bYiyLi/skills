@@ -23,5 +23,6 @@
   "CHANGED_AREAS": "Generated project instructions, AGENTS, and a daily journal entry in the temporary fixture.",
   "VERIFIED_STATE": "Synthetic template fixture, not a real repository revision.",
   "VERIFICATION_RESULTS": "Substitution and UTF-8 round-trip only; no product tests or UI settings claimed.",
-  "FINDINGS_BLOCKERS_AND_NEXT_ACTION": "No product-readiness conclusion can be drawn from this fixture."
+  "FINDINGS_BLOCKERS_AND_NEXT_ACTION": "No product-readiness conclusion can be drawn from this fixture.",
+  "REQUIREMENTS_SOURCE": "docs/requirements.md (synthetic product-commitment source)"
 }

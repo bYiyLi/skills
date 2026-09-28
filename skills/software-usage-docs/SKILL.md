@@ -1,10 +1,6 @@
 ---
 name: software-usage-docs
-description: >
-  创建、修订或只读审校软件产品、CLI 或 API 的 tutorial、how-to、operator guide、
-  使用概念说明与 reference。覆盖安装、启动、调试、操作和接口查询；Phase 工作安排、
-  验收和进度属于 software-development-plan，内部技术合同属于 software-design-spec。
-  同一变更的跨文档同步由 sync-software-docs 协调，并在使用正文上共用本 Skill。
+description: 创建、修订或审校软件、CLI/API 的教程、操作指南、参考和使用概念说明。用于使用者任务，不承担内部设计或实施计划。
 ---
 
 # Software Usage Docs

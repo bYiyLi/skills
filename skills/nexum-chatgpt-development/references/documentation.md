@@ -6,17 +6,20 @@ the source paths declared by the repository; `docs/design.md`,
 
 ## Change the correct source
 
-Write current behavior and technical decisions into the design authority. Put
+Keep product commitments in their established requirements source when one
+exists; write technical behavior and decisions into the design authority. Put
 scope, dependencies, acceptance evidence, and progress into development docs.
-Use phases only when dependencies or independently verifiable milestones justify
-them. Link each acceptance criterion to a test, inspection, or runtime result;
-an unchecked promise is not evidence.
+Determine independent plan units before internal stages or paths. Local tests,
+ordered steps, and independently verifiable milestones do not by themselves
+justify separate Phase Plans. Preserve an explicit single-plan scope. Link each
+acceptance criterion to observed evidence; an unchecked promise is not evidence.
 
 When planning a phase, record its goal/scope, design inputs, prerequisites,
 work items and deliverables, acceptance criteria, review/fix/recheck work, and
 completion conditions. Keep criteria separate from observed results and current
-status. A roadmap owns phase order and status summaries; a phase file owns its
-work and evidence. A setup/run guide or an implementation-notes chapter is not a
+status. A roadmap coordinates independent plans; each plan owns its work and
+evidence. A single plan needs no new roadmap unless repository rules require
+one; preserve existing overview relationships. A setup/run guide or an implementation-notes chapter is not a
 phase plan merely because its filename says development or implementation.
 Use the available `software-development-plan` skill for that artifact when
 applicable; this workflow remains responsible for the complete authorized task.

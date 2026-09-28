@@ -2,19 +2,23 @@
 
 ## Read the owning sources
 
-Design: {{DESIGN_SOURCE}}
+Product commitments: {{REQUIREMENTS_SOURCE}}
+Technical design: {{DESIGN_SOURCE}}
 Development plan and acceptance: {{DEVELOPMENT_SOURCE}}
 ChatGPT Project Instructions source: {{PROJECT_INSTRUCTIONS_SOURCE}}
 Journal: {{JOURNAL_PATH}}; timezone: {{JOURNAL_TIMEZONE}}
 
-These files own different facts. Design defines intended behavior; code and
-runtime establish implementation; the journal records history. Read applicable
-nested instructions before changing a directory. Preserve host/tool authority.
+These sources own different facts: requirements define product commitments,
+design defines the technical contract, code/runtime establish implementation,
+and the journal records history. Read applicable nested instructions before
+changing a directory. Preserve host/tool authority.
 
 ## Inspect before changing
 
-Inspect Git status, staged/unstaged changes, the task's design/acceptance, and
-affected code/tests. Preserve unrelated user work, including pre-staged hunks.
+Inspect the task's design/acceptance and affected code/tests. In Git repositories,
+also inspect status and staged/unstaged changes, preserving unrelated work and
+pre-staged hunks. Without Git, report its absence and continue supported file work;
+initialize it only for authorized setup.
 Discussion/review alone does not authorize file or journal changes. A request
 to review and repair includes in-scope fixes. Within host/tool boundaries,
 explicit user task instructions override workflow defaults. Use existing task
@@ -28,8 +32,10 @@ Project-specific constraints: {{PROJECT_CONSTRAINTS}}
 
 Complete the requested behavior and its required integration, tests, and docs.
 Choose changes for correctness and maintainability under the project contract,
-not for a small patch size. Keep unrelated work outside scope. Document the
-affected design before dependent code. Resolve routine choices from inspected
+not for a small patch size. Keep unrelated work outside scope. Update design
+only when its contract changes or a required behavior is undefined; record the
+resolved contract before code that depends on it. A repair implementing an
+already-defined contract needs no design rewrite. Resolve routine choices from
 evidence; ask only when a material contract decision remains unresolved.
 
 Plan execution units by dependency and continue through the full authorized
@@ -44,7 +50,9 @@ pause, cite its exact source and wording, separately from your interpretation.
 {{VERIFICATION_COMMANDS}}
 
 For each command above, retain its working directory, prerequisites, and scope.
-Use check mode for review. Run targeted checks after a coherent change, broaden
+For review, inspect command side effects and use check mode or an authorized
+isolated workspace. If no check can respect read-only scope, leave it unrun and
+report it unverified. Run targeted checks after a coherent change, broaden
 to affected interfaces and required gates, review findings, repair within scope,
 and rerun invalidated checks. Classify failures rather than weakening tests.
 

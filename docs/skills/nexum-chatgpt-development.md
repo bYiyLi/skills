@@ -13,7 +13,7 @@
 | 资源 | 解决的问题 |
 | --- | --- |
 | references/project-setup.md | ChatGPT Project 隔离、指令来源、UI 配置与 Skill 发现的证据 |
-| references/repository-contract.md | README、AGENTS、设计/计划/历史的职责，真实质量命令 |
+| references/repository-contract.md | README、AGENTS、需求/设计/计划/历史的职责，真实质量命令 |
 | references/documentation.md | 设计变更、开发状态、按天记录的书面 vlog |
 | references/verification.md | 基线、局部到整体验证、review/fix 循环、验收与停止条件 |
 | references/git-delivery.md | 保护用户修改，独立处理 commit/push/CI/release/deploy |
@@ -22,7 +22,8 @@
 
 新项目默认使用 `README.md`、`AGENTS.md`、`docs/design.md`、`docs/development/`、
 `docs/vlog/` 和 `docs/chatgpt-project.md`。已有项目沿用自己的真源和日志路径，
-不为了目录统一迁移文件。设计记录当前合同，vlog 记录历史，不相互替代。
+不为了目录统一迁移文件。沿用已有需求来源中的产品承诺，设计记录技术合同，vlog
+记录历史；不为填模板新增无需求的文档，也不让技术设计替代产品承诺。
 
 ## 完整目标与连续执行
 
@@ -110,4 +111,5 @@ Nexum 操作根据本次实际读取的工具 schema，以及后续调用时的�
 
 本 Skill 的职责类型为 workflow：拥有当前请求的项目开发结果，不是只分发任务的 router。
 名称沿用已确认的产品/场景词，避免新增一个含义重叠的通用开发 Skill。
-评审与修订记录见 [每日日志](../vlog/2026-09-10.md)。
+初版评审见 [2026-09-10 日志](../vlog/2026-09-10.md)，最新全仓指令审核和
+生成资产验证见 [2026-09-28 日志](../vlog/2026-09-28.md)。

@@ -1,0 +1,820 @@
+{
+  "date_utc": "2026-09-28T10:04:30.021113+00:00",
+  "baseline_head": "05a70c0a43ddc68d0a1a9b71441b37fa9d969d8e",
+  "scope": "11 repository Skills; instruction quality, contract boundaries, conditional resources, generated templates and validation assets",
+  "environment": {
+    "host": "Codex CLI 0.157.1 on macOS; isolated fixture directories",
+    "model": "gpt-6-sol",
+    "review_reasoning_effort": "high",
+    "scenario_reasoning_effort": "medium",
+    "controls": [
+      "--ephemeral",
+      "--ignore-user-config",
+      "stdin=DEVNULL",
+      "read-only review/probes; workspace-write only isolated generation/repair fixtures"
+    ]
+  },
+  "sources": [
+    {
+      "url": "https://developers.openai.com/api/docs/guides/latest-model",
+      "access_date": "2026-09-28"
+    },
+    {
+      "url": "https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra",
+      "access_date": "2026-09-28"
+    }
+  ],
+  "metrics": {
+    "unit": "Unicode characters including frontmatter, not tokens",
+    "entrypoints": [
+      {
+        "skill": "nexum-browser",
+        "before_chars": 9729,
+        "after_chars": 5473,
+        "before_lines": 243,
+        "after_lines": 116
+      },
+      {
+        "skill": "nexum-chatgpt-development",
+        "before_chars": 7498,
+        "after_chars": 5756,
+        "before_lines": 117,
+        "after_lines": 94
+      },
+      {
+        "skill": "nexum-operations",
+        "before_chars": 24774,
+        "after_chars": 4576,
+        "before_lines": 251,
+        "after_lines": 80
+      },
+      {
+        "skill": "prompt-authoring-spec",
+        "before_chars": 6070,
+        "after_chars": 4432,
+        "before_lines": 112,
+        "after_lines": 70
+      },
+      {
+        "skill": "skill-authoring-spec",
+        "before_chars": 8156,
+        "after_chars": 5058,
+        "before_lines": 174,
+        "after_lines": 89
+      },
+      {
+        "skill": "software-design-spec",
+        "before_chars": 2419,
+        "after_chars": 2254,
+        "before_lines": 84,
+        "after_lines": 80
+      },
+      {
+        "skill": "software-development-plan",
+        "before_chars": 2492,
+        "after_chars": 2182,
+        "before_lines": 84,
+        "after_lines": 70
+      },
+      {
+        "skill": "software-doc-writing-standards",
+        "before_chars": 2470,
+        "after_chars": 1163,
+        "before_lines": 92,
+        "after_lines": 41
+      },
+      {
+        "skill": "software-requirements-spec",
+        "before_chars": 2261,
+        "after_chars": 2131,
+        "before_lines": 79,
+        "after_lines": 75
+      },
+      {
+        "skill": "software-usage-docs",
+        "before_chars": 2462,
+        "after_chars": 2287,
+        "before_lines": 86,
+        "after_lines": 82
+      },
+      {
+        "skill": "sync-software-docs",
+        "before_chars": 5420,
+        "after_chars": 1882,
+        "before_lines": 160,
+        "after_lines": 70
+      }
+    ],
+    "entrypoint_before": 73751,
+    "entrypoint_after": 37194,
+    "all_model_visible_before": 196098,
+    "all_model_visible_after": 178870
+  },
+  "final_instruction_manifest": {
+    "skills/nexum-browser/SKILL.md": "35c7d825fead5e12d7e86ad6f7f56116c2e0bebc5904c735393b4691102008c3",
+    "skills/nexum-browser/references/runtime-diagnostics.md": "caae23128dcaefaa3d1883530d086d4175b85cdecd19dd3088d48bab04a32a02",
+    "skills/nexum-chatgpt-development/SKILL.md": "93f8bc0caf3b6d5dc449fb40d025297e51265477b1d060ca0f2cfaf795d7146f",
+    "skills/nexum-chatgpt-development/assets/AGENTS.md.tmpl": "1a0ee6477d97bcf2100481677e9971e019304999022704825e6bc9614a81de0b",
+    "skills/nexum-chatgpt-development/assets/daily-log.md": "09e3398f58b5039b4f180571132b5936c02562b13b549735ecad9a66d3641703",
+    "skills/nexum-chatgpt-development/assets/project-instructions.md": "4eab679f7b6f08d645143e91664faaaa7261e6903ed21e3479e0f4984f033782",
+    "skills/nexum-chatgpt-development/references/documentation.md": "5460adb442543ac7585b4cc17d70e96f6cc55f6bf350372354f0a638d04fb0fc",
+    "skills/nexum-chatgpt-development/references/git-delivery.md": "1b9e99b84df6ba294a0166862bbd0dbf62b2670923623fdd3aa79ba2dbdd696c",
+    "skills/nexum-chatgpt-development/references/project-setup.md": "29d7e3fd56dcf43d1b18217f47eec157cab06a5bd6d2bd4aa03fade9fde950d7",
+    "skills/nexum-chatgpt-development/references/prompt-writing.md": "14350c5146f50408789afae7638dfbe52fdac87ec7ddf2ce951cef71f5966388",
+    "skills/nexum-chatgpt-development/references/repository-contract.md": "5238937c07fcd0e7b2c9af3800bb894389ea6476a7ff47b6576585e59d2dfbf2",
+    "skills/nexum-chatgpt-development/references/verification.md": "dda162cfb4d0a5b54814ac3bbf4a90545d94bbee2ccc51b26144fe9f343582ac",
+    "skills/nexum-operations/SKILL.md": "3059d887f260cfd4c6c1050a0df0e0314604bd987d6732a30e42b4c137691dc0",
+    "skills/nexum-operations/references/channel-work.md": "1e6dfc252722c11d16167abae325f16261f876d4d44942bd494fa823d6caeafc",
+    "skills/nexum-operations/references/logging.md": "b42a15a9d1ea1b690605befacabd545dd4cdbd129c5292536e0a8db80cc8af74",
+    "skills/nexum-operations/references/scheduled-tasks.md": "67efbd8a9fd56c018f9e81040aa4804dc5c6d61eb9bf6f3d6ee349dd80cc000b",
+    "skills/prompt-authoring-spec/SKILL.md": "ffd182598d45168357dbc13a9d9b84c6f615e29e8758d3a1e7aa9fe9c2b15e99",
+    "skills/prompt-authoring-spec/agents/openai.yaml": "f5b3f70c844b3b301a6d0fc46049d45f97bd97cbae9af565e9c6108f8313eb34",
+    "skills/prompt-authoring-spec/references/context-and-examples.md": "080e37cdbfdb15c96d3429f178fd22fe4c0e6768a9dd06e269e06df89dede4e5",
+    "skills/prompt-authoring-spec/references/evidence-and-enforcement.md": "a92c6ea19c2fb1e64ae7890ef9e587d0d09acab67b00931df69a462a3d02839d",
+    "skills/prompt-authoring-spec/references/executable-language.md": "e8d610a32de33ac41938f604e252cb546fcda154c52cc724463fc1fefcf9e798",
+    "skills/prompt-authoring-spec/references/instruction-authority.md": "45df3106f464269afbfeff6350320d53b77f4b0f21bd3462b7fe1f2295f00ece",
+    "skills/prompt-authoring-spec/references/prompt-contract-validation.md": "f4e6de4c44e2f9a90b41190563e24c9e07062e8dd868f582773a1c91c9fb2891",
+    "skills/skill-authoring-spec/SKILL.md": "c66f7b620bd5ec95bfdd028d4fb8877f9523d3affa81adf32197e76a2763362c",
+    "skills/skill-authoring-spec/agents/openai.yaml": "4d94b2a65e4815a62e1709e2c804499cfe68cdc4579165dc9425f86919e16065",
+    "skills/skill-authoring-spec/references/naming-and-selection.md": "8d2643d7c5fe181f5c8fc1d63b9da666a2265f550942b7f1d1226f61fbc810fa",
+    "skills/skill-authoring-spec/references/resource-layering.md": "20f77e974829161d6e717e5f0973bb158514066914e73e8ae580b1df719a9c60",
+    "skills/skill-authoring-spec/references/skill-contract-validation.md": "ff1996144c1e5270510f1e59e7d4df8cf5b90527d522c27881629a2477fd2417",
+    "skills/skill-authoring-spec/references/type-contracts.md": "ed745fbf683743f65dad3e5b7b8b6d35c587d38518051b93e70cec969a365c61",
+    "skills/software-design-spec/SKILL.md": "03ad5260254f3979d2b60a0422aa1d4ece8ce5faf3b2640a0a069d18abb4f329",
+    "skills/software-design-spec/assets/design-spec-template.md.tmpl": "b661b29f2ede643407e12d6ade1462d0d2c3540aeab12c6aa7cf1a4de2cfe3a7",
+    "skills/software-design-spec/references/design-view-set.md": "01d75ca80c0c13bfd78e4d61b6784d914f70f7dec81a802d0bafe77a95a31fe8",
+    "skills/software-design-spec/references/doc-management-contract.md": "ebd8dc4c685f18ba656ae7892175a50cb64f6a00037649b2bf394b72e431cf6a",
+    "skills/software-development-plan/SKILL.md": "40001973d269f8ddedfb4f4a53dd174ee7c9a754d7e804527b13674ef3843ec5",
+    "skills/software-development-plan/assets/phase-plan-template.md.tmpl": "4787a2b1df2f1572bda8b9eae9a23da9e62ba30337850be316030693d6883208",
+    "skills/software-development-plan/assets/roadmap-template.md.tmpl": "9a73c30a8257831cb6897409a308f771fe1db73789cfbadb024be2aca435eb31",
+    "skills/software-development-plan/references/doc-management-contract.md": "ebd8dc4c685f18ba656ae7892175a50cb64f6a00037649b2bf394b72e431cf6a",
+    "skills/software-development-plan/references/plan-contract.md": "c5d418af939f613cb4557745bf8607cd2850abe85feff8d559cc966b84ecf7e0",
+    "skills/software-doc-writing-standards/SKILL.md": "318948fb1c94f3365a08bcd5efd2bf56cf2cc26c089d591f239f76314ade9a8e",
+    "skills/software-doc-writing-standards/references/doc-management-contract.md": "ebd8dc4c685f18ba656ae7892175a50cb64f6a00037649b2bf394b72e431cf6a",
+    "skills/software-doc-writing-standards/references/doc-taxonomy.md": "93c64de8e6980a613f0f391b3cff78dbf77b5be066a1358436aa94e615e1f5c4",
+    "skills/software-doc-writing-standards/references/quality-rules.md": "0e2ed5c7b41fe5c3fde943ed891734a5071d18bbccb7e8e6658ea4036cd34d9f",
+    "skills/software-requirements-spec/SKILL.md": "75919f26ef38ab5a87b4a72b9d3b3351b27f4f146fada88066eff86822598016",
+    "skills/software-requirements-spec/assets/feature-spec-template.md.tmpl": "42f3d8f140193bae2bef0d10d633ef54139056f126116e7d831bd78d1f4fab81",
+    "skills/software-requirements-spec/assets/srs-template.md.tmpl": "52595870596f32e510a063b2a2324f51e8ac0bd53ebba43632150858d010698c",
+    "skills/software-requirements-spec/references/doc-management-contract.md": "ebd8dc4c685f18ba656ae7892175a50cb64f6a00037649b2bf394b72e431cf6a",
+    "skills/software-requirements-spec/references/requirements-outline.md": "178d64245d9ff343bbb04752e3cafd6024984cfeb25884bf5c8e83533c11ec31",
+    "skills/software-usage-docs/SKILL.md": "60d7e4a6911170c9a015c6177b5a80a17cfd8574bbe4a5a26bdb80a96518276b",
+    "skills/software-usage-docs/assets/how-to-template.md.tmpl": "e6034a5e7806c922cc294c36bd12d87c6449257865c4cf855e4511a2b6a5086b",
+    "skills/software-usage-docs/assets/reference-template.md.tmpl": "84b4d7521daa3a23ea694cc1b5d5eaf8b17fcbc5a5a89c77d5387b52d9d0e5fc",
+    "skills/software-usage-docs/assets/tutorial-template.md.tmpl": "13a207ab6683b332fcc91e7292a23ee1e5fe50611a6af34b2dc5bf706d104358",
+    "skills/software-usage-docs/references/doc-flavors-and-checklist.md": "a4450aa6cc5d833c7c34cfaae3c5b9a17aa0b8ec6247913b9f447154f62ba3e8",
+    "skills/software-usage-docs/references/doc-management-contract.md": "ebd8dc4c685f18ba656ae7892175a50cb64f6a00037649b2bf394b72e431cf6a",
+    "skills/sync-software-docs/SKILL.md": "92e6e904f5d2af7ef2de847f9d9848b51f5f043d18684796f704de21dd4898b0",
+    "skills/sync-software-docs/assets/doc-sync-plan-template.md.tmpl": "6ab902d262833b0b4c26b2e5610ffbf3d8e2d996645909515b8c3981084452a7",
+    "skills/sync-software-docs/references/change-impact-matrix.md": "1395d66dc96f9052fde6c0b008112cc4a0384c62bf9dd97d0a4debaca11d900c"
+  },
+  "independent_reviews": [
+    {
+      "run": "documents-review-r1.md",
+      "result": "**Read-only review complete.** I found one omission in a selected package and two contradictions in the related Nexum generated instruction assets. I found no actionable issue in the other five selected packages.\n\n### Behavioral findings\n\n1. **Saved sync plans can omit a blocker for a specific action.** The [sync plan template](<evaluation-root>/round1-snapshot/skills/sync-software-docs/assets/doc-sync-plan-template.md.tmpl:18) has no per-row blocker or unverified field, although the [impact matrix contract](<evaluation-root>/round1-snapshot/skills/sync-software-docs/references/change-impact-matrix.md:49) requires one. If a saved plan has an executable action beside an action awaiting evidence, the template permits the latter’s missing condition to appear only in a global summary or disappear. Add a `Blocker / unverified` column to each action row. **Evidence limit:** this is a static contract and template comparison; no generated plan was tested.\n\n2. **Generated AGENTS instructions require design work for a change that may not affect design.** The [AGENTS template](<evaluation-root>/round1-snapshot/skills/nexum-chatgpt-development/assets/AGENTS.md.tmpl:32) says to document affected design before dependent code. The package’s [repository contract](<evaluation-root>/round1-snapshot/skills/nexum-chatgpt-development/references/repository-contract.md:27) says a small fix needs an affected contract documented only *when needed*. For a code fix that changes no design contract, the generated instruction permits an unnecessary document edit or a pause before the fix. Condition the design update on an actual contract change, and require its ordering only when code depends on that decision. **Evidence limit:** the packaged template was reviewed; no generated repository AGENTS file or model run was observed.\n\n3. **Generated source maps can misassign product commitments to design.** The [AGENTS template](<evaluation-root>/round1-snapshot/skills/nexum-chatgpt-development/assets/AGENTS.md.tmpl:5) maps design and plan but no requirements source, then says design defines intended behavior at line 10. The [Project Instructions asset](<evaluation-root>/round1-snapshot/skills/nexum-chatgpt-development/assets/project-instructions.md:24) also omits requirements. In an existing repository with an authoritative PRD or SRS, an executor could take a technical design as the source of product commitments. Allow the inspected source map to name requirements when present, and distinguish their product commitments from design’s technical contract. **Evidence limit:** this is a reachable existing-repository case; no generated instance was available.\n\n### Coverage and limits\n\nI read all six selected `SKILL.md` files, their 12 reachable references and 9 assets; both applicable authoring specs and their required references; and the relevant Nexum generated assets and routing rules. The six selected packages contain no `agents/openai.yaml`; I inspected the two authoring specs’ invocation metadata. A static check found no missing local Markdown links.\n\nThe findings above are contradictions or omissions, **not optional style suggestions**. I identified no separate information-density change supported by a concrete failure. This was source review and scenario walkthrough only: no files were edited, no live services were accessed, and model selection, generated output, and runtime behavior remain unverified.",
+      "sha256": "8c364fa8a99c7f2d257dd7e6bc12ab60fba8389d8460f2d90481b49d95b940bf"
+    },
+    {
+      "run": "nexum-review-r1.md",
+      "result": "**Read-only review complete.** I found two actionable instruction-contract issues. I found no actionable issue in `nexum-browser` within the reviewed text and interface.\n\n### Findings\n\n1. **Generated AGENTS instructions require an unnecessary design edit.** [AGENTS.md.tmpl:29](<<evaluation-root>/round1-snapshot/skills/nexum-chatgpt-development/assets/AGENTS.md.tmpl:29>) tells the executor to document the affected design before dependent code. For a repair where the existing design already specifies the intended behavior, this permits delaying the fix or changing a design document that needs no change. The package’s [repository contract:27](<<evaluation-root>/round1-snapshot/skills/nexum-chatgpt-development/references/repository-contract.md:27>) limits documentation to the affected contract *when needed*. Carry that condition into the generated AGENTS instruction. **Evidence limit:** this is a conflict in independently delivered text and a scenario walkthrough; no generated project or model execution was tested.\n\n2. **Guardian patrol has no bounded slot-discovery rule.** [scheduled-tasks.md:54](<<evaluation-root>/round1-snapshot/skills/nexum-operations/references/scheduled-tasks.md:54>) says to inspect *each* expected slot past its grace period. For a long-running hourly task, a patrol could be directed to re-inspect its entire history, with no stated checkpoint, lookback boundary, or rule for unavailable older evidence. That leaves completion of the patrol indeterminate. Specify how the live task contract bounds candidate slots, and require an explicit coverage gap when that boundary cannot be established. **Evidence limit:** this is an omission in the portable text; a live operating contract might supply the missing bound, but live services were outside this review.\n\n### Coverage and limits\n\nI read all three `SKILL.md` files, their reachable references, the three `nexum-chatgpt-development` assets—including the generated Project Instructions and AGENTS template—and the repository selection guidance. The selected packages contain no separate `agents/openai.yaml` invocation file. I applied `skill-authoring-spec` and `prompt-authoring-spec` with their applicable references.\n\nFor `nexum-browser`, I inspected the CLI solely to check its documented continuation interface. Its documented `--content` spelling is accepted by the current argument parser as an abbreviation of `--content-json`, so I did **not** count that difference as a defect. No files were edited and no live service, independent model trial, or runtime browser operation was used. Other wording preferences are not presented as findings.",
+      "sha256": "b04a2250c86cdbf6499e43630ec3aadbc934c99586e3d1b62bd360167f0f4eee"
+    },
+    {
+      "run": "authoring-review-r1.md",
+      "result": "## Finding\n\n**Selection ambiguity — [prompt-authoring-spec/SKILL.md:3](<evaluation-root>/round1-snapshot/skills/prompt-authoring-spec/SKILL.md:3).** The description says to use the Skill when reviewing “model-visible text,” while the body limits its scope to text intended to instruct a model. A request to review an ordinary document supplied as model context could therefore select this Skill and apply instruction-writing checks to content that is only data. Change the description to say “text intended to instruct a model.” This is a **textual selection ambiguity**, established by a scenario walkthrough; I did not observe an actual model selection.\n\nI found no actionable contradiction or omission in `skill-authoring-spec`, and no separate optional style change to recommend.\n\n## Reviewed coverage\n\nI read both SKILL.md files, all nine routed references, both `agents/openai.yaml` invocation prompts, and the collection descriptions. I also inspected Nexum’s generated AGENTS and Project Instructions assets and their routing and filling rules. The referenced package files were present at the stated paths.\n\nThis was a read-only text and scenario review. I made no edits and accessed no live services. The snapshot has no `tests/` directory, so I did not run the README’s maintenance tests; model selection and runtime behavior remain unverified.",
+      "sha256": "a37ce0d5352cfc1f3886c51c87fdafc2a823fec4c2c2c5f30db92b66bdba4fe7"
+    },
+    {
+      "run": "instructions-review-r2.md",
+      "result": "**Read-only review complete.** I found five actionable contract defects and one low-impact deletion. These are findings about the written instructions, not evidence of how a model or Runtime behaves.\n\n### Demonstrated contract defects\n\n1. **Browser selection excludes a request the Skill otherwise owns.** [nexum-browser/SKILL.md:3](<evaluation-root>/round2-snapshot/skills/nexum-browser/SKILL.md:3) excludes “ChatGPT Web use alone.” A request to use Nexum to capture the user’s live ChatGPT tab is a direct browser operation, yet fits that exclusion; the development Skill does not own a one-off screenshot. Narrow the exclusion to ChatGPT project-development work that does not request live browser control. **Evidence:** selection-contract walkthrough.\n\n2. **The no-connector setup path is unreachable from the main entry instructions.** [nexum-chatgpt-development/SKILL.md:20](<evaluation-root>/round2-snapshot/skills/nexum-chatgpt-development/SKILL.md:20) requires `project.list` and `project.open`, while [lines 36–38](<evaluation-root>/round2-snapshot/skills/nexum-chatgpt-development/SKILL.md:36) require Nexum Files to read the reference containing the no-interface fallback at [project-setup.md:14–18](<evaluation-root>/round2-snapshot/skills/nexum-chatgpt-development/references/project-setup.md:14). For a setup request with no Nexum connector, the executor cannot reach that fallback as written. Permit an authorized host file interface to read packaged references when Nexum is unavailable, then apply the stated setup fallback. **Evidence:** conflicting text paths.\n\n3. **A non-Git project has no consistent continuation.** The main workflow unconditionally says to inspect Git status at [SKILL.md:23–25](<evaluation-root>/round2-snapshot/skills/nexum-chatgpt-development/SKILL.md:23), and the standalone [AGENTS template:18–19](<evaluation-root>/round2-snapshot/skills/nexum-chatgpt-development/assets/AGENTS.md.tmpl:18) repeats it. [repository-contract.md:8–10](<evaluation-root>/round2-snapshot/skills/nexum-chatgpt-development/references/repository-contract.md:8) explicitly permits read-only assessment without Git. For that request, the main instruction and generated AGENTS can turn an absent repository into a stop. State in both independent instruction units: report the absence, continue supported inspection, and initialize Git only when authorized setup calls for it. **Evidence:** textual conflict and reachable state.\n\n4. **The standalone AGENTS template lacks the unsafe-check branch.** [AGENTS.md.tmpl:46–53](<evaluation-root>/round2-snapshot/skills/nexum-chatgpt-development/assets/AGENTS.md.tmpl:46) directs a reviewer to use check mode but gives no outcome when the listed command still writes fixtures or has no safe mode. The workflow reference supplies that branch at [verification.md:17–20](<evaluation-root>/round2-snapshot/skills/nexum-chatgpt-development/references/verification.md:17), but a generated AGENTS is used independently. Add: if a check cannot respect read-only scope, leave it unrun and report it unverified. **Evidence:** standalone-template walkthrough.\n\n5. **Doctor’s tab side effect is absent from its decision instructions.** The Skill offers `browser doctor` for diagnosis at [nexum-browser/SKILL.md:95–101](<evaluation-root>/round2-snapshot/skills/nexum-browser/SKILL.md:95). Its implementation [creates and closes a temporary Chrome tab during a probe](<evaluation-root>/round2-snapshot/skills/nexum-browser/scripts/nexum_browser/doctor.py:541). For “diagnose without changing tabs,” the executor lacks the fact needed to avoid that command. State the temporary-tab behavior beside the doctor route and direct no-tab-change requests to inspection that respects the limit, with connectivity left unverified if necessary. **Evidence:** instruction text plus read-only script inspection; no Runtime execution.\n\n### Decision-free text\n\n[project-setup.md:43](<evaluation-root>/round2-snapshot/skills/nexum-chatgpt-development/references/project-setup.md:43) says template fields are text “unless specified otherwise,” but specifies no other field type. The assets are Markdown, and the following table supplies value sources. Deleting that sentence changes no identified fill decision. This is **low-impact cleanup**, not a demonstrated execution failure.\n\n### Coverage and limits\n\nI reviewed the actual root `AGENTS.md` and referenced RTK instructions; both applicable authoring specifications and their routed references; all eight requested instruction surfaces; the development Skill’s other reachable references and daily-log asset; the browser diagnostic reference and relevant doctor source; and the prompt Skill’s invocation prompt. No finding is assigned to a file merely because it was in scope.\n\nNo files were changed, product commands or live services were invoked, or tests or independent model trials were run. Current external documentation, Skill selection in a named host, generated-template use, and Browser Runtime behavior remain unverified.",
+      "sha256": "6091de061fa1ecaa6dec74bb386bf98a1ff4a6a14bfe233b4708adcbe28c991f"
+    },
+    {
+      "run": "stateful-work-review-r2.md",
+      "result": "**Read-only review found two actionable instruction defects, both in the scheduled operations path.** I found no demonstrated defect in the three `sync-software-docs` files. No files were changed.\n\n1. **An ordinary scheduled business run has no explicit route to its run-key rules.** [nexum-operations/SKILL.md](<evaluation-root>/round2-snapshot/skills/nexum-operations/SKILL.md:54) routes scheduled-task maintenance and recovery to `scheduled-tasks.md`, but does not name an on-time scheduled run. Its next sentence names only the business and logging references. Yet [logging.md](<evaluation-root>/round2-snapshot/skills/nexum-operations/references/logging.md:41) expects a planned run key from the scheduled-task contract. For an authorized daily Vlog run, an executor following the root route could omit that contract and record the wrong key or no key, weakening later recovery. **Minimal correction:** explicitly route every scheduled business run through `scheduled-tasks.md` before deriving its slot and key. This is a demonstrated routing gap in the text, not an observed runtime failure.\n\n2. **Guardian scope conflicts with the stopped-registry reconciliation rule.** [scheduled-tasks.md](<evaluation-root>/round2-snapshot/skills/nexum-operations/references/scheduled-tasks.md:20) says to guard a task whose intended state is running, while [line 31](<evaluation-root>/round2-snapshot/skills/nexum-operations/references/scheduled-tasks.md:31) requires reconciliation of a stale stopped registry. If the registry says stopped but the real scheduler remains enabled after an explicit stop, the stated guard entry condition can exclude the task, allowing further runs. **Minimal correction:** include scheduler-active tasks with a stopped registry in patrol reconciliation; when the stop is confirmed, disable the scheduler under repair authority, and leave ambiguous intent unresolved. This is a demonstrated branch conflict in the text, not evidence that a live guardian misses it.\n\n**Coverage and limits:** I read all five requested surfaces, repository `AGENTS.md` and `README.md`, the applicable authoring specifications and their routed references, the Nexum channel and logging references, and the document-type Skill contracts needed to assess the sync route. I reviewed the sync plan template as an output artifact. The findings come from closed-contract text and scenario walkthroughs; I did not inspect live Feishu or scheduler state, run product commands, or perform an independent model or runtime evaluation.",
+      "sha256": "4b3dc44be8f75892694fe4ee25ab97f4a33cc8f6f16e5e69abee1a7e1854d2aa"
+    },
+    {
+      "run": "final-probes/review-result.md",
+      "result": "**只读评审未发现可确认的剩余指令合同问题。** 对只读范围、授权执行、资源路由、失败恢复和完成证据做了场景推演；没有把已由根文件或条件引用决定的行为重复报为缺陷。\n\n覆盖了三个 `SKILL.md` 根文件、它们全部被引用的 references，并将 `nexum-chatgpt-development` 的三个生成资产分别作为独立指令单元审阅。还核对了仓库 [AGENTS.md](<evaluation-root>/round3-snapshot/AGENTS.md)、[README.md](<evaluation-root>/round3-snapshot/README.md)及两份 authoring 规范和其必读引用；对浏览器启动脚本与 CLI 接口做了静态交叉核对。\n\n结论限于文本与静态场景推演。按请求未修改文件、调用实时服务、执行产品命令或进行独立模型试跑；因此不声称运行时行为或实际 Skill 选择已验证。",
+      "sha256": "76515da7cc43d7a4c95e0a1ed6fa8ac4e7c013edb8bd11bde3eee3eed7401d12"
+    }
+  ],
+  "forward_scenarios": [
+    {
+      "case": "plan-lifecycle",
+      "run": "forward-r1/F01",
+      "exit_code": 0,
+      "observation": "One standalone implementation plan with four internal stages; no new roadmap or implementation.",
+      "result": "已将**一份开发计划**保存到 [官方脚手架生命周期重构开发计划](<evaluation-root>/forward-r1/F01/docs/development/phases/01-official-scaffold-lifecycle.md)。计划内部按 Template、init、upgrade、release validation 四段安排工作、依赖和验收，并以完整生命周期验证作为最终完成条件。\n\n已复读文件、检查新增文件的 diff，并验证设计链接和文本格式。实施及其验收尚未运行；**未提交、未推送**。",
+      "prompt": "Use the specified Skills at support/skills/software-development-plan/SKILL.md to complete the following request in this isolated workspace. Read relevant bundled resources. Do not edit support/. Do not use network, MCP or external apps, install dependencies or access live production state. Other task input is in the workspace files. Use local tools for this isolated fixture; record actual changes and unverified behavior honestly.\n\nUser request:\n为本次已经确认的官方脚手架生命周期重构编写开发计划并保存到仓库。只有一个开发计划，内部按模板、init、upgrade、release validation 分段实施。只写计划，不实现、不提交、不推送。",
+      "source_file_hashes": {
+        "README.md": "2b806c7edce56a0138f609e12902cd35fc4f184c4f49ca45a1377b1f5c4d09e9",
+        "docs/design.md": "2c6242874d2a141e3487c42cfdeb0e4186dc71f5151476096f6e1b4225920f07"
+      },
+      "selected_instruction_hashes": {
+        "skills/software-development-plan/SKILL.md": "40001973d269f8ddedfb4f4a53dd174ee7c9a754d7e804527b13674ef3843ec5",
+        "skills/software-development-plan/references/doc-management-contract.md": "ebd8dc4c685f18ba656ae7892175a50cb64f6a00037649b2bf394b72e431cf6a",
+        "skills/software-development-plan/references/plan-contract.md": "c5d418af939f613cb4557745bf8607cd2850abe85feff8d559cc966b84ecf7e0",
+        "skills/software-development-plan/assets/phase-plan-template.md.tmpl": "4787a2b1df2f1572bda8b9eae9a23da9e62ba30337850be316030693d6883208",
+        "skills/software-development-plan/assets/roadmap-template.md.tmpl": "9a73c30a8257831cb6897409a308f771fe1db73789cfbadb024be2aca435eb31"
+      },
+      "changed_artifacts": {
+        "docs/development/phases/01-official-scaffold-lifecycle.md": "# 官方脚手架生命周期重构开发计划\n\n## 目标与范围\n\n完成同一次重构中的官方最小工程模板、`init`、`upgrade` 和发布验证。四段是本计划的内部实施顺序，共用一个完成结论；各段局部测试通过后，仍须完成干净目录中的完整生命周期验证。\n\n本计划安排实施和验收，不重新决定实现技术。具体命令、文件清单和测试入口须在实施时依据实际项目确定；当前仓库尚无脚手架实现或可运行的验证命令。\n\n## 设计输入与依赖\n\n- [已确认设计](../../design.md)：Template 提供官方最小工程；`init` 从模板创建项目；`upgrade` 更新受管文件并保留用户内容；release validation 在干净目录验证 `init` 与 `upgrade` 的完整生命周期。\n- Template 的可用产物是 `init` 和 `upgrade` 的共同输入。发布验证依赖前三段完成，并以实际待发布产物为对象。\n\n## 实施与局部验收\n\n### 1. Template\n\n- 工作与交付物：建立官方最小工程模板及其受管文件范围，使后续初始化和升级使用同一模板来源。\n- 局部验收：检查模板包含构成官方最小工程所需的文件；用项目确定的模板检查或构建入口验证模板可用，并核对受管文件范围可供 `upgrade` 使用。具体检查入口在实现时建立和记录。\n\n### 2. init\n\n- 工作与交付物：实现从上述模板创建项目的 `init` 流程及相应测试。\n- 依赖：Template 产物可用。\n- 局部验收：在空目录运行 `init`，核对生成文件来自官方模板，并运行生成项目适用的检查或构建；记录所用命令及结果。\n\n### 3. upgrade\n\n- 工作与交付物：实现基于同一模板更新受管文件的 `upgrade` 流程及相应测试。\n- 依赖：Template 的受管文件范围已确定，且 `init` 能创建供升级验证的项目。\n- 局部验收：对已初始化的项目运行 `upgrade`，核对受管文件得到预期更新，用户内容仍被保留；运行升级后项目适用的检查或构建。测试需覆盖含用户内容的项目，而不只验证空项目。\n\n### 4. release validation\n\n- 工作与交付物：建立发布前的完整生命周期验证入口，并记录待发布产物的验证结果。\n- 依赖：Template、`init`、`upgrade` 的交付物及局部检查均已就绪。\n- 局部及最终验收：在干净目录使用实际待发布产物执行 `init`，加入用户内容后执行 `upgrade`；核对生成、受管文件更新和用户内容保留，并运行升级后项目适用的检查或构建。记录环境、产物版本或工作树状态、命令和结果；局部测试不能替代此项。\n\n## 评审、修复与完成条件\n\n评审四段实现是否共同遵守[已确认设计](../../design.md)：`init` 与 `upgrade` 是否使用官方模板、升级是否保留用户内容、发布验证是否覆盖实际待发布产物的完整流程。发现影响验收的问题后修复，并复验受影响的局部检查及生命周期检查。\n\n只有四段交付物、对应局部验收、完整生命周期验证及影响验收的评审问题全部闭环，才能将本计划标记为完成。记录实际证据，不以计划写成或单段测试通过代替实现完成。\n\n## 当前状态与验证记录\n\n计划已编写，实施未开始。当前仓库只有[设计](../../design.md)及文档入口，未发现脚手架实现、测试入口或发布产物；上述实施验收均未运行，命令和结果待实施时记录。\n"
+      },
+      "deleted_files": [],
+      "command_evidence": []
+    },
+    {
+      "case": "parallel-delivery",
+      "run": "forward-r1/F02",
+      "exit_code": 0,
+      "observation": "Roadmap plus three independently tracked parallel plans; no invented cross-Phase startup dependency.",
+      "result": "已按 [已确认设计](<evaluation-root>/forward-r1/F02/design.md) 保存 [roadmap 总览](<evaluation-root>/forward-r1/F02/roadmap/README.md) 和三个可并行、独立跟踪与验收的 Phase 计划：[API](<evaluation-root>/forward-r1/F02/roadmap/phases/01-api.md)、[管理界面](<evaluation-root>/forward-r1/F02/roadmap/phases/02-admin-ui.md)、[历史数据迁移](<evaluation-root>/forward-r1/F02/roadmap/phases/03-history-migration.md)。\n\n已检查文件、链接和空白字符。设计摘要未给出合同字段、固定数据及迁移样本，计划将其列为实施前需核对的输入。**仅完成计划编写；未实现、未运行实施验收、未提交。**",
+      "prompt": "Use the specified Skills at support/skills/software-development-plan/SKILL.md to complete the following request in this isolated workspace. Read relevant bundled resources. Do not edit support/. Do not use network, MCP or external apps, install dependencies or access live production state. Other task input is in the workspace files. Use local tools for this isolated fixture; record actual changes and unverified behavior honestly.\n\nUser request:\n按设计编写 roadmap 和三个可独立跟踪与验收的 Phase 计划：API、管理界面、历史数据迁移。三组可以并行。保存计划，不实现、不提交。",
+      "source_file_hashes": {
+        "AGENTS.md": "8356da4d7da7a8f85aa04dbd271c158dda8a547849d382e39437aa4f66511d86",
+        "design.md": "d26d4fb9463c2ef4158c7252ca08b01ca2668d5998cbdad413e12beb4e8c2ad3"
+      },
+      "selected_instruction_hashes": {
+        "skills/software-development-plan/SKILL.md": "40001973d269f8ddedfb4f4a53dd174ee7c9a754d7e804527b13674ef3843ec5",
+        "skills/software-development-plan/references/doc-management-contract.md": "ebd8dc4c685f18ba656ae7892175a50cb64f6a00037649b2bf394b72e431cf6a",
+        "skills/software-development-plan/references/plan-contract.md": "c5d418af939f613cb4557745bf8607cd2850abe85feff8d559cc966b84ecf7e0",
+        "skills/software-development-plan/assets/phase-plan-template.md.tmpl": "4787a2b1df2f1572bda8b9eae9a23da9e62ba30337850be316030693d6883208",
+        "skills/software-development-plan/assets/roadmap-template.md.tmpl": "9a73c30a8257831cb6897409a308f771fe1db73789cfbadb024be2aca435eb31"
+      },
+      "changed_artifacts": {
+        "roadmap/README.md": "# 开发计划总览\n\n## 目标与设计输入\n\n按 [已确认设计](../design.md) 分别交付只读查询 API、管理界面和历史数据迁移。三组工作使用当前确定的数据合同，各自跟踪状态与验收结论，可以并行启动，互不以前一组完成为前提。本次仅编写计划，尚未实施或提交。\n\n## Phase 与依赖\n\n| Phase | 交付结果与完成边界 | 跨 Phase 前置依赖 | 当前状态 | 详细计划 |\n| --- | --- | --- | --- | --- |\n| 01 API | 只读查询端点及接口合同测试通过 | 无；使用同一数据合同 | 计划中 | [API](phases/01-api.md) |\n| 02 管理界面 | 使用固定接口数据完成列表和状态展示，并通过界面验收 | 无；不等待 API 实现 | 计划中 | [管理界面](phases/02-admin-ui.md) |\n| 03 历史数据迁移 | 样本旧格式转换为新格式，并完成重复执行验证 | 无；不等待 API 或界面实现 | 计划中 | [历史数据迁移](phases/03-history-migration.md) |\n\n## 整体验收与当前依赖\n\n三个 Phase 分别按各自计划收集交付物、验证和评审证据，分别作完成结论；总览在三组均完成后更新为完成。跨组核对它们使用同一数据合同，若合同调整，同步检查受影响的 Phase 验收。\n\n当前工作区仅有设计摘要，未提供数据合同的具体字段、端点约定、固定接口数据或迁移样本。实施各组相关工作前需取得并核对这些输入；本计划不推定其内容，也不把计划写成实现已完成的证据。\n",
+        "roadmap/phases/02-admin-ui.md": "# Phase 02：管理界面\n\n## 目标与范围\n\n使用固定接口数据完成管理界面的列表和状态展示，以界面验收作为本 Phase 的完成边界。API 实现和历史数据迁移不计入本 Phase。\n\n## 设计输入与前置依赖\n\n[已确认设计](../../design.md)要求固定接口数据、列表和状态展示，明确本组不等待 API 交付。实现前核对当前数据合同及固定接口数据；工作区现有资料未给出数据字段或具体界面样例。\n\n## 工作项与交付物\n\n| 工作项 | 交付物 | 验收入口 |\n| --- | --- | --- |\n| UI-1 准备固定数据 | 与当前合同一致的固定接口数据及使用方式 | UI-A1 |\n| UI-2 实现展示 | 基于固定数据的列表和状态展示 | UI-A1、UI-A2 |\n| UI-3 界面检查与修复 | 界面验收记录、评审发现及复验记录 | UI-A1、UI-A2 |\n\n## 验收标准与验证方法\n\n- **UI-A1**：运行界面并确认列表展示来自固定接口数据，所展示字段与当前合同一致；记录使用的数据和观察结果。\n- **UI-A2**：用固定数据中的状态样例检查状态展示，确认界面结果符合已确认设计；记录界面观察或截图及运行环境。具体运行命令和样例待实现时建立。\n\n## 评审与完成条件\n\n评审核对列表、状态展示与固定数据是否一致，以及是否遗漏设计要求的界面结果。影响验收的发现修复后重新进行相关界面检查。固定数据、界面结果、验收记录和评审问题均闭环后，才能标记本 Phase 完成。\n\n## 当前状态与验证记录\n\n计划中。仅依据设计摘要编写计划；尚无界面实现、运行检查或评审结果。\n",
+        "roadmap/phases/01-api.md": "# Phase 01：只读查询 API\n\n## 目标与范围\n\n交付符合当前数据合同的只读查询端点和接口合同测试。完成边界是端点实现与合同测试经验证；管理界面和迁移不计入本 Phase。\n\n## 设计输入与前置依赖\n\n[已确认设计](../../design.md)确定 API 只读、交付查询端点与接口合同测试，且与其他两组无启动先后关系。实现前核对当前数据合同及查询端点约定；工作区现有资料未列出具体字段、路径或响应约定，不能在计划中替其作决定。\n\n## 工作项与交付物\n\n| 工作项 | 交付物 | 验收入口 |\n| --- | --- | --- |\n| API-1 核对合同并实现查询 | 只读查询端点及其合同映射 | API-A1 |\n| API-2 建立合同检查 | 覆盖交付端点的接口合同测试 | API-A2 |\n| API-3 检查与修复 | 测试记录、评审发现及修复复验记录 | API-A1、API-A2 |\n\n## 验收标准与验证方法\n\n- **API-A1**：对每个交付的查询端点，按确定的合同核对请求、响应及只读行为；通过端点调用或接口测试记录结果。\n- **API-A2**：接口合同测试覆盖交付端点的合同要求，并在当前实现上通过；记录测试命令、环境和结果。具体测试命令待实现时建立。\n\n## 评审与完成条件\n\n评审核对端点范围、只读约束和合同测试覆盖，检查是否与界面及迁移使用的数据合同一致。影响验收的发现修复后，复跑受影响的调用与合同测试。端点、测试、验证记录及评审问题均闭环后，才能标记本 Phase 完成。\n\n## 当前状态与验证记录\n\n计划中。仅依据设计摘要编写计划；尚无实现、测试运行或评审结果。\n",
+        "roadmap/phases/03-history-migration.md": "# Phase 03：历史数据迁移\n\n## 目标与范围\n\n交付将样本旧格式转换为当前新格式的迁移脚本，以样本转换和重复执行验证作为本 Phase 的完成边界。API 与管理界面不计入本 Phase。\n\n## 设计输入与前置依赖\n\n[已确认设计](../../design.md)规定脚本转换样本旧格式、验证重复执行，且本组不等待其他 Phase。实施前核对旧格式样本、当前新格式合同及重复执行的预期结果；工作区现有资料未给出这些具体内容。\n\n## 工作项与交付物\n\n| 工作项 | 交付物 | 验收入口 |\n| --- | --- | --- |\n| MIG-1 核对转换输入 | 旧格式样本、新格式合同及对应关系记录 | MIG-A1 |\n| MIG-2 编写转换脚本 | 将样本旧格式转为新格式的脚本 | MIG-A1 |\n| MIG-3 验证重复执行 | 相同样本的转换与重复执行结果记录、修复复验记录 | MIG-A2 |\n\n## 验收标准与验证方法\n\n- **MIG-A1**：对样本执行脚本，逐项检查转换结果符合当前新格式合同，保留输入、输出和检查结果。\n- **MIG-A2**：在已确认的相同输入与目标状态下重复执行，核对每次结果符合实施前确认的重复执行预期，记录运行方式、环境和结果。具体命令与预期须随样本及合同确定。\n\n## 评审与完成条件\n\n评审核对样本覆盖、转换对应关系和重复执行结果，检查是否与其他 Phase 使用同一数据合同。影响验收的发现修复后，复跑受影响的转换及重复执行验证。脚本、样本验证、重复执行记录及评审问题均闭环后，才能标记本 Phase 完成。\n\n## 当前状态与验证记录\n\n计划中。仅依据设计摘要编写计划；尚无脚本、样本执行或评审结果。\n"
+      },
+      "deleted_files": [],
+      "command_evidence": []
+    },
+    {
+      "case": "existing-roadmap",
+      "run": "forward-r1/F03",
+      "exit_code": 0,
+      "observation": "One Phase 05 added and existing overview updated; Phase 04 evidence bytes retained.",
+      "result": "已编写一个 [Phase 05 实施计划](<evaluation-root>/forward-r1/F03/docs/development/phases/05-workspace-list.md)，按存储 → API → 界面安排工作与验收；已在 [roadmap](<evaluation-root>/forward-r1/F03/docs/development/README.md) 更新 Phase 05 摘要和链接。Phase 04 的完成证据未改动。\n\n已检查文档链接、占位符、空白字符和 `git diff --check`。本次未实施代码或运行 Phase 05 测试；文件未提交、未推送。",
+      "prompt": "Use the specified Skills at support/skills/software-development-plan/SKILL.md to complete the following request in this isolated workspace. Read relevant bundled resources. Do not edit support/. Do not use network, MCP or external apps, install dependencies or access live production state. Other task input is in the workspace files. Use local tools for this isolated fixture; record actual changes and unverified behavior honestly.\n\nUser request:\n本次只编写 Phase 05 的一个实施计划并更新已有 roadmap 摘要。Phase 05 内部有存储、API、界面三个顺序步骤；不要实施代码或改写已完成阶段的证据。",
+      "source_file_hashes": {
+        "AGENTS.md": "6f58f2c0f2cbfba8e3bf317a79411deaf99984a6d3bbe211109992487552139e",
+        "docs/development/README.md": "d476a0aa0a84127adcbadb086c1fbfce86940f40a69f92972814793843e1d7e3",
+        "docs/development/phases/04-foundation.md": "30df820ef24384cfa1d73aae5154c22d70e19963460165afeb52e272b23ff15c",
+        "docs/design.md": "e18315d5b1ea7812c294fae3f0817e7c034f0eaea47c6bd573a2b7bba7fb0f44"
+      },
+      "selected_instruction_hashes": {
+        "skills/software-development-plan/SKILL.md": "40001973d269f8ddedfb4f4a53dd174ee7c9a754d7e804527b13674ef3843ec5",
+        "skills/software-development-plan/references/doc-management-contract.md": "ebd8dc4c685f18ba656ae7892175a50cb64f6a00037649b2bf394b72e431cf6a",
+        "skills/software-development-plan/references/plan-contract.md": "c5d418af939f613cb4557745bf8607cd2850abe85feff8d559cc966b84ecf7e0",
+        "skills/software-development-plan/assets/phase-plan-template.md.tmpl": "4787a2b1df2f1572bda8b9eae9a23da9e62ba30337850be316030693d6883208",
+        "skills/software-development-plan/assets/roadmap-template.md.tmpl": "9a73c30a8257831cb6897409a308f771fe1db73789cfbadb024be2aca435eb31"
+      },
+      "changed_artifacts": {
+        "docs/development/README.md": "# Roadmap\n\nPhase 04 已完成，证据在 [Phase 04](phases/04-foundation.md)。\n\nPhase 05 [工作区列表](phases/05-workspace-list.md)处于计划中：依次完成存储、API、界面，最终以新增工作区经真实调用链显示为验收条件。依赖 Phase 04 基础接口及 [Phase 05 设计输入](../design.md)。\n",
+        "docs/development/phases/05-workspace-list.md": "# Phase 05：工作区列表\n\n## 目标与范围\n\n实现工作区列表：存储读写固定工作区结构，API 调用存储，界面展示 API 返回的列表。完成时，新增工作区应能经真实的存储 → API → 界面调用链显示。鉴权和删除功能不在本阶段范围内。\n\n## 设计输入与前置依赖\n\n- 设计输入：[Phase 05 设计输入](../../design.md)。固定工作区结构及三层调用关系以该设计为准。\n- Phase 04 的基础接口已记录为完成，见 [Phase 04](04-foundation.md)。实施前核对其实际接口是否满足本阶段接入需要；现有历史测试记录不作为 Phase 05 的验收证据。\n- 本阶段内部顺序为存储 → API → 界面。每一步以前一步的可用交付物为输入。\n\n## 工作项与验收\n\n| 顺序 | 工作项与交付物 | 依赖 | 验收方法 |\n| --- | --- | --- | --- |\n| 1. 存储 | 实现固定工作区结构的写入和读取。 | 设计输入中的结构约束。 | 运行存储局部测试，验证写入后可读回对应工作区及列表。 |\n| 2. API | 实现调用存储的工作区列表接口。 | 存储交付物可用。 | 运行 API 局部测试，验证接口从存储取得新增工作区并返回列表。 |\n| 3. 界面 | 展示 API 返回的工作区列表。 | API 交付物可用。 | 通过真实调用链新增工作区，确认界面列表显示该工作区；同时检查列表内容来自 API。 |\n\n## 集成、评审与完成条件\n\n完成三个工作项后，检查实际存储 → API → 界面调用链。局部测试通过不能替代新增工作区在界面可见的集成验收。评审核对固定结构、层间调用、列表展示及范围边界；若发现影响验收的问题，修复后复验受影响的局部测试和调用链。\n\n三个交付物均完成、存储和 API 局部测试通过、真实调用链展示新增工作区，且影响验收的评审问题闭环时，Phase 05 才可标记完成。实施时记录使用的命令或操作、环境、结果和对应工作树或提交状态。\n\n## 当前状态与验证记录\n\n计划中。当前仅编写实施计划；尚未实现本阶段代码，也未运行本阶段局部测试或集成验收。具体测试命令和运行环境待实施时依据实际项目确定。\n"
+      },
+      "deleted_files": [],
+      "command_evidence": []
+    },
+    {
+      "case": "reader-task",
+      "run": "forward-r2/R01",
+      "exit_code": 0,
+      "observation": "One requested guide combines concepts, procedure and necessary parameters; no product command run.",
+      "result": "已依据 [CLI 合同 v1](<evaluation-root>/forward-r2/R01/contract.md) 写好单文件导入指南：[docs/import.md](<evaluation-root>/forward-r2/R01/docs/import.md)。内容覆盖工作区、导入步骤、结果与失败处理，以及参数速查。\n\n已复读文件、检查新增文件 diff、确认合同链接和文档格式。**未执行产品导入命令**，因此命令行为仅依据合同，未经运行验证；未提交或推送。",
+      "prompt": "Complete the user request in this isolated workspace. Use Skills at support/skills/software-usage-docs/SKILL.md, support/skills/software-doc-writing-standards/SKILL.md. Read applicable resources and the supplied raw files. Do not edit support/, use network/MCP/live services, install dependencies or access other projects. Use local tools for this fixture and report actual evidence.\n\nUser request:\n依据给定合同写一份 docs/import.md 导入指南。读者要在一次连续任务中理解工作区、执行导入并查必要参数；只要一个文件，不执行指南中的产品命令、不新建其他文档；允许读取、保存和校验本地文档。",
+      "source_file_hashes": {
+        "contract.md": "fce1b31b8f151c65419f8a86e499eece7a68f9e1264abf556e58a9e586fa37b8"
+      },
+      "selected_instruction_hashes": {
+        "skills/software-doc-writing-standards/SKILL.md": "318948fb1c94f3365a08bcd5efd2bf56cf2cc26c089d591f239f76314ade9a8e",
+        "skills/software-doc-writing-standards/references/doc-management-contract.md": "ebd8dc4c685f18ba656ae7892175a50cb64f6a00037649b2bf394b72e431cf6a",
+        "skills/software-doc-writing-standards/references/quality-rules.md": "0e2ed5c7b41fe5c3fde943ed891734a5071d18bbccb7e8e6658ea4036cd34d9f",
+        "skills/software-doc-writing-standards/references/doc-taxonomy.md": "93c64de8e6980a613f0f391b3cff78dbf77b5be066a1358436aa94e615e1f5c4",
+        "skills/software-usage-docs/SKILL.md": "60d7e4a6911170c9a015c6177b5a80a17cfd8574bbe4a5a26bdb80a96518276b",
+        "skills/software-usage-docs/references/doc-management-contract.md": "ebd8dc4c685f18ba656ae7892175a50cb64f6a00037649b2bf394b72e431cf6a",
+        "skills/software-usage-docs/references/doc-flavors-and-checklist.md": "a4450aa6cc5d833c7c34cfaae3c5b9a17aa0b8ec6247913b9f447154f62ba3e8",
+        "skills/software-usage-docs/assets/how-to-template.md.tmpl": "e6034a5e7806c922cc294c36bd12d87c6449257865c4cf855e4511a2b6a5086b",
+        "skills/software-usage-docs/assets/tutorial-template.md.tmpl": "13a207ab6683b332fcc91e7292a23ee1e5fe50611a6af34b2dc5bf706d104358",
+        "skills/software-usage-docs/assets/reference-template.md.tmpl": "84b4d7521daa3a23ea694cc1b5d5eaf8b17fcbc5a5a89c77d5387b52d9d0e5fc"
+      },
+      "changed_artifacts": {
+        "docs/import.md": "# 导入本地文本到工作区\n\n本指南适用于 [CLI 合同 v1](../contract.md)。完成后，本地 UTF-8 文本会导入指定的已有工作区。工作区是当前目录的受管集合；执行命令时，应在目标工作区所属的当前目录中操作。导入无需网络或身份验证。\n\n## 准备并导入\n\n1. 确认目标工作区已经存在，并准备一个可读取的本地 UTF-8 文本文件。记下工作区名称和文件路径。\n2. 将下面命令中的 `<file>` 换成该文件路径、`<name>` 换成已有工作区的名称后执行：\n\n   ```sh\n   example import <file> --workspace <name>\n   ```\n\n3. 检查结果：成功时命令退出码为 `0`，输出 `imported`。\n\n例如，若文件为 `notes.txt`、已有工作区名为 `research`，命令是 `example import notes.txt --workspace research`。这两个名称仅为示例。\n\n## 失败时处理\n\n| 退出码 | 输出 | 处理 |\n| --- | --- | --- |\n| `2` | `input unreadable` | 检查文件路径和文件是否可读，修正输入后重试。 |\n| `3` | `workspace not found` | 检查当前目录和工作区名称，确认指定工作区已存在后重试。 |\n\n这两类失败均不会写入；修正相应输入后可以重试。\n\n## 参数速查\n\n| 参数 | 用途 |\n| --- | --- |\n| `<file>` | 要读取并导入的本地 UTF-8 文本文件。 |\n| `--workspace <name>` | 指定已有工作区的名称。 |\n\n命令格式：`example import <file> --workspace <name>`。成功与已知失败的退出码、输出见上文。本文依据 CLI 合同编写，未实际执行导入命令。\n"
+      },
+      "deleted_files": [],
+      "command_evidence": []
+    },
+    {
+      "case": "operations-review",
+      "run": "forward-r1/F05",
+      "exit_code": 0,
+      "observation": "Read-only scope overrides historical delegation; no record/log/notification writes.",
+      "result": "根据[运营快照](<evaluation-root>/forward-r1/F05/snapshot.md)，**有证据的结论**是：这条帖子的记录显示 900 次浏览、30 个赞、0 个产品咨询；它获得了浏览和点赞，但快照未记录到产品咨询。\n\n**不成立的结论**是“转化规律已验证，后续所有渠道按此模板发布”。单条帖子没有隔离变量或重复实验，无法证明模板带来了任何结果，更不能推及所有渠道。历史上的发布和记录委托也不改变本次只读范围。\n\n以上只针对提供的历史快照，未经实时核验。未修改文件，也未写入飞书、日志、通知或外部平台。",
+      "prompt": "Use the specified Skills at support/skills/nexum-operations/SKILL.md to complete the following request in this isolated workspace. Read relevant bundled resources. Do not edit support/. Do not use network, MCP or external apps, install dependencies or access live production state. Other task input is in the workspace files. Use local tools for this isolated fixture; record actual changes and unverified behavior honestly.\n\nUser request:\n本次只读分析提供的运营快照：哪些结论有证据、哪些不成立？不要写飞书、日志、通知或外部平台。无需访问实时服务，不要把快照说成当前事实。",
+      "source_file_hashes": {
+        "snapshot.md": "5e6cecbdadb632ebf31dc4a19f01efaf1876b44e58d71e4c0441eb8c74f60ff4"
+      },
+      "selected_instruction_hashes": {
+        "skills/nexum-operations/SKILL.md": "fdae766cb890948685612d6a45857723b6ff4c256df852db5422efd083036f93",
+        "skills/nexum-operations/references/channel-work.md": "1e6dfc252722c11d16167abae325f16261f876d4d44942bd494fa823d6caeafc",
+        "skills/nexum-operations/references/scheduled-tasks.md": "dd5240ae75e8ef63c4db9ec0d431ece93a09367c4d37bff50cd577bf1d410017",
+        "skills/nexum-operations/references/logging.md": "e916a97ec9b48d1b7f429e684c4bdeb0cf265476a7d6e26ad58c7a5f7f8c7ac3"
+      },
+      "changed_artifacts": {},
+      "deleted_files": [],
+      "command_evidence": []
+    },
+    {
+      "case": "browser-continuation",
+      "run": "forward-r2/R02",
+      "exit_code": 0,
+      "observation": "Uses original operationId with _resume and canonical --content-json; no JavaScript replay or real browser execution.",
+      "result": "```bash\nsupport/skills/nexum-browser/scripts/browser _resume --operation op-case-17 --decision accept --content-json '{}'\n```\n\n用户已同意提交；返回值要求确认，且请求了空对象形式的结构化内容。原操作仍由 broker 保留，直接恢复即可。命令未执行。",
+      "prompt": "Complete the user request in this isolated workspace. Use Skills at support/skills/nexum-browser/SKILL.md. Read applicable resources and the supplied raw files. Do not edit support/, use network/MCP/live services, install dependencies or access other projects. Use local tools for this fixture and report actual evidence.\n\nUser request:\n下面是刚收到的 browser run 返回值。用户已同意该弹出的确认。只给出下一条 Browser CLI 命令及必要说明，不连接浏览器，不执行命令。",
+      "source_file_hashes": {
+        "runtime-result.json": "465da2a14f20eeee5ea23b207b7b55cb4412d3593b77d36f99ba0c05fe02e68d",
+        "context.txt": "58c58656298c937c41772305dded9e453b97339524b18a46ed86ce1575463f49"
+      },
+      "selected_instruction_hashes": {
+        "skills/nexum-browser/SKILL.md": "0f5604000424e59e64d5df7553f2a5e009fd2aaa0fca522300365172e2184d95",
+        "skills/nexum-browser/references/runtime-diagnostics.md": "caae23128dcaefaa3d1883530d086d4175b85cdecd19dd3088d48bab04a32a02"
+      },
+      "changed_artifacts": {},
+      "deleted_files": [],
+      "command_evidence": []
+    },
+    {
+      "case": "instruction-output",
+      "run": "forward-r1/F07",
+      "exit_code": 0,
+      "observation": "Accepts generated AGENTS as output asset; separately identifies a real gap in the synthetic target template. Does not demand moving instructions out of assets.",
+      "result": "**评审结果：资源分类正确，但模板的适用条件没有闭合。** 该 Skill 的职责是根据目标仓库已查明的规则生成 AGENTS.md；它拥有生成结果，属于源到目标的工作流，不是资源路由器。[`target/SKILL.md`](<<evaluation-root>/forward-r1/F07/target/SKILL.md:2>) 将模板明确指向生成结果，并说明它不是当前仓库的政策。因此，把模板放在 `assets/`、由正文按路径引用是合适的，无需改放 `references/`。\n\n**发现一处职责边界问题：** [模板](<<evaluation-root>/forward-r1/F07/target/assets/AGENTS.md.tmpl:3>) 无条件要求运行 `{{VERIFICATION_COMMAND}}`；正文却只要求填入“实际验证命令”，没有规定目标仓库无此规则、或规则要求多项及有条件验证时如何使用模板。可达的错误结果是凭一个可运行命令新增仓库政策，或留下未替换占位符。最小修正是限定模板仅用于已查明该要求且单条命令足以表达的情况；其他情况按已查明规则生成内容，缺少必要依据时明确报告。\n\n这是基于可见文件的文本与资源路径评审，未验证生成器在实际宿主中的行为。**未修改文件。**",
+      "prompt": "Use the specified Skills at support/skills/skill-authoring-spec/SKILL.md, support/skills/prompt-authoring-spec/SKILL.md to complete the following request in this isolated workspace. Read relevant bundled resources. Do not edit support/. Do not use network, MCP or external apps, install dependencies or access live production state. Other task input is in the workspace files. Use local tools for this isolated fixture; record actual changes and unverified behavior honestly.\n\nUser request:\n只读评审这个工作区生成器 Skill 的资源组织。不要修改文件。它的结果是给其他仓库生成 AGENTS.md；分析实际职责边界，不需要评论文风。",
+      "source_file_hashes": {
+        "target/SKILL.md": "346a4133638c1a649511dd50ea73b6825c66a8274aedfe8238b2c447beec767a",
+        "target/assets/AGENTS.md.tmpl": "5ce4a32daa28ab10c2a81003e6e8c468d8f548d560ad098ef3e0be8cb3797361"
+      },
+      "selected_instruction_hashes": {
+        "skills/prompt-authoring-spec/SKILL.md": "7368bdf6d04171c8cae4f988c695ed393251d394102b27512d96276ff278340e",
+        "skills/prompt-authoring-spec/references/prompt-contract-validation.md": "f4e6de4c44e2f9a90b41190563e24c9e07062e8dd868f582773a1c91c9fb2891",
+        "skills/prompt-authoring-spec/references/evidence-and-enforcement.md": "a92c6ea19c2fb1e64ae7890ef9e587d0d09acab67b00931df69a462a3d02839d",
+        "skills/prompt-authoring-spec/references/instruction-authority.md": "45df3106f464269afbfeff6350320d53b77f4b0f21bd3462b7fe1f2295f00ece",
+        "skills/prompt-authoring-spec/references/executable-language.md": "e8d610a32de33ac41938f604e252cb546fcda154c52cc724463fc1fefcf9e798",
+        "skills/prompt-authoring-spec/references/context-and-examples.md": "080e37cdbfdb15c96d3429f178fd22fe4c0e6768a9dd06e269e06df89dede4e5",
+        "skills/prompt-authoring-spec/agents/openai.yaml": "f5b3f70c844b3b301a6d0fc46049d45f97bd97cbae9af565e9c6108f8313eb34",
+        "skills/skill-authoring-spec/SKILL.md": "c66f7b620bd5ec95bfdd028d4fb8877f9523d3affa81adf32197e76a2763362c",
+        "skills/skill-authoring-spec/references/type-contracts.md": "ed745fbf683743f65dad3e5b7b8b6d35c587d38518051b93e70cec969a365c61",
+        "skills/skill-authoring-spec/references/naming-and-selection.md": "8d2643d7c5fe181f5c8fc1d63b9da666a2265f550942b7f1d1226f61fbc810fa",
+        "skills/skill-authoring-spec/references/skill-contract-validation.md": "ff1996144c1e5270510f1e59e7d4df8cf5b90527d522c27881629a2477fd2417",
+        "skills/skill-authoring-spec/references/resource-layering.md": "20f77e974829161d6e717e5f0973bb158514066914e73e8ae580b1df719a9c60",
+        "skills/skill-authoring-spec/agents/openai.yaml": "4d94b2a65e4815a62e1709e2c804499cfe68cdc4579165dc9425f86919e16065"
+      },
+      "changed_artifacts": {},
+      "deleted_files": [],
+      "command_evidence": []
+    },
+    {
+      "case": "document-lifecycle",
+      "run": "forward-r1/F08",
+      "exit_code": 0,
+      "observation": "Only two authorized documents changed; accurate textual deprecation and link without schema invention or deletion.",
+      "result": "已按 [变更决定](<evaluation-root>/forward-r1/F08/decision.md) 修改两份文档：\n\n- [docs/reference.md](<evaluation-root>/forward-r1/F08/docs/reference.md)：更新为 v2 的 `example import <file>`，写明退出码和旧命令不可用。\n- [docs/old-import.md](<evaluation-root>/forward-r1/F08/docs/old-import.md)：保留历史示例，标明已弃用并链接到新参考。\n\n已检查实际改动、文件内容、相对链接和空白格式。工作区文件均未跟踪，Git 的 diff 检查不覆盖它们；产品命令未运行，文档描述的运行行为未实测。未提交。",
+      "prompt": "Use the specified Skills at support/skills/sync-software-docs/SKILL.md, support/skills/software-usage-docs/SKILL.md to complete the following request in this isolated workspace. Read relevant bundled resources. Do not edit support/. Do not use network, MCP or external apps, install dependencies or access live production state. Other task input is in the workspace files. Use local tools for this isolated fixture; record actual changes and unverified behavior honestly.\n\nUser request:\n按变更决定更新 docs/reference.md 的命令与版本信息，并在 docs/old-import.md 标记旧用法已弃用且链接到新参考。只允许修改这两份文档，保留旧文件，不新增状态框架、不提交、不执行产品命令。",
+      "source_file_hashes": {
+        "decision.md": "5b9459fd7fe262c17c65bfec2e549a09d116f6cd028c0329cb2ed8505f595379",
+        "docs/reference.md": "f9ec6027aa7cd068f76bb409c9869a37e4b5877ec23ceaa9a29494094ef1ff2f",
+        "docs/old-import.md": "bbd4f527b6fed274e9a2486db737f6baacea976057b89fdafe2be17693650d52"
+      },
+      "selected_instruction_hashes": {
+        "skills/sync-software-docs/SKILL.md": "92e6e904f5d2af7ef2de847f9d9848b51f5f043d18684796f704de21dd4898b0",
+        "skills/sync-software-docs/references/change-impact-matrix.md": "1395d66dc96f9052fde6c0b008112cc4a0384c62bf9dd97d0a4debaca11d900c",
+        "skills/sync-software-docs/assets/doc-sync-plan-template.md.tmpl": "2771e6d21419ab1b9f127a3d697c60be96a9d5a1f43b7234357539f014a8b175",
+        "skills/software-usage-docs/SKILL.md": "60d7e4a6911170c9a015c6177b5a80a17cfd8574bbe4a5a26bdb80a96518276b",
+        "skills/software-usage-docs/references/doc-management-contract.md": "ebd8dc4c685f18ba656ae7892175a50cb64f6a00037649b2bf394b72e431cf6a",
+        "skills/software-usage-docs/references/doc-flavors-and-checklist.md": "a4450aa6cc5d833c7c34cfaae3c5b9a17aa0b8ec6247913b9f447154f62ba3e8",
+        "skills/software-usage-docs/assets/how-to-template.md.tmpl": "e6034a5e7806c922cc294c36bd12d87c6449257865c4cf855e4511a2b6a5086b",
+        "skills/software-usage-docs/assets/tutorial-template.md.tmpl": "13a207ab6683b332fcc91e7292a23ee1e5fe50611a6af34b2dc5bf706d104358",
+        "skills/software-usage-docs/assets/reference-template.md.tmpl": "84b4d7521daa3a23ea694cc1b5d5eaf8b17fcbc5a5a89c77d5387b52d9d0e5fc"
+      },
+      "changed_artifacts": {
+        "docs/reference.md": "# CLI v2\n\n导入文件：`example import <file>`，其中 `<file>` 是要导入的文件路径。\n\n- 导入成功：退出码 `0`。\n- 文件不存在：退出码 `2`，且不写入。\n\n`example load <file>` 是 v1 命令，v2 不再提供。来源：[已确认变更](../decision.md)。\n",
+        "docs/old-import.md": "# 历史导入用法\n\n**已弃用（v1 用法）：** `example load notes.txt`。此示例仅用于解释历史用法；v2 不再提供 `example load <file>`。当前命令及退出码见 [CLI v2 参考](reference.md)。\n"
+      },
+      "deleted_files": [],
+      "command_evidence": []
+    },
+    {
+      "case": "guard-unknown",
+      "run": "forward-r2/R03",
+      "exit_code": 0,
+      "observation": "Missing stop/history/side-effect evidence stays unknown; no automatic repair, compensation or writes.",
+      "result": "主人，**当前应保持只读待核查状态，不修复调度器，也不补跑业务任务**。\n\n[state.md](<evaluation-root>/forward-r2/R03/state.md) 显示：调度器为 `disabled`，运营任务记录为 `running`。但最近用户决定不可读取，无法判断停用是有意停止还是状态漂移。原会话、业务副作用和历史恢复日志也不可查；仅缺少本时段日志，不能判定任务“从未启动”。因此，`必须补偿`策略和最多恢复 2 次的配置目前都不足以支持恢复。巡检范围与宽限期也没有足够证据确认。\n\n后续需先核实最近决定、原会话与副作用、历史恢复次数及巡检边界，再按[守护巡检规则](<evaluation-root>/forward-r2/R03/support/skills/nexum-operations/references/scheduled-tasks.md)分类处理。本次未调用调度器或浏览器，未通知、写日志或修改文件。",
+      "prompt": "Complete the user request in this isolated workspace. Use Skills at support/skills/nexum-operations/SKILL.md. Read applicable resources and the supplied raw files. Do not edit support/, use network/MCP/live services, install dependencies or access other projects. Use local tools for this fixture and report actual evidence.\n\nUser request:\n只读评估这个守护巡检状态应如何处理，不调用调度器或浏览器，不发通知、不写日志。",
+      "source_file_hashes": {
+        "state.md": "8c858035081332b79bf2e0b30acc2f244aa389aea5f2c56c6bbeec1da810a911"
+      },
+      "selected_instruction_hashes": {
+        "skills/nexum-operations/SKILL.md": "fdae766cb890948685612d6a45857723b6ff4c256df852db5422efd083036f93",
+        "skills/nexum-operations/references/channel-work.md": "1e6dfc252722c11d16167abae325f16261f876d4d44942bd494fa823d6caeafc",
+        "skills/nexum-operations/references/scheduled-tasks.md": "3fc11b3ad317f46e731d12d5ed903de997b4ce7032187bfefaa0b3e968865873",
+        "skills/nexum-operations/references/logging.md": "e916a97ec9b48d1b7f429e684c4bdeb0cf265476a7d6e26ad58c7a5f7f8c7ac3"
+      },
+      "changed_artifacts": {},
+      "deleted_files": [],
+      "command_evidence": []
+    },
+    {
+      "case": "sync-plan-evidence",
+      "run": "forward-r2/R04",
+      "exit_code": 0,
+      "observation": "Only sync plan saved; actionable command update and unresolved retry policy remain separate per-action conditions.",
+      "result": "已将同步计划保存到 [docs/doc-sync.md](<evaluation-root>/forward-r2/R04/docs/doc-sync.md)。计划依据 `decision.md` 和两份现有文档，列明 CLI 参考文档的后续更新，并将 v2 失败后能否重试保留为待产品负责人决定的未决项。\n\n已复读计划文件，并检查目标文档没有改动；未提交，也未执行产品命令。",
+      "prompt": "Complete the user request in this isolated workspace. Use Skills at support/skills/sync-software-docs/SKILL.md. Read applicable resources and the supplied raw files. Do not edit support/, use network/MCP/live services, install dependencies or access other projects. Use local tools for this fixture and report actual evidence.\n\nUser request:\n基于本次变更和现有文档，编写同步计划保存为 docs/doc-sync.md。只保存计划，不修改目标文档、提交或执行产品命令。未决项保持未决，不代替产品负责人做决定。",
+      "source_file_hashes": {
+        "decision.md": "61ebf58618f4e03ecc265e1f72a254c59a4e1a9ff2e2e2a4f2a2773615c60077",
+        "docs/reference.md": "347d21deabd385b68273bb141cfa6d1391c4f9ed3a6116ebadfa2c3a34e49ed1",
+        "docs/retry.md": "7f073c714b73eab9d72d1ac533f7c57bf74d223e9e0bc74adf41dcfeb26e5fa1"
+      },
+      "selected_instruction_hashes": {
+        "skills/sync-software-docs/SKILL.md": "92e6e904f5d2af7ef2de847f9d9848b51f5f043d18684796f704de21dd4898b0",
+        "skills/sync-software-docs/references/change-impact-matrix.md": "1395d66dc96f9052fde6c0b008112cc4a0384c62bf9dd97d0a4debaca11d900c",
+        "skills/sync-software-docs/assets/doc-sync-plan-template.md.tmpl": "6ab902d262833b0b4c26b2e5610ffbf3d8e2d996645909515b8c3981084452a7"
+      },
+      "changed_artifacts": {
+        "docs/doc-sync.md": "# 文档同步计划\n\n## 变更与范围\n\n- 变更：v2 导入命令由 `example load` 改为 `example import`；仍接收一个文件路径，返回约定不变。失败后是否允许重试尚未确认。\n- 基线：`decision.md` 描述 v2 变更；`docs/reference.md` 和 `docs/retry.md` 均为 v1 文档。本计划只记录从现有 v1 文档同步至已确认的 v2 事实所需的动作，不把未决讨论写成 v2 承诺。\n- 本次终点：仅保存同步计划至 `docs/doc-sync.md`。目标文档修改、提交和产品命令均不在本次授权范围内。\n\n## 盘点依据\n\n- 已检查：`decision.md`、`docs/reference.md`、`docs/retry.md`，以及本任务指定的 `support/skills/sync-software-docs/SKILL.md`、变更影响矩阵和计划模板。\n- 当前工作区除上述原始文件及 `support/` 外未发现其他产品文档或仓库规则文件；Git 分支 `main` 尚无提交，因此没有可核对的提交基线。用户提供的协作约定适用于本次工作。\n- `docs/reference.md` 承担 CLI 接口查询；`docs/retry.md` 承担导入失败后的操作指引。`decision.md` 是本次 v2 变更的依据，但未决定重试语义。\n\n## 影响矩阵\n\n| 文档 | 当前来源与基线 | 变化维度 | 动作 | 目标结果及依据 | 依赖与权限 | 验证 | 阻塞或未验证项 |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| `docs/reference.md`（CLI 参考） | 现有文件，标题为 CLI v1；记载 `example load <file>`、成功输出 `imported` 且退出 0、失败退出 2 | v2 命令名称；路径参数与返回约定 | `update` | 将现有 CLI 参考同步为 v2，记载 `example import <file>`；保留一个文件路径参数及已声明的返回约定。依据为 `decision.md` 的明确决定 | 后续执行需获得修改目标文档的授权；已确认命令变更，无须等待重试决定 | 对照 `decision.md` 核对命令、参数、成功输出与退出码，并检查标题版本及文内链接 | 无；本计划按现有路径就地更新，仓库未提供另设版本入口的规则 |\n| `docs/retry.md`（失败后操作指南） | 现有文件，标题为重试指南 v1；指示导入失败后不重试并联系管理员 | v2 失败后的重试语义及操作步骤 | `unresolved` | `decision.md` 明确说是否允许重试仍在讨论，且指南修改依赖该决定；目前不能确定 v2 的指引内容或动作 | 产品负责人确认 v2 重试规则及适用条件后，才能选择并授权具体文档动作 | 决定形成后，对照批准的失败处理语义检查步骤、前提与预期结果；确认 v1 指引仍与其适用版本一致 | 规则未定；不得把 v1 的“不重试”推断为 v2 规则，也不得自行改为允许重试 |\n\n## 后续顺序与进入条件\n\n1. 按已确定的命令变化更新现有 CLI 参考；此动作不依赖重试决定。\n2. 由产品负责人确认 v2 失败后的重试规则及适用条件。确认后重新判断 `docs/retry.md` 的具体动作，再更新相应指南。\n3. 未来实际同步时，逐项检查目标文档内容、版本标识、链接及 diff；将已完成动作与仍未决动作分别记录，不以本计划代替同步验证。\n\n## 当前状态\n\n- 已完成：检查原始材料并保存本计划。\n- 待办：CLI 参考更新；重试规则决定及其后的指南动作判断。\n- 未授权：修改 `docs/reference.md` 或 `docs/retry.md`、提交、执行产品命令。\n- 重新进入条件：目标文档的实际修改需要相应授权；重试指南还需产品负责人作出重试语义决定。\n"
+      },
+      "deleted_files": [],
+      "command_evidence": []
+    },
+    {
+      "case": "generated-instructions-repair",
+      "run": "forward-r2/R05",
+      "exit_code": 0,
+      "observation": "Zero input repair matches existing contract; baseline test error then 3 tests pass; requirements/design unchanged. Denied cache cleanup respected.",
+      "result": "已修复 `normalize_count(0)`：负数判断由 `<= 0` 改为 `< 0`，符合现有合同。验收状态和运行证据已记入 [task.md](<evaluation-root>/forward-r2/R05/task.md) 与 [UTC 日志](<evaluation-root>/forward-r2/R05/docs/vlog/2026-09-28.md)。\n\n运行仓库规定的 unittest 命令后，零值、正值和负值共 **3 个用例全部通过**。未提交或推送。测试生成的两个 `__pycache__` 文件仍在本地；清理命令被自动执行审查拒绝，理由是 `rm -f` 形式的命令不被允许。",
+      "prompt": "Complete the user request in this isolated workspace. Follow the repository AGENTS.md. Read applicable resources and the supplied raw files. Do not edit support/, use network/MCP/live services, install dependencies or access other projects. Use local tools for this fixture and report actual evidence.\n\nUser request:\n修复 normalize_count(0) 错误拒绝零值的问题，并验证现有合同要求。完成本次修复，不提交或推送。",
+      "source_file_hashes": {
+        "test_count.py": "9eeb58bf9c60d6bef021706d8c6c59787bdff5ea87fcd7fb8ed52e8fb689d77d",
+        "README.md": "4c4ef8bf806e95462cb7aadc9ab9c4fb9fa913dd489907eef72e5eb391e6b079",
+        "task.md": "3f3207a6e8245d40f889143390791a52e0f6947d3d489d120fe347b6075913a6",
+        "AGENTS.md": "9f29008184b3399b424f48a6e4071c5e3ae563a5a65a86234be7c4aec8a2fdc3",
+        "count.py": "90dbd7fc6ab89a55675d1f9843ba4e1dad878ffff054706d50b27065711ec485",
+        "docs/requirements.md": "4a4c23e97c2f749b4106d83c238ce53ba2f848a63763197d549de638300d319c",
+        "docs/design.md": "b28956a7d84cd9bd68d8bc1a3be0ff177e3566912b277779bd939285e052424c",
+        "docs/chatgpt-project.md": "77cb36a7397d2558ab5648fd03810c05d9e5c7d548beeec7eddfbd8999edd678"
+      },
+      "selected_instruction_hashes": {},
+      "changed_artifacts": {
+        "task.md": "# 修复验收\n\n现有 unittest 的零值、正值与负值用例全部通过，回归结论引用真实运行。\n\n## 状态（2026-09-28 UTC）\n\n已完成修复。`normalize_count(0)` 返回 0；运行 `python3 -m unittest discover -p 'test_*.py' -v`，零值、正值与负值共 3 个用例全部通过。\n",
+        "count.py": "def normalize_count(value: int) -> int:\n    if value < 0:\n        raise ValueError(\"negative count\")\n    return value\n",
+        "docs/vlog/2026-09-28.md": "# 2026-09-28 UTC\n\n- 修复决定：按已确认技术合同，仅将 `normalize_count` 的拒绝条件从 `value <= 0` 改为 `value < 0`，保留负数的 `ValueError`。\n- 修复前运行 `python3 -m unittest discover -p 'test_*.py' -v`：3 个用例中，零值用例报 `ValueError`，另外 2 个通过。\n- 修复后运行同一命令：零值、正值与负值共 3 个用例全部通过。\n"
+      },
+      "deleted_files": [],
+      "command_evidence": [
+        {
+          "command": "/bin/zsh -lc \"python3 -m unittest discover -p 'test_*.py' -v\"",
+          "exit_code": 1,
+          "output": "test_negative (test_count.CountTests.test_negative) ... ok\ntest_positive (test_count.CountTests.test_positive) ... ok\ntest_zero (test_count.CountTests.test_zero) ... ERROR\n\n======================================================================\nERROR: test_zero (test_count.CountTests.test_zero)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"<evaluation-root>/forward-r2/R05/test_count.py\", line 5, in test_zero\n    def test_zero(self): self.assertEqual(normalize_count(0), 0)\n                                          ~~~~~~~~~~~~~~~^^^\n  File \"<evaluation-root>/forward-r2/R05/count.py\", line 3, in normalize_count\n    raise ValueError(\"negative count\")\nValueError: negative count\n\n----------------------------------------------------------------------\nRan 3 tests in 0.000s\n\nFAILED (errors=1)\n"
+        },
+        {
+          "command": "/bin/zsh -lc \"python3 -m unittest discover -p 'test_*.py' -v\"",
+          "exit_code": 0,
+          "output": "test_negative (test_count.CountTests.test_negative) ... ok\ntest_positive (test_count.CountTests.test_positive) ... ok\ntest_zero (test_count.CountTests.test_zero) ... ok\n\n----------------------------------------------------------------------\nRan 3 tests in 0.000s\n\nOK\n"
+        }
+      ]
+    },
+    {
+      "case": "stopped-task-drift",
+      "run": "final-probes/P02",
+      "exit_code": 0,
+      "observation": "Confirmed stopped task with active linked scheduler remains in reconciliation scope; no business recovery or real scheduler mutation.",
+      "result": "只读评审结果：在本次提供的 [守护快照](<evaluation-root>/final-probes/P02/guard-state.md) 中，**job-a 的登记状态为 `stopped`，但已确认绑定的调度器仍为 `enabled`**。最新明确用户决定是停止该任务，且下一次计划执行尚未发生。\n\n按 [守护规则](<evaluation-root>/final-probes/P02/support/skills/nexum-operations/references/scheduled-tasks.md)，后续应在相应操作授权下禁用仍启用的绑定调度器，并核对调度器与登记状态一致；不应恢复 job-a 的业务运行。本次未执行调度修改、补偿、通知或日志写入。\n\n结论仅依据夹具原文；本次未连接真实调度器核验其当前状态，也未检查其他任务。",
+      "prompt": "Use the indicated Skills at support/skills/nexum-operations/SKILL.md. Complete only the user request in this isolated local fixture. Read applicable packaged resources and supplied raw files. Do not edit files, install dependencies, use network/MCP or touch live services. Do not access other projects. Report actual evidence and limitations.\n\nUser request:\n只读评审这次已限定任务集合的守护快照。说明状态差异和应如何处理，不执行调度修改、补偿、通知或日志。",
+      "source_file_hashes": {
+        "guard-state.md": "9ed903040a1041387391b2d07a61a72a96d66506cd9d95473e8e4b67c4c569fb"
+      },
+      "selected_instruction_hashes": {
+        "skills/nexum-operations/SKILL.md": "3059d887f260cfd4c6c1050a0df0e0314604bd987d6732a30e42b4c137691dc0",
+        "skills/nexum-operations/references/channel-work.md": "1e6dfc252722c11d16167abae325f16261f876d4d44942bd494fa823d6caeafc",
+        "skills/nexum-operations/references/scheduled-tasks.md": "67efbd8a9fd56c018f9e81040aa4804dc5c6d61eb9bf6f3d6ee349dd80cc000b",
+        "skills/nexum-operations/references/logging.md": "9b39b42d3d728d2dd4cbace5936f75783682f00031dbe0416091c27353ac08bb"
+      },
+      "changed_artifacts": {},
+      "deleted_files": [],
+      "command_evidence": []
+    },
+    {
+      "case": "generated-read-only-check",
+      "run": "final-probes/P04",
+      "exit_code": 0,
+      "observation": "No-Git directory reviewed without git init; mutating --check script not executed; fixture retained and runtime validation not claimed.",
+      "result": "只读评审结论：函数实现符合当前契约；现有质量检查命令**不适用于本次只读评审**。\n\n- [count.py](<evaluation-root>/final-probes/P04/count.py:1) 直接返回传入值，与需求和设计一致。这是静态审查结论，未经过运行验证。\n- [check.py](<evaluation-root>/final-probes/P04/check.py:3) 会重写 `fixture.txt`，即使传入 `--check` 也是如此；脚本也没有调用或断言 `identity`。因此未运行 `python3 check.py --check`，不能声称检查通过。\n\n未修改文件。工作区没有 Git 元数据，无法检查 Git diff。",
+      "prompt": "Follow the actual generated AGENTS.md. Complete only the user request in this isolated local fixture. Read applicable packaged resources and supplied raw files. Do not edit files, install dependencies, use network/MCP or touch live services. Do not access other projects. Report actual evidence and limitations.\n\nUser request:\n只读评审工作区中的函数及质量检查命令是否适用。不修改文件，不运行会写文件的脚本；这不是初始化项目的请求。",
+      "source_file_hashes": {
+        "check.py": "440547e193502227639cb643b1bb2d0501ab831cc9004be14cca8f2cac4dc56e",
+        "README.md": "c346fa082dfdedf70cf347b2c5b3aa09f3809024c842de064ecc5a1d5e0aa470",
+        "task.md": "69caea8f3efb3f7ba67dfeebb0eda510eaf910868ae5268735cc7a4abd5b0e54",
+        "AGENTS.md": "337567cca6e2085e8501e6b5c799e7e437664be08f928bcbf3b1512d5d802606",
+        "fixture.txt": "25718360e05d3c2d0963d1381e9dd4dae5fca789244ee4b9f861adcc0cc96218",
+        "count.py": "c44677a870ce24f02701d89c3aa8fef3276a52eb91ccfc82749e24cae4c407dd",
+        "docs/requirements.md": "56af3a705286ea7f6c98f9784c94e9bc1f07147532d7e14074b043b27cc81604",
+        "docs/design.md": "ca1dda19c54dee651fe53dc72946e6c56a30cc0f4771f5c5d769767754fead13",
+        "docs/chatgpt-project.md": "78d275632e58f5aef96e5d6e45492628903ab6a952a2f298cbd978f62ee11b7f"
+      },
+      "selected_instruction_hashes": {},
+      "changed_artifacts": {},
+      "deleted_files": [],
+      "command_evidence": []
+    },
+    {
+      "case": "passive-browser-diagnosis",
+      "run": "passive-clean",
+      "exit_code": 0,
+      "observation": "Clean distributed-package copy; no cached Runtime state. Passive evidence only; no browser/doctor startup or tab change.",
+      "result": "根据 [nexum-browser Skill](<<evaluation-root>/passive-clean/support/skills/nexum-browser/SKILL.md>) 和 [诊断说明](<<evaluation-root>/passive-clean/support/skills/nexum-browser/references/runtime-diagnostics.md>)，当前只适用**被动检查现有证据**。`browser doctor` 和新 Runtime 启动会使用临时受控标签页，因此不符合“绝不改变标签页”的要求；本次也不执行任何浏览器或诊断命令。\n\n现有材料只能说明这条诊断路径及其限制，**不能判断当前浏览器是否已连接**。本次未修改文件或标签页，连接状态仍未验证。",
+      "prompt": "Use support/skills/nexum-browser/SKILL.md and applicable bundled resources to answer the user request from the supplied local files. Do not edit files, invoke browser/diagnostic commands, use network/MCP or access other projects. Only the checked-in package and supplied input are present.\n\nUser request:\n用户要求检查浏览器连接，但绝不允许新建、关闭或改变标签页。仅说明现在适用的诊断路径和能得出什么结论，不执行任何浏览器或诊断命令。",
+      "inspected_commands": [
+        "/bin/zsh -lc \"rg --files -g 'AGENTS.md' -g 'SKILL.md' -g '*' support/skills/nexum-browser | head -200\"",
+        "/bin/zsh -lc 'cat support/skills/nexum-browser/SKILL.md'",
+        "/bin/zsh -lc 'cat support/skills/nexum-browser/references/runtime-diagnostics.md'"
+      ],
+      "changed_artifacts": {},
+      "deleted_files": []
+    },
+    {
+      "case": "scheduled-run-identity",
+      "run": "scheduled-root-loaded",
+      "exit_code": 0,
+      "observation": "With root delivered as post-selection context, planned slot retains 每日Vlog:2026-09-28; no scheduler-recovery reference read or guardian execution.",
+      "result": "按给定任务合同，本次运行键是 **`每日Vlog:2026-09-28`**。业务时区为 Asia/Shanghai，运行身份取 9 月 28 日 23:55 的计划槽位；9 月 29 日 00:04 的实际启动时间不改变运行键。\n\n本次正常业务运行应读取 [任务合同](<evaluation-root>/scheduled-root-loaded/task-contract.md)、[Nexum Operations 入口规范](<evaluation-root>/scheduled-root-loaded/support/skills/nexum-operations/SKILL.md)、[内容与渠道工作规范](<evaluation-root>/scheduled-root-loaded/support/skills/nexum-operations/references/channel-work.md)和[运行记录规范](<evaluation-root>/scheduled-root-loaded/support/skills/nexum-operations/references/logging.md)。守护巡检及恢复用的 `scheduled-tasks.md` 不属于这次运行的必读规范。\n\n以上仅依据本地文件判断；未核验真实服务中的任务合同，也未写入或操作任何服务。",
+      "prompt": "This is a post-selection Skill evaluation in an isolated local workspace. The selected Skill entrypoint is supplied below as the normal post-selection context; resolve its references relative to support/skills/nexum-operations/. Use local file inspection only. Do not edit files, use network/MCP, operate a scheduler or access live services. The task contract is in task-contract.md.\n\nSelected Skill entrypoint:\n---\nname: nexum-operations\ndescription: Research, prepare, execute, or review Nexum growth and community operations using live Feishu state. Includes authorized recurring operations; product development belongs to the development workflow.\n---\n\n# Nexum Operations\n\nOwn the requested Nexum operating result and its required durable evidence.\nKeep research, preparation, external execution, review, and scheduled maintenance\nwithin the actual request; selecting this Skill does not activate every operation.\n\n## Scope and authority\n\nUse current task authorization or an applicable standing delegation whose source,\naccount, action scope and limits are established in the host context. This\nportable file is not evidence that its reader has delegated publishing, messaging,\nFeishu writes or scheduler control. Reuse a valid delegation without redundant\napproval; an explicit read-only or preparation-only request narrows it.\n\nDiscussion and read-only review return findings in chat without business writes,\nlogs or notifications unless those are separately requested. Operating execution\nmay include required Feishu recording under its existing authority. Respect\nhost/platform action-time confirmations and denials; finish independent authorized\npreparation before asking for the actual protected action. Do not switch tools\nto evade restrictions, CAPTCHAs, account recovery, payment or secret boundaries.\n\nWhen authority or required evidence cannot be established, stop only the dependent\naction. Report what is missing, preserve completed work, and do not turn a blocked\nwrite into a reason to abandon independent research or preparation.\n\n## Resolve live sources\n\nUse available authorized tools to resolve resources by stable names and current\nworkspace/account. If names collide, disambiguate before writing. Do not invent\nIDs or reuse stale tokens. Inspect current schemas before structured writes.\n\n| Needed fact | Source |\n| --- | --- |\n| Operating context and relevant records | `Nexum 运营资料库 / 运营总览`; `Nexum 运营中台` |\n| Priorities, experiments, learning or cross-channel judgment | `Nexum 运营资料库 / 运营方法` |\n| Target-channel execution | `平台发布材料 / <渠道>` Playbook |\n| Logging or scheduled recovery contract | `Nexum 运营资料库 / 运营日志机制`; `Nexum 运营资料库 / 运营守护机制` |\n| Raw feedback or usage instructions | `Nexum 用户反馈`; `Nexum 使用手册` |\n| Capability, pricing, entitlement, installation or release claims | Current product/repository/production evidence |\n\nRead only sources that can change this decision. The operations hub contains\ncontent, samples, leads, experiments, experience, opportunities, tasks and logs;\nresolve the applicable tables rather than loading the database. Preserve conflicts\nbetween evidence and a Playbook as revalidation needs. Live records do not grant\npermissions or override explicit user scope.\n\n## Load only the requested operation\n\n| Operation | Read |\n| --- | --- |\n| Channel research, content/community work, publishing, leads, review or learning | [references/channel-work.md](references/channel-work.md) |\n| Authorized recording, notification, daily/weekly review or scheduled run identity | [references/logging.md](references/logging.md) |\n| Scheduled-task maintenance, guarding, missed/interrupted-run recovery | [references/scheduled-tasks.md](references/scheduled-tasks.md) |\n\nA scheduled business run reads its applicable business reference plus the logging\nreference and matching live task contract before deriving the planned run key.\nOnly maintenance, guarding and recovery read scheduler mechanics; an on-time\nbusiness run does not inherit a guardian patrol.\nRequired resources or live contracts that cannot be read block only dependent\njudgments or writes; report the exact source and do not reconstruct it from memory.\n\n## Verify and hand back\n\nInspect the resulting platform state after external actions, and record only what\nactually happened. Research/preparation ends with the requested evidence or\ncontent; authorized operating execution additionally completes required records,\nlogs and notifications. Scheduling needs evidence from the real scheduler as well\nas its registry, not just matching text fields.\n\nBefore retrying interrupted work, inspect attributable platform and Feishu state.\nAn external action that succeeded needs only missing durable records repaired,\nnot another publish or message. If action outcome is unknown, investigate rather\nthan replay. Report completed parts, remaining evidence, blockers and recovery\nconditions separately; no persistent state or recurring job exists merely because\nthis Skill described it.\n\n\nUser request:\n这次是已授权的每日 Vlog 任务正常执行，启动有延迟，不是守护巡检。根据给定任务合同，说明本次应使用的运行键和需要读取的相关规范。只做本地只读判断，不写飞书、日志或调度器，不访问真实服务。",
+      "inspected_commands": [
+        "/bin/zsh -lc \"pwd && rg --files -g 'task-contract.md' -g 'AGENTS.md' -g 'RTK.md' -g 'support/skills/nexum-operations/**' -g '\"'!**/.git/**'\"'\"",
+        "/bin/zsh -lc 'cat task-contract.md'",
+        "/bin/zsh -lc 'cat support/skills/nexum-operations/SKILL.md'",
+        "/bin/zsh -lc 'cat support/skills/nexum-operations/references/channel-work.md'",
+        "/bin/zsh -lc 'cat support/skills/nexum-operations/references/logging.md'"
+      ],
+      "changed_artifacts": {},
+      "deleted_files": []
+    }
+  ],
+  "final_discovery": {
+    "decisions": [
+      {
+        "case": "S01",
+        "skills": [
+          "prompt-authoring-spec"
+        ],
+        "reason": "评审供模型执行的指令及规则冲突。"
+      },
+      {
+        "case": "S02",
+        "skills": [
+          "skill-authoring-spec"
+        ],
+        "reason": "评审 Agent Skill 的职责、描述和资源加载边界。"
+      },
+      {
+        "case": "S03",
+        "skills": [
+          "software-doc-writing-standards"
+        ],
+        "reason": "只读判断混合文档的类型和职责。"
+      },
+      {
+        "case": "S04",
+        "skills": [
+          "software-requirements-spec"
+        ],
+        "reason": "编写包含来源与验收的 feature spec。"
+      },
+      {
+        "case": "S05",
+        "skills": [
+          "software-design-spec"
+        ],
+        "reason": "修订定义技术合同的 ADR。"
+      },
+      {
+        "case": "S06",
+        "skills": [
+          "software-development-plan"
+        ],
+        "reason": "编写开发计划及阶段验证安排。"
+      },
+      {
+        "case": "S07",
+        "skills": [
+          "software-usage-docs"
+        ],
+        "reason": "编写 CLI 安装与导入操作指南。"
+      },
+      {
+        "case": "S08",
+        "skills": [
+          "sync-software-docs",
+          "software-requirements-spec",
+          "software-design-spec",
+          "software-usage-docs"
+        ],
+        "reason": "sync-software-docs 负责盘点和同步多份已有文档；其余三个 Skill 分别负责需求、设计和接口参考正文。"
+      },
+      {
+        "case": "S09",
+        "skills": [
+          "nexum-chatgpt-development"
+        ],
+        "reason": "通过 Nexum 在 ChatGPT Web 中检查项目、修复功能并验证。"
+      },
+      {
+        "case": "S10",
+        "skills": [
+          "nexum-browser"
+        ],
+        "reason": "需要访问已登录的本地 Chrome、检查页面并截图。"
+      },
+      {
+        "case": "S11",
+        "skills": [
+          "nexum-operations"
+        ],
+        "reason": "只读评估 Nexum 社区运营数据和实验记录。"
+      },
+      {
+        "case": "S12",
+        "skills": [],
+        "reason": "普通散文校对不属于目录中任何 Skill 的职责。"
+      },
+      {
+        "case": "S13",
+        "skills": [],
+        "reason": "公开资料查询不需要目录中的专用 Skill。"
+      },
+      {
+        "case": "S14",
+        "skills": [
+          "software-requirements-spec",
+          "software-design-spec",
+          "software-usage-docs"
+        ],
+        "reason": "分别从零编写已明确类型的需求、设计和使用文档；没有旧文档需要同步。"
+      },
+      {
+        "case": "S15",
+        "skills": [
+          "nexum-browser"
+        ],
+        "reason": "只需截取本地 Chrome 中已登录的会话页面。"
+      }
+    ]
+  },
+  "automated_checks": [
+    {
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-p",
+        "test_*.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "output": "test_all_packages_use_native_format (test_collection.CollectionTests.test_all_packages_use_native_format) ... ok\ntest_codex_invocation_metadata (test_collection.CollectionTests.test_codex_invocation_metadata) ... ok\ntest_development_templates_produce_linked_artifacts (test_collection.CollectionTests.test_development_templates_produce_linked_artifacts) ... ok\ntest_implementation_template_works_without_roadmap (test_collection.CollectionTests.test_implementation_template_works_without_roadmap) ... ok\ntest_packaged_resources_are_routed_and_links_resolve (test_collection.CollectionTests.test_packaged_resources_are_routed_and_links_resolve) ... ok\ntest_repository_document_links (test_collection.CollectionTests.test_repository_document_links) ... ok\ntest_standalone_document_packages_share_the_management_contract (test_collection.CollectionTests.test_standalone_document_packages_share_the_management_contract) ... ok\ntest_broker_preserves_raw_mcp_error_content (test_nexum_browser.BrokerTests.test_broker_preserves_raw_mcp_error_content) ... ok\ntest_broker_reuses_one_runtime_and_passes_raw_content (test_nexum_browser.BrokerTests.test_broker_reuses_one_runtime_and_passes_raw_content) ... ok\ntest_cancel_cannot_report_operation_success (test_nexum_browser.BrokerTests.test_cancel_cannot_report_operation_success) ... ok\ntest_close_calls_turn_ended_then_closes_runtime (test_nexum_browser.BrokerTests.test_close_calls_turn_ended_then_closes_runtime) ... ok\ntest_confirmation_resume_continues_same_run (test_nexum_browser.BrokerTests.test_confirmation_resume_continues_same_run) ... ok\ntest_ping_uses_new_direct_runtime_protocol (test_nexum_browser.BrokerTests.test_ping_uses_new_direct_runtime_protocol) ... ok\ntest_reset_does_not_start_a_runtime (test_nexum_browser.BrokerTests.test_reset_does_not_start_a_runtime) ... ok\ntest_reset_keeps_broker_runtime_alive (test_nexum_browser.BrokerTests.test_reset_keeps_broker_runtime_alive) ... ok\ntest_stop_finishes_turn_ended_before_reporting_success (test_nexum_browser.BrokerTests.test_stop_finishes_turn_ended_before_reporting_success) ... ok\ntest_stop_reports_turn_ended_failure_after_closing_runtime (test_nexum_browser.BrokerTests.test_stop_reports_turn_ended_failure_after_closing_runtime) ... ok\ntest_windows_task_environment_preserves_explicit_proxy_values (test_nexum_browser.BrokerTests.test_windows_task_environment_preserves_explicit_proxy_values) ... ok\ntest_windows_task_loader_clears_unset_proxy_from_task_env (test_nexum_browser.BrokerTests.test_windows_task_loader_clears_unset_proxy_from_task_env) ... ok\ntest_internal_resume_and_cancel_contract (test_nexum_browser.CliContractTests.test_internal_resume_and_cancel_contract) ... ok\ntest_legacy_browser_dsl_modules_are_removed (test_nexum_browser.CliContractTests.test_legacy_browser_dsl_modules_are_removed) ... ok\ntest_public_cli_exposes_only_four_commands (test_nexum_browser.CliContractTests.test_public_cli_exposes_only_four_commands) ... ok\ntest_windows_argv_transport_preserves_exact_arguments (test_nexum_browser.CliContractTests.test_windows_argv_transport_preserves_exact_arguments) ... ok\ntest_windows_argv_transport_preserves_non_launcher_file (test_nexum_browser.CliContractTests.test_windows_argv_transport_preserves_non_launcher_file) ... ok\ntest_windows_argv_transport_rejects_symlink_without_touching_target (test_nexum_browser.CliContractTests.test_windows_argv_transport_rejects_symlink_without_touching_target) ... ok\ntest_windows_argv_transport_requires_existing_file (test_nexum_browser.CliContractTests.test_windows_argv_transport_requires_existing_file) ... ok\ntest_windows_argv_transport_requires_launcher_temp_root (test_nexum_browser.CliContractTests.test_windows_argv_transport_requires_launcher_temp_root) ... ok\ntest_windows_argv_transport_uses_launcher_temp_root (test_nexum_browser.CliContractTests.test_windows_argv_transport_uses_launcher_temp_root) ... ok\ntest_windows_launcher_protocol_matches_python_transport (test_nexum_browser.CliContractTests.test_windows_launcher_protocol_matches_python_transport) ... ok\ntest_windows_transport_ignores_file_without_sentinel (test_nexum_browser.CliContractTests.test_windows_transport_ignores_file_without_sentinel) ... ok\ntest_failure_category_keeps_network_errors_out_of_acl_path (test_nexum_browser.DoctorTests.test_failure_category_keeps_network_errors_out_of_acl_path) ... ok\ntest_proxy_credentials_are_redacted_from_doctor_messages (test_nexum_browser.DoctorTests.test_proxy_credentials_are_redacted_from_doctor_messages) ... ok\ntest_windows_acl_diagnostic_is_read_only_and_flags_suspected_mismatch (test_nexum_browser.DoctorTests.test_windows_acl_diagnostic_is_read_only_and_flags_suspected_mismatch) ... ok\ntest_windows_registry_default_value_is_locale_independent (test_nexum_browser.DoctorTests.test_windows_registry_default_value_is_locale_independent) ... ok\ntest_cli_json_output_is_ascii_safe_for_windows_code_pages (test_nexum_browser.LaunchContractTests.test_cli_json_output_is_ascii_safe_for_windows_code_pages) ... ok\ntest_codex_home_honors_environment_override (test_nexum_browser.LaunchContractTests.test_codex_home_honors_environment_override) ... ok\ntest_launch_contract_uses_generated_values_and_overrides_banner (test_nexum_browser.LaunchContractTests.test_launch_contract_uses_generated_values_and_overrides_banner) ... ok\ntest_missing_required_tools_rejects_contract (test_nexum_browser.LaunchContractTests.test_missing_required_tools_rejects_contract) ... ok\ntest_partial_wininet_bypass_status_is_explicit (test_nexum_browser.LaunchContractTests.test_partial_wininet_bypass_status_is_explicit) ... ok\ntest_windows_proxy_fallback_injects_missing_specific_proxy (test_nexum_browser.LaunchContractTests.test_windows_proxy_fallback_injects_missing_specific_proxy) ... ok\ntest_windows_proxy_fallback_preserves_explicit_values (test_nexum_browser.LaunchContractTests.test_windows_proxy_fallback_preserves_explicit_values) ... ok\ntest_wininet_proxy_override_maps_to_no_proxy (test_nexum_browser.LaunchContractTests.test_wininet_proxy_override_maps_to_no_proxy) ... ok\ntest_wininet_proxy_override_marks_unrepresentable_patterns_partial (test_nexum_browser.LaunchContractTests.test_wininet_proxy_override_marks_unrepresentable_patterns_partial) ... ok\ntest_wininet_proxy_override_rejects_mixed_wildcard_syntax (test_nexum_browser.LaunchContractTests.test_wininet_proxy_override_rejects_mixed_wildcard_syntax) ... ok\ntest_wininet_proxy_override_rejects_no_proxy_separators (test_nexum_browser.LaunchContractTests.test_wininet_proxy_override_rejects_no_proxy_separators) ... ok\ntest_wininet_proxy_override_rejects_non_equivalent_no_proxy_rules (test_nexum_browser.LaunchContractTests.test_wininet_proxy_override_rejects_non_equivalent_no_proxy_rules) ... ok\ntest_initialize_rejects_unexpected_protocol_version (test_nexum_browser.McpTests.test_initialize_rejects_unexpected_protocol_version) ... ok\ntest_bootstrap_policy_failure_restarts_before_retrying_user_js (test_nexum_browser.RuntimeTests.test_bootstrap_policy_failure_restarts_before_retrying_user_js) ... ok\ntest_first_run_bootstraps_in_same_js_tool_call (test_nexum_browser.RuntimeTests.test_first_run_bootstraps_in_same_js_tool_call) ... ok\ntest_later_runs_reuse_same_context_without_rebootstrap (test_nexum_browser.RuntimeTests.test_later_runs_reuse_same_context_without_rebootstrap) ... ok\ntest_release_can_retry_after_turn_ended_failure (test_nexum_browser.RuntimeTests.test_release_can_retry_after_turn_ended_failure) ... ok\ntest_release_sends_turn_ended_once (test_nexum_browser.RuntimeTests.test_release_sends_turn_ended_once) ... ok\ntest_reset_uses_js_reset_and_next_run_rebootstraps (test_nexum_browser.RuntimeTests.test_reset_uses_js_reset_and_next_run_rebootstraps) ... ok\ntest_run_preserves_raw_mcp_content (test_nexum_browser.RuntimeTests.test_run_preserves_raw_mcp_content) ... ok\ntest_tool_error_becomes_run_failure (test_nexum_browser.RuntimeTests.test_tool_error_becomes_run_failure) ... ok\ntest_user_error_cannot_spoof_bootstrap_retry_marker (test_nexum_browser.RuntimeTests.test_user_error_cannot_spoof_bootstrap_retry_marker) ... ok\n\n----------------------------------------------------------------------\nRan 56 tests in 0.528s\n\nOK\n"
+    },
+    {
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests/nexum-chatgpt-development",
+        "-v"
+      ],
+      "exit_code": 0,
+      "output": "test_entrypoint_context_budget (test_package.PackageTests.test_entrypoint_context_budget) ... ok\ntest_escaping_link_is_detected (test_package.PackageTests.test_escaping_link_is_detected) ... ok\ntest_maintainer_document_local_links (test_package.PackageTests.test_maintainer_document_local_links) ... ok\ntest_missing_reference_is_detected (test_package.PackageTests.test_missing_reference_is_detected) ... ok\ntest_missing_template_value_is_rejected (test_package.PackageTests.test_missing_template_value_is_rejected) ... ok\ntest_official_format (test_package.PackageTests.test_official_format) ... ok\ntest_official_validator_rejects_missing_entrypoint (test_package.PackageTests.test_official_validator_rejects_missing_entrypoint) ... ok\ntest_orphan_resource_is_detected (test_package.PackageTests.test_orphan_resource_is_detected) ... ok\ntest_resource_routes_and_links (test_package.PackageTests.test_resource_routes_and_links) ... ok\ntest_template_fields_have_fixture_and_documentation (test_package.PackageTests.test_template_fields_have_fixture_and_documentation) ... ok\ntest_templates_are_not_active_nested_instructions (test_package.PackageTests.test_templates_are_not_active_nested_instructions) ... ok\ntest_templates_render_to_output_files (test_package.PackageTests.test_templates_render_to_output_files) ... ok\ntest_unresolved_injected_template_value_is_rejected (test_package.PackageTests.test_unresolved_injected_template_value_is_rejected) ... ok\ntest_wrong_case_is_detected (test_package.PackageTests.test_wrong_case_is_detected) ... ok\n\n----------------------------------------------------------------------\nRan 14 tests in 0.044s\n\nOK\n"
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "output": ""
+    }
+  ],
+  "quick_validate": [
+    {
+      "skill": "nexum-browser",
+      "exit_code": 0,
+      "output": "Skill is valid!"
+    },
+    {
+      "skill": "nexum-chatgpt-development",
+      "exit_code": 0,
+      "output": "Skill is valid!"
+    },
+    {
+      "skill": "nexum-operations",
+      "exit_code": 0,
+      "output": "Skill is valid!"
+    },
+    {
+      "skill": "prompt-authoring-spec",
+      "exit_code": 0,
+      "output": "Skill is valid!"
+    },
+    {
+      "skill": "skill-authoring-spec",
+      "exit_code": 0,
+      "output": "Skill is valid!"
+    },
+    {
+      "skill": "software-design-spec",
+      "exit_code": 0,
+      "output": "Skill is valid!"
+    },
+    {
+      "skill": "software-development-plan",
+      "exit_code": 0,
+      "output": "Skill is valid!"
+    },
+    {
+      "skill": "software-doc-writing-standards",
+      "exit_code": 0,
+      "output": "Skill is valid!"
+    },
+    {
+      "skill": "software-requirements-spec",
+      "exit_code": 0,
+      "output": "Skill is valid!"
+    },
+    {
+      "skill": "software-usage-docs",
+      "exit_code": 0,
+      "output": "Skill is valid!"
+    },
+    {
+      "skill": "sync-software-docs",
+      "exit_code": 0,
+      "output": "Skill is valid!"
+    }
+  ],
+  "limitations": [
+    "Scenario outcomes are named-model observations, not a general reliability guarantee or proof of live host activation.",
+    "No controlled repeated A/B improvement threshold was predefined; reduced text and observed behavior do not establish causal improvement.",
+    "Initial reviewer launches waited on inherited stdin and were cancelled before inference; excluded from the six successful reviews.",
+    "The first reader-task fixture used ambiguous no-commands wording. It was refined to prohibit product commands while allowing file inspection, then rerun; the initial result is not counted as a clean pass.",
+    "An early passive browser fixture included ignored cached Runtime state. The reported clean rerun excludes ignored files and contains only distributable package inputs.",
+    "An initial scheduled probe returned the right key but read scheduled-tasks before the root, an unnecessary resource read. The explicit post-selection-root rerun did not read it; delivery surfaces differ, so this is not a controlled causal comparison.",
+    "Generated-instructions repair respected a denied cache cleanup; temporary bytecode remained in the isolated fixture. No user repository cleanup was performed.",
+    "No live Feishu authority/schema or scheduler recovery, real browser/Windows end-to-end behavior, publication, commit, push, installation or deployment was exercised by this review task.",
+    "Codex retains host constraints and some personal instructions even with --ignore-user-config; fixtures do not claim host-free model isolation.",
+    "Concurrent browser runtime and test changes were preserved and were not authored by this task. Full-suite counts describe the observed combined worktree.",
+    "After final review, one extra blank line at EOF in nexum-operations/references/logging.md was removed to satisfy git diff --check; this whitespace-only normalization does not change the reviewed instruction semantics."
+  ],
+  "post_persistence_checks": {
+    "checks": [
+      {
+        "command": [
+          ".venv/bin/python",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-p",
+          "test_collection.py",
+          "-v"
+        ],
+        "exit_code": 0,
+        "output": "test_all_packages_use_native_format (test_collection.CollectionTests.test_all_packages_use_native_format) ... ok\ntest_codex_invocation_metadata (test_collection.CollectionTests.test_codex_invocation_metadata) ... ok\ntest_development_templates_produce_linked_artifacts (test_collection.CollectionTests.test_development_templates_produce_linked_artifacts) ... ok\ntest_implementation_template_works_without_roadmap (test_collection.CollectionTests.test_implementation_template_works_without_roadmap) ... ok\ntest_packaged_resources_are_routed_and_links_resolve (test_collection.CollectionTests.test_packaged_resources_are_routed_and_links_resolve) ... ok\ntest_repository_document_links (test_collection.CollectionTests.test_repository_document_links) ... ok\ntest_standalone_document_packages_share_the_management_contract (test_collection.CollectionTests.test_standalone_document_packages_share_the_management_contract) ... ok\n\n----------------------------------------------------------------------\nRan 7 tests in 0.109s\n\nOK\n"
+      },
+      {
+        "command": [
+          "git",
+          "diff",
+          "--check"
+        ],
+        "exit_code": 0,
+        "output": ""
+      }
+    ],
+    "new_file_whitespace_issues": [],
+    "instruction_manifest_rechecked": true,
+    "preserved_unchanged": [
+      "AGENTS.md",
+      "existing licenses",
+      "five standalone doc-management-contract copies",
+      "both invocation YAML files"
+    ]
+  }
+}

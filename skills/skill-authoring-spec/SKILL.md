@@ -1,174 +1,89 @@
 ---
 name: skill-authoring-spec
-description: >
-  Use when authoring, revising, or reviewing an Agent Skill. Apply this
-  specification's rules for defining a cohesive responsibility, assigning a
-  primary type, choosing a canonical name, writing a discriminative description,
-  and designing and validating the body and resource set. This specification
-  evaluates the Skill-specific contract, not general instruction-writing quality.
+description: Apply Agent Skill authoring rules to responsibility, selection, names, resource boundaries and validation. Use when creating, revising or reviewing a Skill; general instruction quality belongs to prompt-authoring-spec.
 ---
 
 # Skill Authoring Spec
 
-Use this Skill as the canonical source for Skill-specific authoring rules.
-Preserve the host task's mode. A read-only review reports findings without
-changing the reviewed Skill. Author or revise only when the user requests that
-result.
+Guide the host's Skill authoring or review without taking over its deliverable.
+Preserve read-only requests; naming a Skill does not authorize edits. Check
+available sources before asking about a material ambiguity. Add only confirmed
+rules that change a real authoring decision.
 
-Infer the mode from the request and available context. Naming a Skill alone does
-not authorize changes. Without explicit writing authorization, keep the target
-unchanged and perform useful read-only inspection or assessment. Ask only when
-the target or a material ambiguity still prevents the requested result, after
-checking available, authorized sources; do not gate inspection on permission to
-revise.
+## Establish sources and authority
 
-Add only confirmed rules that change an authoring decision. Do not preserve
-research history, unvalidated ideas, or empty structure for hypothetical rules.
+Ground rules and examples in applicable project sources, primary documentation,
+representative artifacts/task traces, failure records or explicit user decisions.
+A decision establishes policy only in its authority and scope; a trace proves
+only observed behavior. External format or runtime guarantees need matching
+primary evidence. Resolve conflicts by authority, scope and applicable version,
+or preserve the unresolved conflict instead of inventing a mandatory rule.
 
-## Establish the Portable Contract
+This specification's normative rules are policy defined here, not evidence for
+external formats or hosts. Every Skill needs a stable non-empty name, selection
+description and post-selection instructions. Inspect the intended native format
+for serialization, paths and metadata; when unavailable, review only this
+semantic core and mark those format conclusions unverified.
 
-Ground source-dependent rules, facts, procedures, and examples in applicable
-project sources, authoritative documentation or policy, representative artifacts
-or task traces, failure records, or explicit user decisions.
+A Skill may explain authorization boundaries but does not itself prove a user
+has delegated actions. Preserve current task authority, protected actions and
+host/tool approvals. Do not turn routine choices, internal checkpoints or Skill
+transitions into new approval gates. A Skill's result returns to the host, which
+continues the request's remaining authorized work.
 
-- A user decision establishes policy only within that user's authority and the
-  stated task scope.
-- An artifact or trace establishes only the behavior observed in it.
-- A claim about an external format, host, or runtime guarantee requires an
-  authoritative source or applicable runtime evidence.
-- Resolve conflicts by instruction authority, source authority, and scope. If
-  those factors do not determine a winner, preserve the conflict and do not turn
-  either claim into a mandatory rule.
+## Define responsibility and selection
 
-Treat this specification's normative rules as policy defined here, not as
-evidence for external formats, runtimes, or tools.
+Determine the owned result and where responsibility ends. Read
+[references/type-contracts.md](references/type-contracts.md) for responsibility,
+primary type and body behavior. Choose one primary type from guidance, capability,
+workflow or router; apply only that type's body rules. Internal resource routing
+does not change an owned workflow or capability into a router.
 
-Require every Skill to provide a stable non-empty name, a selection description,
-and post-selection instructions. Let the native format supplied by the task or
-exposed by the intended host govern serialization, paths, and additional
-metadata. If no native format can be inspected, apply only this semantic core and
-mark serialization, path, and additional-metadata conclusions unverified. Report
-an unresolved format-source conflict instead of choosing a format.
+Read [references/naming-and-selection.md](references/naming-and-selection.md)
+when choosing or reviewing names, descriptions, prerequisites or sibling boundaries.
+Use the actual target collection. The description identifies the responsibility
+and when to select it, with prerequisites or sibling distinctions only when they
+change selection. Put initial selection conditions there, not only in the body;
+keep operation-specific checks and output detail after selection.
 
-Treat invocation and authorization as runtime contracts, not portable metadata
-fields. When a Skill can write, delete, execute commands, send messages, commit,
-push, deploy, or cause another external side effect, state the authorization
-boundary needed before that action. Use a verified runtime control when one
-exists. Do not claim that model-visible text alone enforces authorization.
+Names remain stable unless a demonstrated selection or responsibility defect
+requires a change. Naming patterns are preferences for expressing the result,
+not a reason for cosmetic migrations of valid existing names.
 
-An owned result ends this Skill's responsibility, not the host's larger task.
-Preserve authority already established in the current task; do not turn ordinary
-engineering choices, internal checkpoints, or Skill transitions into approval
-gates. Keep actual host approvals and user-reserved decisions explicit.
+## Keep the package sufficient and small
 
-## Define the Skill
+Keep core decisions, shared invariants, resource routes and completion boundaries
+in `SKILL.md`. Retain text only when its removal can cause a wrong choice, excess
+side effect, incomplete result, false success or unnecessary resource load.
+A short self-contained Skill needs no router or extra files.
 
-Before choosing a name, complete:
+Read [references/resource-layering.md](references/resource-layering.md) when
+placing or auditing instructions, references, scripts, assets or metadata.
+Add a resource only for an existing runtime role. Link each required resource
+from the body with its exact native path and use condition. Move substantial
+conditional detail off the ordinary path; do not repeat its full rules there.
 
-> When triggered, this Skill owns ___, and its responsibility ends when ___.
+## Validate the closed contract
 
-Use exactly one primary type:
+Read [references/skill-contract-validation.md](references/skill-contract-validation.md)
+for review and before calling a revision complete. Use only the name, description,
+body, reachable resources, declared dependencies and verified host/runtime behavior.
+Do not fill gaps from author intent or assumed permissions/capabilities.
 
-| Type | Responsibility |
-| --- | --- |
-| router | Select and dispatch leaf work without owning the leaf result. |
-| guidance | Change decisions inside a host task without owning its result. |
-| workflow | Advance one responsibility to a verifiable terminal result. |
-| capability | Expose independently invocable operations around one subject. |
+Include independently used invocation prompts and generated instruction templates.
+Derive cases from distinct selection, responsibility, branch, resource, recovery
+and stopping edges. An ideal walkthrough does not prove actual model behavior;
+selection and runtime claims need evidence on the named model, host or tool.
 
-When defining or reviewing responsibility, type, stopping point, or body
-behavior, read [Responsibility and Type Contracts](references/type-contracts.md).
-Apply its general classification rules and only the type-specific body section
-for the selected or candidate type.
+Missing or case-mismatched required resources block only their dependent path.
+Report the exact blocker and continue independent work. A draft with uncovered
+required rules is not a fully reviewed or validated revision.
 
-When choosing or reviewing a name, description, prerequisite, sibling boundary,
-or collection-level selection contract, read
-[Naming and Selection Contracts](references/naming-and-selection.md).
+## Report supported conclusions
 
-Treat the description as a selection contract:
-
-~~~text
-description =
-  responsibility
-  + applicability
-  + [hard prerequisite]
-  + [nearest-sibling boundary]
-~~~
-
-Put initial selection conditions in the description because the body loads only
-after selection. Keep operation-specific state, authorization, output detail,
-and validation in the body unless they determine whether the whole Skill can
-serve the request.
-
-Design the body from:
-
-~~~text
-body =
-  non-obvious decisions and instructions
-  + [conditional resource routing]
-  + [failure-preventing boundaries or evidence]
-~~~
-
-Keep an element only when removing it can cause a wrong decision, an action
-outside declared permission or side-effect boundaries, an incomplete result,
-false success, or an unnecessary resource load within the declared
-responsibility. Do not add side effects that the responsibility does not require.
-Do not prescribe type-named headings or a universal Markdown structure.
-
-## Place Resources by Runtime Role
-
-Create no resource by default. Add one only for a concrete runtime role. Apply
-the native format's paths and layout after inspecting that format.
-
-When placing or auditing any instruction document, agent-readable reference,
-executable resource, output asset, or integration metadata, read
-[Resource Layering](references/resource-layering.md). Route every required
-resource from the body with its exact native path and use condition.
-
-## Validate the Skill Contract
-
-Review the Skill as a closed contract using only its name, description, body,
-resources reachable on the selected path, explicitly declared dependencies,
-verified invocation and authorization behavior affecting that path, and explicit
-runtime guarantees. Do not supply missing rules, resources, permissions, or host
-capabilities from general knowledge or author intent.
-
-Include model-visible invocation prompts and output instruction templates when
-they can run independently. An updated body does not fix an older UI prompt
-that still asks the model to stop or request unnecessary confirmation.
-
-When reviewing a Skill or before calling an authored or revised Skill complete,
-read [Skill Contract Validation](references/skill-contract-validation.md). Derive
-cases from actual responsibility, selection, branch, resource, and stopping
-edges. A walkthrough proves only that an ideal executor can derive a coherent
-route. Claim model selection, model behavior, or runtime correctness only from
-evidence collected on the named surface, model, or runtime.
-
-If a reference required by the current path is missing, unreadable, or
-case-mismatched, stop only that dependent path and report the exact blocker.
-Continue independent work supported by available evidence. An authoring or
-revision task may return a draft only when it labels the affected review
-incomplete.
-
-## Report the Result
-
-Before calling an authored or revised Skill complete, or closing a review,
-resolve:
-
-- grounding and evidence for source-dependent decisions;
-- responsibility, stopping point, primary type, and cohesion boundary;
-- canonical or explicitly provisional name and written selection contract;
-- type-specific body behavior;
-- each resource's runtime role and route;
-- selection and contract cases that expose distinct decision edges; and
-- the strongest conclusions supported by available evidence.
-
-In read-only review, report each finding with the affected contract element, a
-reachable request and state, the conflicting or unsupported behavior it permits,
-the smallest correction boundary, and the evidence level. If no finding is
-identified, state that result for the inspected scope and list conclusions that
-remain unverified.
-
-Record confirmed decisions in the artifact or review result owned by the host
-task. Do not require fixed headings, serialized review fields, a universal case
-count, or a total quality score.
+Resolve source grounding, responsibility/type, selection boundaries, resource
+roles and routing, and meaningful contract cases. Report each finding with the
+affected element, reachable request/state, allowed wrong behavior, minimal
+correction and evidence level. With no finding, state the inspected scope and
+unverified conclusions. Record decisions in the host-owned artifact or result;
+no universal headings, serialized review fields, total score or case quota.

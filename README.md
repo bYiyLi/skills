@@ -12,7 +12,7 @@
 | 区分文档类型、核对共性质量 | [software-doc-writing-standards](skills/software-doc-writing-standards/SKILL.md) | 分类 guidance，不接管具体产物 |
 | 产品要求、约束和验收 | [software-requirements-spec](skills/software-requirements-spec/SKILL.md) | 单份需求文档 |
 | 技术结构、行为合同和 ADR | [software-design-spec](skills/software-design-spec/SKILL.md) | 单份设计文档 |
-| 路线图、Phase 工作与完成证据 | [software-development-plan](skills/software-development-plan/SKILL.md) | 开发计划及其阶段详情 |
+| 实施计划、路线图与完成证据 | [software-development-plan](skills/software-development-plan/SKILL.md) | 独立计划单元、内部阶段与总览分开判断 |
 | 安装运行、操作方法、接口查询 | [software-usage-docs](skills/software-usage-docs/SKILL.md) | 同一产品的使用文档 |
 | 一次变更影响多份文档 | [sync-software-docs](skills/sync-software-docs/SKILL.md) | 同步工作流，正文共用对应类型 Skill |
 | ChatGPT Web 通过 Nexum 开发本地项目 | [nexum-chatgpt-development](skills/nexum-chatgpt-development/SKILL.md) | 特定环境的完整开发工作流 |
@@ -47,5 +47,7 @@ Windows 使用 `.venv/Scripts/python.exe`。检查覆盖全体包的官方格式
 后先检查声明、正文、references、assets 和调用提示词是否一致，再按实际行为变化
 选择必要验证，不用匹配提示词原句的测试冒充行为验证。
 
-本轮分析与证据见 [2026-09-19 记录](docs/vlog/2026-09-19.md)。
+最新逐 Skill 审核与验证见 [2026-09-28 记录](docs/vlog/2026-09-28.md)及
+[保留证据](tests/evidence/2026-09-28-skills-review.json)；历史集合调整见
+[2026-09-19 记录](docs/vlog/2026-09-19.md)。
 Nexum 工作流用法见[专项说明](docs/skills/nexum-chatgpt-development.md)。

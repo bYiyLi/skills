@@ -91,7 +91,12 @@ Use `assets/` for files consumed as part of the result rather than as instructio
 - boilerplate copied into a generated output;
 - sample artifacts transformed into the requested deliverable.
 
-Place output templates under `assets/` rather than inventing a separate top-level `templates/` contract. Keep instructions, policies, and decision rules out of assets. If the agent must read a template to understand a rule, move that rule into the body or a reference.
+Use `assets/` for output templates in formats that support it. Keep rules governing
+how the current author selects or produces an output in the body or references.
+An asset whose requested output is itself model-visible instructions, such as an
+AGENTS or prompt template, may contain those instructions; review its generated
+result as an independent instruction unit. Do not treat the template as active
+repository policy merely because it contains imperative text.
 
 State how the asset is selected and used, whether it may be modified, and which output properties must be preserved. To claim runtime usability, verify that the asset exists, opens in its intended consumer, and produces a result that meets those documented output properties through the documented path. If the intended consumer is unavailable, report that claim as unverified.
 

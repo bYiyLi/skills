@@ -40,14 +40,17 @@ instructions. Include only project-specific constraints that change decisions.
 Point to design and AGENTS instead of copying their changing contents. Keep
 implementation progress and daily history out of Project Instructions.
 
-Template fields are text unless specified otherwise:
-
 | Fields | Value source |
 | --- | --- |
 | PROJECT_NAME, PROJECT_PURPOSE, PRODUCT_BOUNDARIES, PROJECT_CONSTRAINTS | User-approved goals and current design |
 | AGENT_HINT, REPOSITORY_MAP | Live Agent discovery and opened canonical directories; map each repository independently |
 | WORKING_LANGUAGE | Existing project convention or user's working language |
-| AGENTS_PATH, DESIGN_SOURCE, DEVELOPMENT_SOURCE, JOURNAL_PATH, PROJECT_INSTRUCTIONS_SOURCE | Actual repository source map; use repository-relative paths where applicable |
+| AGENTS_PATH, REQUIREMENTS_SOURCE, DESIGN_SOURCE, DEVELOPMENT_SOURCE, JOURNAL_PATH, PROJECT_INSTRUCTIONS_SOURCE | Actual repository source map; use repository-relative paths where applicable |
+
+REQUIREMENTS_SOURCE identifies the inspected PRD/SRS, product requirements section,
+or explicit decision source when one exists. Do not create a requirements file
+just to fill the template. If none exists, omit that source row or state the
+actual source gap; do not transfer product authority to technical design.
 
 Save a repository-maintained instruction source at `docs/chatgpt-project.md`
 when repository writing is authorized and no existing source already serves that

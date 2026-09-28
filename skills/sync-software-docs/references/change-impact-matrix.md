@@ -19,14 +19,14 @@
 
 - `create`：当前没有承担所需读者结果的文档。
 - `update`：已有文档拥有该结果，且变化改变其内容。
-- `update-metadata`：正文不变，governing evidence 或用户在其权限内的治理决定要求改变
+- `update-metadata`：本行动不改正文，governing evidence 或用户在其权限内的治理决定要求改变
   非状态 metadata，且目标合同定义或允许字段和值；记录准确前后值。
-- `change-state`：正文不变，目标合同定义的一般 lifecycle 状态需要改变；记录当前值、目标值
+- `change-state`：本行动不改正文，目标合同定义的一般 lifecycle 状态需要改变；记录当前值、目标值
   和进入条件。变为 deprecated 时使用 `deprecate`。
-- `move`：仍为当前文档，governing evidence 或用户在其权限内的治理决定要求移动或重命名，
+- `move`：仍为当前维护文档，governing evidence 或用户在其权限内的治理决定要求移动或重命名，
   且目标合同定义或允许准确源路径、目标路径和受影响引用处理。移入历史位置时使用 `archive`。
-- `deprecate`：文档需保留但不再表示当前事实，且目标合同已定义表示方式、当前与目标状态
-  及进入条件；缺任一项时将该维度标为 `unresolved`，不自创表示方式。
+- `deprecate`：文档需保留但不再表示当前事实，先核对当前声明和弃用依据，沿用仓库表示方式与进入条件。无专门状态合同
+  时可用明确文字和替代来源表达，不新增状态机；弃用依据或既有状态条件未确定时记 `unresolved`。
 - `archive`：governing evidence 或用户在其权限内的治理决定要求归档非当前文档，且目标
   合同定义或允许准确源路径、历史目标路径和进入条件。
 - `delete`：准确目标和 governing evidence 表明应删除而非保留、deprecate 或 archive；记录

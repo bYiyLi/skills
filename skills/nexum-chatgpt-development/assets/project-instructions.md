@@ -21,7 +21,8 @@ substitutes for current files, Git state, or command results.
 ## Sources
 
 Repository rules: {{AGENTS_PATH}}
-Current design: {{DESIGN_SOURCE}}
+Product commitments: {{REQUIREMENTS_SOURCE}}
+Technical design: {{DESIGN_SOURCE}}
 Development scope and acceptance: {{DEVELOPMENT_SOURCE}}
 Daily engineering journal: {{JOURNAL_PATH}}
 Maintained source of these instructions: {{PROJECT_INSTRUCTIONS_SOURCE}}

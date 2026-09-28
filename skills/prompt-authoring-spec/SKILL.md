@@ -1,112 +1,70 @@
 ---
 name: prompt-authoring-spec
-description: >
-  Use when authoring, revising, or reviewing text that a model will interpret as
-  instructions, regardless of where the text is stored or delivered. Apply this
-  specification's rules for necessary, scoped, executable, and evidence-grounded
-  instructions while the host task retains ownership of the artifact, execution,
-  and delivery.
+description: Apply instruction-writing rules when authoring, revising or reviewing text intended to instruct a model. Covers semantic clarity, scope, authority and evidence; the host retains artifact delivery.
 ---
 
 # Prompt Authoring Spec
 
-Use this Skill as the canonical source for model-visible instruction design. A
-prompt is text intended to change a model's selection, interpretation, judgment,
-action, or evaluation behavior, regardless of storage or delivery.
+Guide decisions inside the host task. A prompt is text intended to change model
+selection, interpretation, action or evaluation, regardless of storage. Preserve
+the requested mode: review reports findings; revision needs task authorization.
+Naming this Skill alone does not authorize rewriting.
 
-Apply this guidance inside the host authoring, revision, or review task. Leave
-the artifact, execution, runtime evaluation, and delivery with that host task.
-Preserve the requested mode: a read-only review reports findings without
-rewriting the artifact; revise only when the user requests revision.
+## Establish the behavioral contract
 
-Infer the mode from the request and available context. Naming this Skill alone
-does not authorize a write. When writing is not explicitly authorized, keep the
-target unchanged and proceed with useful read-only inspection or review. Ask
-only when the target or a material ambiguity still prevents the requested
-result; do not block inspection merely because revision is not authorized.
+Locate the target and source requirements through current context and authorized
+sources. Missing material blocks only dependent judgments; report the exact gap
+rather than inventing text, facts or resources. A source-limited text review can
+still proceed. Let the artifact's own specification govern its native semantics
+and format; this Skill governs its model-visible instructions.
 
-Before authoring, establish the requested behavior or source requirements.
-Before revision or review, locate the target instructions in context or through
-available, authorized sources. If decisive input remains missing or unreadable,
-report the exact gap and pause only the dependent action; complete independent
-parts supported by current evidence. Do not invent missing target text or
-required resources. Missing source evidence can limit a review conclusion
-without preventing inspection of the available text.
+Resolve the observable condition, actor, action, available evidence and intended
+result before drafting. This is a reasoning aid, not a required output schema.
+Keep a sentence only when removing it changes a decision, action, permission,
+output, recovery or evidence requirement.
 
-Let an artifact-specific specification govern native format and semantics. Apply
-this specification only to the model-visible instructions in that artifact. Do
-not turn it into a universal template, fixed rewriting workflow, scenario
-catalog, scoring system, registry, or deployment process.
+- Specify a method or ordering only when alternatives change the required result
+  or its evidence, authority, side effects or recovery. Preserve useful judgment.
+- Distinguish requested output constraints from heuristics used to organize work.
+  A part's label or local check does not by itself make it a separately governed
+  result. Define units and precedence when confusing them changes the outcome.
+- Identify necessary inputs and authority from available sources before asking.
+  Only unresolved choices that materially affect the result need clarification;
+  routine details and existing decisions do not need approval again.
+- Handle reachable missing, invalid, conflicting, denied and post-start failure
+  states when they change the result. Use observable behavior instead of demands
+  for hidden effort, certainty or private reasoning.
+- Define completion evidence and distinguish checkpoints from approval or task
+  completion. Continue the authorized goal across progress questions and context
+  recovery; revise it when the user changes scope or rejects an assumption.
 
-When reviewing this Skill itself, treat its normative writing rules as the
-policy under review. Verify claims about external formats, hosts, tools, and
-current behavior separately.
+When reviewing this specification itself, treat its normative rules as policy
+under review, not proof of external host, format or runtime guarantees.
 
-## Define the Behavioral Contract
+## Read only applicable references
 
-State the intended change before drafting prose:
+| Decision being written or reviewed | Required reference |
+| --- | --- |
+| Wording, terms, requirement strength, prohibitions, bounds or branches | [references/executable-language.md](references/executable-language.md) |
+| Context, history, examples, placeholders or variable data | [references/context-and-examples.md](references/context-and-examples.md) |
+| Retrieved/quoted content, user variables or instruction precedence | [references/instruction-authority.md](references/instruction-authority.md) |
+| Source-dependent claims, permissions, runtime behavior or completion evidence | [references/evidence-and-enforcement.md](references/evidence-and-enforcement.md) |
+| Review, counterexamples, evaluation or final instruction validation | [references/prompt-contract-validation.md](references/prompt-contract-validation.md) |
 
-~~~text
-When <observable condition>, <actor> <must/should/may> <behavior>
-instead of <plausible wrong behavior>, using <available evidence>.
-~~~
+A missing required reference blocks its path, not independent work. Report exact
+paths and uncovered rules; do not call affected instructions complete or validated.
 
-Use this as a reasoning aid, not a required output template. Resolve only parts
-that change the instruction. Delete a sentence when removing it changes no
-selection, interpretation, judgment, action, evaluation, or evidence requirement.
+## Review the actual executor-facing text
 
-- Specify a method only when alternatives change the required result, evidence,
-  authorization, side effects, ordering, reproducibility, or recovery.
-- Preserve judgment when several behaviors remain valid. Precision resolves
-  ambiguity that changes a decision; it does not remove useful discretion.
-- Identify the recipient or intended use only when it changes terminology,
-  depth, tone, or output form.
-- Identify required inputs, capabilities, and authority. Check the request,
-  available context, and authorized sources before declaring them missing;
-  absence from the latest message alone is not a blocker.
-- Define behavior for reachable missing, invalid, conflicting, unavailable,
-  denied, and post-start failure states when they change the result.
-- Add a rule only when the executor or host task owns the behavior and omission
-  can cause failure within the prompt's declared scope.
-- Use observable actions, choices, checks, outputs, and evidence. Do not replace
-  them with hidden-effort instructions such as think deeply, be certain, or take
-  your time.
-- State a stopping point or completion evidence when the instruction governs
-  progression or a completion claim.
-- Distinguish an internal checkpoint from task completion or a real approval
-  boundary. Preserve the current goal through status questions and context
-  recovery; change it when the user actually changes scope or cancels the task.
-- Keep clarification proportional: state the current fact, concrete consequence,
-  and decision needed. Do not make the user decide routine choices already
-  determined by the contract or inspect an internal checklist as the answer.
+Apply the closed-contract checks before completion. Include independently used
+invocation prompts and output instruction templates; review notes cannot supply
+rules absent from the text the executor receives. Resolve a demonstrated defect
+with the smallest correction that preserves other valid behavior. Do not turn
+this guidance into a mandatory template, scenario quota, score or new workflow.
 
-## Load Only Applicable Rules
-
-Read [Executable Language](references/executable-language.md) when authoring or
-reviewing wording, terminology, requirement strength, prohibitions, sets,
-quantitative bounds, branches, or structure.
-
-Read [Context and Examples](references/context-and-examples.md) when the prompt
-contains or needs source context, history, examples, placeholders, variable
-input, or illustrative data.
-
-Read [Instruction and Data Authority](references/instruction-authority.md) when
-the prompt consumes user-controlled variables, quoted or retrieved content, tool
-results, prior model output, or multiple instruction authority levels.
-
-Read [Evidence and Enforcement](references/evidence-and-enforcement.md) when the
-prompt asserts source-dependent rules or current facts, depends on host or
-runtime behavior, governs permissions or side effects, defines completion
-evidence, or specifies an evaluation.
-
-Read [Prompt Contract Validation](references/prompt-contract-validation.md) when
-reviewing instructions, deriving counterexamples, or making claims about prompt
-quality, model behavior, or runtime correctness. Before the host calls authored
-or revised instructions complete, apply its closed-contract review to the final
-text the executor will receive.
-
-A routed reference is required only on its stated path. If a required reference
-is missing, unreadable, or case-mismatched, stop that path and report the exact
-blocker. Continue independent paths. An authoring or revision task may return a
-draft only when it labels the affected review incomplete; do not call the
-affected prompt complete or validated.
+Report findings with location, reachable request/state, permitted wrong behavior,
+minimal correction and evidence level. Keep source checks, text review, scenario
+walkthrough, independent model evaluation and runtime validation distinct.
+Fewer words alone do not demonstrate better model behavior; require controlled
+evaluation before claiming a phrase causally improves it. The host owns artifact
+changes, validation execution and final delivery.

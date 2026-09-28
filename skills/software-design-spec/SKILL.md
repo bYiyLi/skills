@@ -1,10 +1,6 @@
 ---
 name: software-design-spec
-description: >
-  创建、修订或只读评审单一软件设计文档或 ADR，覆盖实际问题所需的结构、接口、数据、
-  运行时和技术取舍。产品承诺使用 software-requirements-spec；工作拆分、Phase 验收
-  和进度使用 software-development-plan；安装运行与接口使用说明使用 software-usage-docs。
-  跨文档同步由 sync-software-docs 协调，并在设计正文上共用本 Skill。
+description: 创建、修订或评审软件设计文档和 ADR，定义结构、接口、数据及运行行为。产品承诺由需求负责，工作安排由实施计划负责。
 ---
 
 # Software Design Spec

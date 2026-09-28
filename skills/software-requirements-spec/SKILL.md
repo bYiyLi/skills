@@ -1,10 +1,6 @@
 ---
 name: software-requirements-spec
-description: >
-  创建、修订或只读审校单一软件 PRD、feature spec、SRS 或需求基线，明确问题、范围、
-  产品承诺、验收和来源。技术方案由 software-design-spec 负责，实施步骤、Phase
-  计划与进度由 software-development-plan 负责。跨文档同步由 sync-software-docs
-  协调，并在需求正文上共用本 Skill。
+description: 创建、修订或审校 PRD、feature spec 和 SRS，明确产品范围、要求、来源与验收。技术方案和实施计划由各自文档负责。
 ---
 
 # Software Requirements Spec
