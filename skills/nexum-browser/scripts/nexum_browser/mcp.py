@@ -99,7 +99,7 @@ class StdioMcpClient:
             {
                 "protocolVersion": _PROTOCOL_VERSION,
                 "capabilities": {"elicitation": {}},
-                "clientInfo": {"name": "nexum-browser", "version": "0.4.0"},
+                "clientInfo": {"name": "nexum-browser", "version": "1.0.0"},
             },
             timeout=self._startup_timeout,
         )

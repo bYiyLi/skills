@@ -1,1 +1,1 @@
-"""Nexum Browser CLI adapter."""
+"""Persistent bridge to the Codex/OpenAI cua_repl Browser Runtime."""
