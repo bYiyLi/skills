@@ -12,6 +12,12 @@ sys.dont_write_bytecode = True
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 ENV_PATH = SKILL_ROOT / ".runtime" / "broker-task-env.json"
+_PROXY_ENV_NAMES = {
+    "HTTP_PROXY",
+    "HTTPS_PROXY",
+    "ALL_PROXY",
+    "NO_PROXY",
+}
 
 
 def _load_environment() -> None:
@@ -26,6 +32,8 @@ def _load_environment() -> None:
     for name, setting in value.items():
         if isinstance(name, str) and isinstance(setting, str):
             os.environ[name] = setting
+        elif name in _PROXY_ENV_NAMES and setting is None:
+            os.environ.pop(name, None)
     with contextlib.suppress(FileNotFoundError):
         ENV_PATH.unlink()
 

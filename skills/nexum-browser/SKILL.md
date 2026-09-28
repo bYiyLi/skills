@@ -19,15 +19,19 @@ browser reset
 browser stop
 ~~~
 
-Resolve scripts/browser from this Skill directory. Prefer a process tool that
-passes arguments directly. Pass the JavaScript for run as one argv element; do
-not interpolate model-generated JavaScript into a shell command string.
+On macOS and Linux, resolve `scripts/browser` from this Skill directory. On
+Windows, invoke `powershell.exe` directly with `-NoProfile -NonInteractive
+-ExecutionPolicy Bypass -File` and the resolved `scripts/browser.ps1` path.
+Pass all Browser CLI arguments separately. Pass the JavaScript for run as one
+argv element; do not interpolate model-generated JavaScript into a shell command
+string.
 
 doctor is diagnostic, not a required prelude to every browser task. Normal
 browser work should usually use run.
 
 Packaged implementation resources are
 [scripts/browser](scripts/browser),
+[scripts/browser.ps1](scripts/browser.ps1),
 [scripts/browser_task.py](scripts/browser_task.py),
 [scripts/nexum_browser/__init__.py](scripts/nexum_browser/__init__.py),
 [scripts/nexum_browser/cli.py](scripts/nexum_browser/cli.py),
@@ -75,6 +79,12 @@ user JavaScript.
 
 Mac and Windows use the same direct cua_repl transport. Do not route Windows
 through Codex model turns or an app-server Browser adapter.
+
+On Windows, caller-provided `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, and
+`NO_PROXY` settings are preserved through the persistent Scheduled Task broker.
+If the caller did not explicitly provide a proxy for HTTP or HTTPS, the bridge
+uses the current user's WinINET proxy only in the Runtime child environment. It
+does not change the user's system proxy.
 
 ## Work directly in persistent JavaScript
 
@@ -213,11 +223,16 @@ It checks:
   js, js_reset, post-reset bootstrap, and turn_ended;
 - Browser plugin presence, Chrome installation/running state, extension state,
   native messaging host, and Browser Runtime connectivity;
+- effective proxy sources without printing proxy URLs; on Windows, WinINET is
+  used only as the fallback described above;
 - on Windows, whether codex sandbox can execute the Runtime node.exe.
 
-When the Windows sandbox execution probe fails, doctor reports the Runtime path,
-resolved Junction target, Codex sandbox group evidence, relevant ACL output, and
-whether an ACL mismatch is suspected. It must not modify system ACLs.
+On Windows, native messaging host registration is verified through the Registry
+without depending on localized `reg.exe` default-value labels. When the Windows
+sandbox execution probe fails because access is denied, doctor reports the
+Runtime path, resolved Junction target, Codex sandbox group evidence, relevant
+ACL output, and whether an ACL mismatch is suspected. It must not modify system
+ACLs. Network and proxy failures do not trigger ACL diagnostics.
 
 Use the diagnostic evidence to repair the actual environment outside this Skill;
 do not add alternate product architecture to mask a machine-specific

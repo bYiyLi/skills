@@ -17,6 +17,34 @@ from .common import (
 from .runtime import CuaLaunchContract, CuaRuntime, discover_launch_contract
 
 
+_URL_CREDENTIALS = re.compile(
+    r"(?P<scheme>[a-z][a-z0-9+.-]*)://[^\s/@]+(?::[^\s/@]*)?@",
+    re.IGNORECASE,
+)
+
+
+def _redact_sensitive_text(value: str) -> str:
+    return _URL_CREDENTIALS.sub(
+        lambda match: f"{match.group('scheme')}://***@",
+        value,
+    )
+
+
+def _redact_sensitive_value(value: Any) -> Any:
+    if isinstance(value, str):
+        return _redact_sensitive_text(value)
+    if isinstance(value, dict):
+        return {
+            key: _redact_sensitive_value(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [_redact_sensitive_value(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_redact_sensitive_value(item) for item in value)
+    return value
+
+
 def _entry(
     checks: list[dict[str, Any]],
     name: str,
@@ -27,10 +55,10 @@ def _entry(
     value: dict[str, Any] = {
         "name": name,
         "status": status,
-        "message": message,
+        "message": _redact_sensitive_text(message),
     }
     if details:
-        value["details"] = details
+        value["details"] = _redact_sensitive_value(details)
     checks.append(value)
 
 
@@ -130,6 +158,81 @@ def _windows_acl_details(runtime_path: Path, sandbox_output: str) -> dict[str, A
     }
 
 
+def _failure_category(message: str) -> str:
+    lower = message.lower()
+    if any(
+        token in lower
+        for token in (
+            "access is denied",
+            "access denied",
+            "createprocessasuserw failed: 5",
+            "winerror 5",
+        )
+    ):
+        return "sandbox-acl"
+    if any(
+        token in lower
+        for token in (
+            "fetch request failed",
+            "timed out",
+            "timeout",
+            "winerror 10060",
+            "econn",
+            "dns",
+            "proxy",
+        )
+    ):
+        return "network"
+    if any(
+        token in lower
+        for token in (
+            "cua_repl",
+            "node_repl",
+            "mcp",
+            "launch contract",
+        )
+    ):
+        return "runtime"
+    return "browser-runtime"
+
+
+def _runtime_failure_details(
+    contract: CuaLaunchContract,
+    message: str,
+) -> dict[str, Any]:
+    category = _failure_category(message)
+    details: dict[str, Any] = {"category": category}
+    if os.name == "nt" and category == "sandbox-acl":
+        details.update(
+            _windows_acl_details(contract.node_path, message)
+        )
+    return details
+
+
+def _read_windows_registry_default_value(
+    registry_key: str,
+) -> str | None:
+    import winreg
+
+    roots = {
+        "HKCU": winreg.HKEY_CURRENT_USER,
+        "HKEY_CURRENT_USER": winreg.HKEY_CURRENT_USER,
+        "HKLM": winreg.HKEY_LOCAL_MACHINE,
+        "HKEY_LOCAL_MACHINE": winreg.HKEY_LOCAL_MACHINE,
+    }
+    root_name, separator, subkey = registry_key.partition("\\")
+    root = roots.get(root_name.upper())
+    if root is None or not separator or not subkey:
+        return None
+    try:
+        with winreg.OpenKey(root, subkey) as key:
+            value, _ = winreg.QueryValueEx(key, "")
+    except OSError:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
 def _browser_checks(
     checks: list[dict[str, Any]],
     contract: CuaLaunchContract,
@@ -148,7 +251,11 @@ def _browser_checks(
     )
     scripts = root / "scripts"
 
-    def run(name: str, *args: str) -> tuple[dict[str, Any], str]:
+    def run(
+        name: str,
+        *args: str,
+        env: dict[str, str] | None = None,
+    ) -> tuple[dict[str, Any], str]:
         script = scripts / name
         if not script.is_file():
             return {}, f"diagnostic script is missing: {script}"
@@ -157,6 +264,7 @@ def _browser_checks(
                 contract.node_path,
                 script,
                 *args,
+                env=env,
             )
         except Exception as exc:
             return {}, str(exc)
@@ -237,6 +345,32 @@ def _browser_checks(
         "chrome",
         "--json",
     )
+    if os.name == "nt" and native.get("correct") is not True:
+        registry_key = native.get("registryKey")
+        if isinstance(registry_key, str) and registry_key:
+            manifest_path = _read_windows_registry_default_value(
+                registry_key
+            )
+            if manifest_path:
+                native_env = os.environ.copy()
+                native_env[
+                    "CODEX_CHROME_NATIVE_HOST_MANIFEST_PATH"
+                ] = manifest_path
+                recovered, recovered_msg = run(
+                    "check-native-host-manifest.js",
+                    "--browser",
+                    "chrome",
+                    "--json",
+                    env=native_env,
+                )
+                if recovered.get("correct") is True:
+                    native = {
+                        **recovered,
+                        "registryKey": registry_key,
+                        "registryManifestPath": manifest_path,
+                        "registryKeyExists": True,
+                    }
+                    native_msg = recovered_msg
     if native.get("correct") is True:
         _entry(
             checks,
@@ -274,6 +408,16 @@ def run_doctor() -> dict[str, Any]:
             "pass",
             "command, args, env, env_vars and enabled_tools are valid",
             **contract.summary(),
+        )
+        _entry(
+            checks,
+            "Runtime proxy",
+            "pass",
+            (
+                "Runtime proxy sources resolved without exposing "
+                "proxy URLs"
+            ),
+            sources=contract.proxy_status,
         )
     except Exception as exc:
         _entry(checks, "unified-computer-use", "fail", str(exc))
@@ -370,9 +514,7 @@ def run_doctor() -> dict[str, Any]:
     try:
         runtime = CuaRuntime(contract)
     except Exception as exc:
-        details: dict[str, Any] = {}
-        if os.name == "nt":
-            details.update(_windows_acl_details(contract.node_path, str(exc)))
+        details = _runtime_failure_details(contract, str(exc))
         _entry(
             checks,
             "MCP initialize",
@@ -414,11 +556,7 @@ try {
                     rpc_timeout=max(60.0, contract.startup_timeout),
                 )
             except Exception as exc:
-                details: dict[str, Any] = {}
-                if os.name == "nt":
-                    details.update(
-                        _windows_acl_details(contract.node_path, str(exc))
-                    )
+                details = _runtime_failure_details(contract, str(exc))
                 _entry(checks, name, "fail", str(exc), **details)
             else:
                 _entry(

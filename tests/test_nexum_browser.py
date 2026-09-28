@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import types
 import unittest
 from unittest.mock import patch
 
@@ -19,10 +20,21 @@ REPO = Path(__file__).resolve().parents[1]
 ROOT = REPO / "skills/nexum-browser"
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from nexum_browser.broker import Broker, _compatible_ping
+import browser_task
+
+from nexum_browser.broker import (
+    Broker,
+    _compatible_ping,
+    _write_windows_task_environment,
+)
 from nexum_browser.cli import build_internal_parser, build_parser
 from nexum_browser.common import codex_home, emit
-from nexum_browser.doctor import _windows_acl_details
+from nexum_browser.doctor import (
+    _failure_category,
+    _read_windows_registry_default_value,
+    _redact_sensitive_text,
+    _windows_acl_details,
+)
 from nexum_browser.mcp import McpError, PendingElicitation, StdioMcpClient
 from nexum_browser.runtime import (
     _BOOTSTRAP,
@@ -30,6 +42,7 @@ from nexum_browser.runtime import (
     _BOOTSTRAP_WITH_READINESS,
     CuaRuntime,
     CuaToolError,
+    _apply_windows_proxy_fallback,
     _read_contract,
 )
 
@@ -100,7 +113,10 @@ class LaunchContractTests(unittest.TestCase):
                                     "turn_ended",
                                 ],
                                 "startup_timeout_sec": 17,
-                                "env_vars": [],
+                                "env_vars": [
+                                    "FORWARDED_OPTIONAL",
+                                    "MISSING_OPTIONAL",
+                                ],
                                 "env": {
                                     "CUA_REPL_NODE_REPL_PATH": str(
                                         node_repl
@@ -124,7 +140,13 @@ class LaunchContractTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            contract = _read_contract(config)
+            with patch.dict(
+                os.environ,
+                {"FORWARDED_OPTIONAL": "forward-me"},
+                clear=False,
+            ):
+                os.environ.pop("MISSING_OPTIONAL", None)
+                contract = _read_contract(config)
 
         self.assertEqual(contract.command, str(node))
         self.assertEqual(contract.runtime_version, "26.1")
@@ -137,7 +159,60 @@ class LaunchContractTests(unittest.TestCase):
             frozenset({"js", "js_reset", "turn_ended"}),
         )
         self.assertEqual(contract.env["PRESERVE_ME"], "yes")
+        self.assertEqual(
+            contract.env["FORWARDED_OPTIONAL"],
+            "forward-me",
+        )
+        self.assertNotIn("MISSING_OPTIONAL", contract.env)
         self.assertEqual(contract.env["NODE_REPL_JS_BANNER"], "")
+
+    def test_windows_proxy_fallback_preserves_explicit_values(self) -> None:
+        env = {
+            "HTTPS_PROXY": "",
+            "ALL_PROXY": "socks5://explicit.invalid:1080",
+        }
+        status = _apply_windows_proxy_fallback(
+            env,
+            explicit_names={"HTTPS_PROXY", "ALL_PROXY"},
+            system_proxies={
+                "http": "http://system.invalid:8080",
+                "https": "http://system.invalid:8080",
+            },
+        )
+
+        self.assertNotIn("HTTP_PROXY", env)
+        self.assertEqual(env["HTTPS_PROXY"], "")
+        self.assertEqual(
+            env["ALL_PROXY"],
+            "socks5://explicit.invalid:1080",
+        )
+        self.assertEqual(status["http"], "all-proxy")
+        self.assertEqual(status["https"], "explicit-empty")
+        self.assertEqual(status["wininetProxy"], "configured")
+
+    def test_windows_proxy_fallback_injects_missing_specific_proxy(
+        self,
+    ) -> None:
+        env = {"HTTP_PROXY": "http://explicit.invalid:3128"}
+        status = _apply_windows_proxy_fallback(
+            env,
+            explicit_names={"HTTP_PROXY"},
+            system_proxies={
+                "http": "http://system.invalid:8080",
+                "https": "http://system.invalid:8080",
+            },
+        )
+
+        self.assertEqual(
+            env["HTTP_PROXY"],
+            "http://explicit.invalid:3128",
+        )
+        self.assertEqual(
+            env["HTTPS_PROXY"],
+            "http://system.invalid:8080",
+        )
+        self.assertEqual(status["http"], "explicit")
+        self.assertEqual(status["https"], "wininet")
 
     def test_missing_required_tools_rejects_contract(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -641,6 +716,79 @@ class BrokerTests(unittest.TestCase):
         )
         self.assertIsNone(broker.runtime)
 
+    def test_windows_task_environment_preserves_explicit_proxy_values(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "broker-task-env.json"
+            with (
+                patch(
+                    "nexum_browser.broker._WINDOWS_TASK_ENV_PATH",
+                    path,
+                ),
+                patch(
+                    "nexum_browser.broker._secure_windows_state_file",
+                    return_value=None,
+                ),
+                patch.dict(
+                    os.environ,
+                    {
+                        "HTTP_PROXY": (
+                            "http://user:secret@proxy.invalid:8080"
+                        ),
+                        "HTTPS_PROXY": "",
+                        "NO_PROXY": "localhost",
+                    },
+                    clear=True,
+                ),
+            ):
+                _write_windows_task_environment()
+            saved = json.loads(path.read_text(encoding="utf-8"))
+
+        self.assertEqual(
+            saved["HTTP_PROXY"],
+            "http://user:secret@proxy.invalid:8080",
+        )
+        self.assertEqual(saved["HTTPS_PROXY"], "")
+        self.assertEqual(saved["NO_PROXY"], "localhost")
+        self.assertIsNone(saved["ALL_PROXY"])
+
+    def test_windows_task_loader_clears_unset_proxy_from_task_env(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "broker-task-env.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "HTTP_PROXY": "http://proxy.invalid:8080",
+                        "HTTPS_PROXY": None,
+                        "ALL_PROXY": None,
+                        "NO_PROXY": "localhost",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with (
+                patch.object(browser_task, "ENV_PATH", path),
+                patch.dict(
+                    os.environ,
+                    {
+                        "HTTPS_PROXY": "http://stale.invalid:9999",
+                        "ALL_PROXY": "socks5://stale.invalid:1080",
+                    },
+                    clear=False,
+                ),
+            ):
+                browser_task._load_environment()
+                self.assertEqual(
+                    os.environ["HTTP_PROXY"],
+                    "http://proxy.invalid:8080",
+                )
+                self.assertNotIn("HTTPS_PROXY", os.environ)
+                self.assertNotIn("ALL_PROXY", os.environ)
+                self.assertEqual(os.environ["NO_PROXY"], "localhost")
+
     def test_reset_keeps_broker_runtime_alive(self) -> None:
         runtime = self.FakeRuntime()
         broker = Broker()
@@ -961,6 +1109,75 @@ class McpTests(unittest.TestCase):
 
 
 class DoctorTests(unittest.TestCase):
+    def test_failure_category_keeps_network_errors_out_of_acl_path(
+        self,
+    ) -> None:
+        self.assertEqual(
+            _failure_category("nodeRepl.fetch request failed"),
+            "network",
+        )
+        self.assertEqual(
+            _failure_category("CreateProcessAsUserW failed: 5"),
+            "sandbox-acl",
+        )
+
+    def test_proxy_credentials_are_redacted_from_doctor_messages(
+        self,
+    ) -> None:
+        value = _redact_sensitive_text(
+            "proxy http://user:secret@proxy.invalid:8080 failed"
+        )
+        self.assertNotIn("user:secret", value)
+        self.assertIn(
+            "http://***@proxy.invalid:8080",
+            value,
+        )
+
+    def test_windows_registry_default_value_is_locale_independent(
+        self,
+    ) -> None:
+        class FakeKey:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+        fake = types.SimpleNamespace(
+            HKEY_CURRENT_USER=object(),
+            HKEY_LOCAL_MACHINE=object(),
+        )
+
+        def open_key(root, subkey):
+            self.assertIs(root, fake.HKEY_CURRENT_USER)
+            self.assertEqual(
+                subkey,
+                (
+                    "Software\\Google\\Chrome\\"
+                    "NativeMessagingHosts\\host"
+                ),
+            )
+            return FakeKey()
+
+        fake.OpenKey = open_key
+        fake.QueryValueEx = lambda key, name: (
+            r"C:\Users\test\native-host.json",
+            1,
+        )
+
+        with patch.dict(sys.modules, {"winreg": fake}):
+            value = _read_windows_registry_default_value(
+                (
+                    "HKCU\\Software\\Google\\Chrome\\"
+                    "NativeMessagingHosts\\host"
+                )
+            )
+
+        self.assertEqual(
+            value,
+            r"C:\Users\test\native-host.json",
+        )
+
     def test_windows_acl_diagnostic_is_read_only_and_flags_suspected_mismatch(
         self,
     ) -> None:

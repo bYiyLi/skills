@@ -19,6 +19,7 @@ from .common import (
     BROKER_STATE_PATH,
     IDLE_SECONDS,
     LOG_PATH,
+    PROXY_ENV_NAMES,
     REQUEST_TIMEOUT_SECONDS,
     RUNTIME_DIR,
     SKILL_ROOT,
@@ -685,7 +686,7 @@ def _remove_windows_task() -> None:
 
 
 def _write_windows_task_environment() -> None:
-    env: dict[str, str] = {}
+    env: dict[str, str | None] = {}
     for name in (
         "CODEX_HOME",
         "NEXUM_BROWSER_CUA_MCP",
@@ -696,6 +697,8 @@ def _write_windows_task_environment() -> None:
         value = os.environ.get(name)
         if value:
             env[name] = value
+    for name in PROXY_ENV_NAMES:
+        env[name] = os.environ.get(name)
 
     RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
     tmp = _WINDOWS_TASK_ENV_PATH.with_name(

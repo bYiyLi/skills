@@ -23,6 +23,12 @@ REQUEST_TIMEOUT_SECONDS = int(
 LOCK_STALE_SECONDS = int(
     os.environ.get("NEXUM_BROWSER_LOCK_STALE_SECONDS", "900")
 )
+PROXY_ENV_NAMES = (
+    "HTTP_PROXY",
+    "HTTPS_PROXY",
+    "ALL_PROXY",
+    "NO_PROXY",
+)
 
 
 @contextlib.contextmanager
@@ -153,6 +159,7 @@ def run_json_script(
     script: Path,
     *args: str,
     timeout: float = 20,
+    env: dict[str, str] | None = None,
 ) -> tuple[int, dict[str, Any], str]:
     import subprocess
 
@@ -165,6 +172,7 @@ def run_json_script(
         text=True,
         encoding="utf-8",
         errors="replace",
+        env=env,
         timeout=timeout,
         check=False,
     )

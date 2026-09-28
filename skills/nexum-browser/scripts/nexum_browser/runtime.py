@@ -9,7 +9,12 @@ import shutil
 import uuid
 from typing import Any
 
-from .common import LOG_PATH, codex_home, is_executable_file
+from .common import (
+    LOG_PATH,
+    PROXY_ENV_NAMES,
+    codex_home,
+    is_executable_file,
+)
 from .mcp import PendingElicitation, StdioMcpClient
 
 
@@ -69,6 +74,7 @@ class CuaLaunchContract:
     node_repl: Path
     node_path: Path
     api_json: Path
+    proxy_status: dict[str, str]
 
     def summary(self) -> dict[str, Any]:
         if self.env.get("NODE_REPL_JS_BANNER") == "":
@@ -88,6 +94,7 @@ class CuaLaunchContract:
             "apiJson": str(self.api_json),
             "enabledTools": sorted(self.enabled_tools),
             "startupBannerMode": banner_mode,
+            "proxy": dict(self.proxy_status),
         }
 
 
@@ -112,6 +119,113 @@ def _resolve_command(value: str) -> str:
     if found:
         return found
     raise RuntimeError(f"cua_repl command is not executable: {value}")
+
+
+def _normalized_proxy_names(values: Any) -> set[str]:
+    names: set[str] = set()
+    for value in values:
+        name = str(value).upper()
+        if name in PROXY_ENV_NAMES:
+            names.add(name)
+    return names
+
+
+def _proxy_value(env: dict[str, str], name: str) -> str | None:
+    for key, value in env.items():
+        if key.upper() == name:
+            return value
+    return None
+
+
+def _windows_system_proxy_settings() -> dict[str, str]:
+    if os.name != "nt":
+        return {}
+
+    import urllib.request
+
+    get_registry_proxies = getattr(
+        urllib.request,
+        "getproxies_registry",
+        None,
+    )
+    if get_registry_proxies is None:
+        return {}
+
+    try:
+        raw = get_registry_proxies()
+    except Exception:
+        raw = {}
+    proxies = {
+        str(name).lower(): str(value)
+        for name, value in raw.items()
+        if name in {"http", "https"} and value
+    }
+    return proxies
+
+
+def _apply_windows_proxy_fallback(
+    env: dict[str, str],
+    *,
+    explicit_names: set[str],
+    system_proxies: dict[str, str],
+) -> dict[str, str]:
+    status: dict[str, str] = {}
+    explicit_all = "ALL_PROXY" in explicit_names
+    all_value = _proxy_value(env, "ALL_PROXY")
+
+    for scheme, name in (
+        ("http", "HTTP_PROXY"),
+        ("https", "HTTPS_PROXY"),
+    ):
+        if name in explicit_names:
+            value = _proxy_value(env, name)
+            status[scheme] = (
+                "explicit" if value else "explicit-empty"
+            )
+            continue
+        if explicit_all:
+            status[scheme] = (
+                "all-proxy" if all_value else "all-proxy-empty"
+            )
+            continue
+        value = system_proxies.get(scheme)
+        if value:
+            env[name] = value
+            status[scheme] = "wininet"
+        else:
+            status[scheme] = "none"
+
+    if explicit_all:
+        status["all"] = (
+            "explicit" if all_value else "explicit-empty"
+        )
+    else:
+        status["all"] = "none"
+
+    if "NO_PROXY" in explicit_names:
+        status["noProxy"] = (
+            "explicit"
+            if _proxy_value(env, "NO_PROXY")
+            else "explicit-empty"
+        )
+    else:
+        status["noProxy"] = "none"
+
+    status["wininetProxy"] = (
+        "configured" if system_proxies else "not-configured"
+    )
+    return status
+
+
+def _proxy_status_without_system(
+    env: dict[str, str],
+    explicit_names: set[str],
+) -> dict[str, str]:
+    return _apply_windows_proxy_fallback(
+        env,
+        explicit_names=explicit_names,
+        system_proxies={},
+    )
 
 
 def _read_contract(path: Path) -> CuaLaunchContract:
@@ -146,6 +260,8 @@ def _read_contract(path: Path) -> CuaLaunchContract:
     raw_env = config.get("env") or {}
     if not isinstance(raw_env, dict):
         raise RuntimeError(f"cua_repl env is invalid in {path}")
+    explicit_proxy_names = _normalized_proxy_names(os.environ)
+    explicit_proxy_names.update(_normalized_proxy_names(raw_env))
     env = os.environ.copy()
     for name, raw in raw_env.items():
         if raw is None:
@@ -159,11 +275,21 @@ def _read_contract(path: Path) -> CuaLaunchContract:
     ):
         raise RuntimeError(f"cua_repl env_vars is invalid in {path}")
     for name in env_vars:
-        if name not in os.environ:
-            raise RuntimeError(
-                f"Required cua_repl environment variable is unavailable: {name}"
-            )
-        env[name] = os.environ[name]
+        if name in os.environ:
+            env[name] = os.environ[name]
+
+    if os.name == "nt":
+        system_proxies = _windows_system_proxy_settings()
+        proxy_status = _apply_windows_proxy_fallback(
+            env,
+            explicit_names=explicit_proxy_names,
+            system_proxies=system_proxies,
+        )
+    else:
+        proxy_status = _proxy_status_without_system(
+            env,
+            explicit_proxy_names,
+        )
 
     # Keep OpenAI's generated launch contract intact except for this one
     # compatibility override. CUA is initialized inside the first authenticated
@@ -251,6 +377,7 @@ def _read_contract(path: Path) -> CuaLaunchContract:
         node_repl=node_repl,
         node_path=node_path,
         api_json=api_json,
+        proxy_status=proxy_status,
     )
 
 
