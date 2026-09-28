@@ -46,11 +46,15 @@ On Windows, caller-provided `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, and
 `NO_PROXY` settings are preserved through the persistent Scheduled Task broker.
 If the caller did not explicitly provide a proxy for HTTP or HTTPS, the bridge
 uses the current user's WinINET proxy only in the Runtime child environment. It
-also maps NO_PROXY-compatible entries from the current user's WinINET bypass
-list into the Runtime child's `NO_PROXY` when the caller did not explicitly
-provide `NO_PROXY`. WinINET-only patterns that cannot keep the same meaning in
-`NO_PROXY` are not widened; doctor reports the bypass mapping as partial or
-unsupported instead. It does not change the user's system proxy.
+also maps semantically compatible WinINET bypass entries into the Runtime
+child's `NO_PROXY` when the caller did not explicitly provide `NO_PROXY`.
+WinINET-only patterns are not widened: the bridge may retain only a safe
+loopback subset such as `127.0.0.1` from `127.*`; `<local>` remains partial
+because `NO_PROXY` cannot express all simple hostnames. The `<-loopback>`
+rule is applied in order so later subtraction removes earlier mapped loopback
+entries. Doctor reports incomplete mappings as partial or unsupported. An explicit
+`NO_PROXY`, including an empty value, always wins. The bridge does not change
+the user's system proxy.
 
 ## Doctor
 

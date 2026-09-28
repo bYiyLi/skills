@@ -235,9 +235,12 @@ class LaunchContractTests(unittest.TestCase):
     def test_wininet_proxy_override_maps_to_no_proxy(self) -> None:
         self.assertEqual(
             _wininet_proxy_override_to_no_proxy(
-                "localhost;*.corp.example;api.internal;*"
+                "localhost;*.corp.example;api.internal;10.0.0.5;*"
             ),
-            ("localhost,*.corp.example,api.internal,*", False),
+            (
+                "localhost,*.corp.example,api.internal,10.0.0.5,*",
+                False,
+            ),
         )
 
     def test_wininet_proxy_override_marks_unrepresentable_patterns_partial(
@@ -245,9 +248,55 @@ class LaunchContractTests(unittest.TestCase):
     ) -> None:
         self.assertEqual(
             _wininet_proxy_override_to_no_proxy(
-                "<local>;127.*;10.*;localhost"
+                (
+                    "<local>;127.*;10.*;localhost;"
+                    "*.corp.example;api.internal"
+                )
             ),
-            ("127.0.0.1,localhost", True),
+            ("127.0.0.1,localhost,*.corp.example,api.internal", True),
+        )
+
+    def test_loopback_subtraction_honors_rule_order(self) -> None:
+        self.assertEqual(
+            _wininet_proxy_override_to_no_proxy(
+                (
+                    "localhost;loopback;127.0.0.1;127.0.0.2;"
+                    "169.254.1.2;<-loopback>"
+                )
+            ),
+            ("127.0.0.2,169.254.1.2", False),
+        )
+        self.assertEqual(
+            _wininet_proxy_override_to_no_proxy(
+                "<-loopback>;localhost;loopback;127.0.0.1"
+            ),
+            ("localhost,loopback,127.0.0.1", False),
+        )
+
+    def test_loopback_subtraction_keeps_explicit_127_alias(self) -> None:
+        self.assertEqual(
+            _wininet_proxy_override_to_no_proxy(
+                "127.0.0.2;<-loopback>"
+            ),
+            ("127.0.0.2", False),
+        )
+
+    def test_local_rule_is_not_mapped_to_localhost(self) -> None:
+        for value in ("<local>;<-loopback>", "<-loopback>;<local>"):
+            with self.subTest(value=value):
+                self.assertEqual(
+                    _wininet_proxy_override_to_no_proxy(value),
+                    ("", True),
+                )
+
+    def test_loopback_subtraction_does_not_leave_broad_bypass(self) -> None:
+        self.assertEqual(
+            _wininet_proxy_override_to_no_proxy("*;<-loopback>"),
+            ("", True),
+        )
+        self.assertEqual(
+            _wininet_proxy_override_to_no_proxy("<-loopback>;*"),
+            ("*", False),
         )
 
     def test_wininet_proxy_override_rejects_non_equivalent_no_proxy_rules(
@@ -257,11 +306,57 @@ class LaunchContractTests(unittest.TestCase):
             _wininet_proxy_override_to_no_proxy(
                 (
                     ".corp.example;api.internal:8443;"
-                    "192.168.1.0-192.168.1.255;10.0.0.0/8"
+                    "192.168.1.0-192.168.1.255;10.0.0.0/8;::1"
                 )
             ),
             ("", True),
         )
+
+    def test_explicit_forward_proxy_still_uses_wininet_bypass(
+        self,
+    ) -> None:
+        for explicit_name, value in (
+            ("HTTP_PROXY", "http://explicit.invalid:3128"),
+            ("HTTPS_PROXY", "http://explicit.invalid:3128"),
+            ("ALL_PROXY", "socks5://explicit.invalid:1080"),
+        ):
+            with self.subTest(explicit_name=explicit_name):
+                env = {explicit_name: value}
+                status = _apply_windows_proxy_fallback(
+                    env,
+                    explicit_names={explicit_name},
+                    system_proxies={
+                        "http": "http://system.invalid:8080",
+                        "https": "http://system.invalid:8080",
+                        "no_proxy": "127.0.0.1",
+                    },
+                )
+                self.assertEqual(env["NO_PROXY"], "127.0.0.1")
+                self.assertEqual(status["noProxy"], "wininet-bypass")
+
+    def test_explicit_empty_proxy_keeps_wininet_bypass_for_fallback(
+        self,
+    ) -> None:
+        env = {"HTTP_PROXY": ""}
+        status = _apply_windows_proxy_fallback(
+            env,
+            explicit_names={"HTTP_PROXY"},
+            system_proxies={
+                "http": "http://system.invalid:8080",
+                "https": "http://system.invalid:8080",
+                "no_proxy": "127.0.0.1",
+            },
+        )
+
+        self.assertEqual(env["HTTP_PROXY"], "")
+        self.assertEqual(
+            env["HTTPS_PROXY"],
+            "http://system.invalid:8080",
+        )
+        self.assertEqual(env["NO_PROXY"], "127.0.0.1")
+        self.assertEqual(status["http"], "explicit-empty")
+        self.assertEqual(status["https"], "wininet")
+        self.assertEqual(status["noProxy"], "wininet-bypass")
 
     def test_wininet_proxy_override_rejects_no_proxy_separators(
         self,

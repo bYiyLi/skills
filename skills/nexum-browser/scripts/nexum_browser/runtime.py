@@ -175,6 +175,27 @@ def _wininet_proxy_override_to_no_proxy(
         seen.add(key)
         entries.append(normalized)
 
+    def remove_implicit_loopback_entries() -> bool:
+        nonlocal entries
+        removed_broad_rule = False
+        kept: list[str] = []
+        for current in entries:
+            lowered_current = current.lower()
+            remove = lowered_current in {
+                "localhost",
+                "loopback",
+                "127.0.0.1",
+            }
+            if current == "*":
+                remove = True
+                removed_broad_rule = True
+            if remove:
+                seen.discard(lowered_current)
+            else:
+                kept.append(current)
+        entries = kept
+        return removed_broad_rule
+
     for raw in value.split(";"):
         entry = raw.strip()
         if not entry:
@@ -182,6 +203,10 @@ def _wininet_proxy_override_to_no_proxy(
         lowered = entry.lower()
         if lowered == "<local>":
             partial = True
+            continue
+        if lowered == "<-loopback>":
+            if remove_implicit_loopback_entries():
+                partial = True
             continue
         if "," in entry or any(char.isspace() for char in entry):
             partial = True
