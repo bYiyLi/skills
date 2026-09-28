@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 from dataclasses import dataclass
+import ipaddress
 import json
 import os
 from pathlib import Path
@@ -137,6 +138,113 @@ def _proxy_value(env: dict[str, str], name: str) -> str | None:
     return None
 
 
+def _is_no_proxy_hostname(value: str) -> bool:
+    if (
+        not value
+        or value.startswith(".")
+        or value.endswith(".")
+        or ".." in value
+    ):
+        return False
+    for label in value.split("."):
+        if not label or label.startswith("-") or label.endswith("-"):
+            return False
+        if not all(
+            char.isascii()
+            and (char.isalnum() or char in {"-", "_"})
+            for char in label
+        ):
+            return False
+    return True
+
+
+def _wininet_proxy_override_to_no_proxy(
+    value: str,
+) -> tuple[str, bool]:
+    entries: list[str] = []
+    seen: set[str] = set()
+    partial = False
+
+    def add(entry: str) -> None:
+        normalized = entry.strip()
+        if not normalized:
+            return
+        key = normalized.lower()
+        if key in seen:
+            return
+        seen.add(key)
+        entries.append(normalized)
+
+    for raw in value.split(";"):
+        entry = raw.strip()
+        if not entry:
+            continue
+        lowered = entry.lower()
+        if lowered == "<local>":
+            partial = True
+            continue
+        if "," in entry or any(char.isspace() for char in entry):
+            partial = True
+            continue
+        if entry == "*":
+            add(entry)
+            continue
+        if (
+            entry.startswith("*.")
+            and entry.count("*") == 1
+            and _is_no_proxy_hostname(entry[2:])
+        ):
+            add(entry)
+            continue
+        if lowered in {"127.*", "127.0.0.*"}:
+            add("127.0.0.1")
+            partial = True
+            continue
+        if "*" in entry or "?" in entry:
+            partial = True
+            continue
+        if "-" in entry:
+            start, separator, end = entry.partition("-")
+            if separator:
+                try:
+                    ipaddress.ip_address(start.strip())
+                    ipaddress.ip_address(end.strip())
+                except ValueError:
+                    pass
+                else:
+                    partial = True
+                    continue
+        if not _is_no_proxy_hostname(entry):
+            partial = True
+            continue
+        add(entry)
+
+    return ",".join(entries), partial
+
+
+def _windows_proxy_override() -> str:
+    if os.name != "nt":
+        return ""
+
+    try:
+        import winreg
+
+        with winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Microsoft\Windows\CurrentVersion\Internet Settings",
+        ) as key:
+            enabled = winreg.QueryValueEx(key, "ProxyEnable")[0]
+            if not enabled:
+                return ""
+            try:
+                raw = winreg.QueryValueEx(key, "ProxyOverride")[0]
+            except OSError:
+                return ""
+    except (OSError, TypeError, ValueError):
+        return ""
+    return str(raw or "")
+
+
 def _windows_system_proxy_settings() -> dict[str, str]:
     if os.name != "nt":
         return {}
@@ -160,6 +268,13 @@ def _windows_system_proxy_settings() -> dict[str, str]:
         for name, value in raw.items()
         if name in {"http", "https"} and value
     }
+    no_proxy, no_proxy_partial = _wininet_proxy_override_to_no_proxy(
+        _windows_proxy_override()
+    )
+    if no_proxy:
+        proxies["no_proxy"] = no_proxy
+    if no_proxy_partial:
+        proxies["no_proxy_partial"] = "1"
     return proxies
 
 
@@ -209,11 +324,32 @@ def _apply_windows_proxy_fallback(
             else "explicit-empty"
         )
     else:
-        status["noProxy"] = "none"
+        no_proxy = system_proxies.get("no_proxy")
+        if no_proxy:
+            env["NO_PROXY"] = no_proxy
+            status["noProxy"] = (
+                "wininet-bypass-partial"
+                if system_proxies.get("no_proxy_partial")
+                else "wininet-bypass"
+            )
+        else:
+            status["noProxy"] = "none"
 
     status["wininetProxy"] = (
-        "configured" if system_proxies else "not-configured"
+        "configured"
+        if any(system_proxies.get(name) for name in ("http", "https"))
+        else "not-configured"
     )
+    if system_proxies.get("no_proxy_partial"):
+        status["wininetBypass"] = (
+            "partial" if system_proxies.get("no_proxy") else "unsupported"
+        )
+    else:
+        status["wininetBypass"] = (
+            "configured"
+            if system_proxies.get("no_proxy")
+            else "not-configured"
+        )
     return status
 
 

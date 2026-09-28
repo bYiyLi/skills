@@ -51,6 +51,7 @@ from nexum_browser.runtime import (
     CuaToolError,
     _apply_windows_proxy_fallback,
     _read_contract,
+    _wininet_proxy_override_to_no_proxy,
 )
 
 
@@ -177,13 +178,15 @@ class LaunchContractTests(unittest.TestCase):
         env = {
             "HTTPS_PROXY": "",
             "ALL_PROXY": "socks5://explicit.invalid:1080",
+            "NO_PROXY": "",
         }
         status = _apply_windows_proxy_fallback(
             env,
-            explicit_names={"HTTPS_PROXY", "ALL_PROXY"},
+            explicit_names={"HTTPS_PROXY", "ALL_PROXY", "NO_PROXY"},
             system_proxies={
                 "http": "http://system.invalid:8080",
                 "https": "http://system.invalid:8080",
+                "no_proxy": "localhost,127.0.0.1,::1",
             },
         )
 
@@ -195,7 +198,9 @@ class LaunchContractTests(unittest.TestCase):
         )
         self.assertEqual(status["http"], "all-proxy")
         self.assertEqual(status["https"], "explicit-empty")
+        self.assertEqual(status["noProxy"], "explicit-empty")
         self.assertEqual(status["wininetProxy"], "configured")
+        self.assertEqual(status["wininetBypass"], "configured")
 
     def test_windows_proxy_fallback_injects_missing_specific_proxy(
         self,
@@ -207,6 +212,7 @@ class LaunchContractTests(unittest.TestCase):
             system_proxies={
                 "http": "http://system.invalid:8080",
                 "https": "http://system.invalid:8080",
+                "no_proxy": "localhost,127.0.0.1,::1",
             },
         )
 
@@ -220,6 +226,85 @@ class LaunchContractTests(unittest.TestCase):
         )
         self.assertEqual(status["http"], "explicit")
         self.assertEqual(status["https"], "wininet")
+        self.assertEqual(
+            env["NO_PROXY"],
+            "localhost,127.0.0.1,::1",
+        )
+        self.assertEqual(status["noProxy"], "wininet-bypass")
+
+    def test_wininet_proxy_override_maps_to_no_proxy(self) -> None:
+        self.assertEqual(
+            _wininet_proxy_override_to_no_proxy(
+                "localhost;*.corp.example;api.internal;*"
+            ),
+            ("localhost,*.corp.example,api.internal,*", False),
+        )
+
+    def test_wininet_proxy_override_marks_unrepresentable_patterns_partial(
+        self,
+    ) -> None:
+        self.assertEqual(
+            _wininet_proxy_override_to_no_proxy(
+                "<local>;127.*;10.*;localhost"
+            ),
+            ("127.0.0.1,localhost", True),
+        )
+
+    def test_wininet_proxy_override_rejects_non_equivalent_no_proxy_rules(
+        self,
+    ) -> None:
+        self.assertEqual(
+            _wininet_proxy_override_to_no_proxy(
+                (
+                    ".corp.example;api.internal:8443;"
+                    "192.168.1.0-192.168.1.255;10.0.0.0/8"
+                )
+            ),
+            ("", True),
+        )
+
+    def test_wininet_proxy_override_rejects_no_proxy_separators(
+        self,
+    ) -> None:
+        self.assertEqual(
+            _wininet_proxy_override_to_no_proxy(
+                "api.internal,external.com;api.internal external.com"
+            ),
+            ("", True),
+        )
+
+    def test_wininet_proxy_override_rejects_mixed_wildcard_syntax(
+        self,
+    ) -> None:
+        self.assertEqual(
+            _wininet_proxy_override_to_no_proxy(
+                "*.corp?.example;[ab].corp.example"
+            ),
+            ("", True),
+        )
+
+    def test_partial_wininet_bypass_status_is_explicit(self) -> None:
+        env: dict[str, str] = {}
+        status = _apply_windows_proxy_fallback(
+            env,
+            explicit_names=set(),
+            system_proxies={
+                "http": "http://system.invalid:8080",
+                "https": "http://system.invalid:8080",
+                "no_proxy": "localhost,127.0.0.1",
+                "no_proxy_partial": "1",
+            },
+        )
+
+        self.assertEqual(
+            env["NO_PROXY"],
+            "localhost,127.0.0.1",
+        )
+        self.assertEqual(
+            status["noProxy"],
+            "wininet-bypass-partial",
+        )
+        self.assertEqual(status["wininetBypass"], "partial")
 
     def test_missing_required_tools_rejects_contract(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
