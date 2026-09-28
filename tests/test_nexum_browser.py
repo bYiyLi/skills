@@ -11,6 +11,7 @@ import tempfile
 import threading
 import types
 import unittest
+import uuid
 from unittest.mock import patch
 
 
@@ -27,7 +28,13 @@ from nexum_browser.broker import (
     _compatible_ping,
     _write_windows_task_environment,
 )
-from nexum_browser.cli import build_internal_parser, build_parser
+from nexum_browser.cli import (
+    _WINDOWS_ARGV_ROOT_ENV,
+    _WINDOWS_ARGV_SENTINEL,
+    _prepare_argv,
+    build_internal_parser,
+    build_parser,
+)
 from nexum_browser.common import codex_home, emit
 from nexum_browser.doctor import (
     _failure_category,
@@ -1026,6 +1033,218 @@ class BrokerTests(unittest.TestCase):
 
 
 class CliContractTests(unittest.TestCase):
+    def test_windows_argv_transport_preserves_exact_arguments(
+        self,
+    ) -> None:
+        code = ' // a\r\n' * 4000
+        original = [
+            "run",
+            "--title",
+            "Deep validation",
+            code,
+            "--timeout-ms",
+            "4321",
+        ]
+        serialized = json.dumps(original, ensure_ascii=False)
+        self.assertLess(len(code), 32767)
+        self.assertGreaterEqual(len(serialized), 32767)
+        path = (
+            Path(tempfile.gettempdir())
+            / f"nexum-browser-argv-{uuid.uuid4().hex}.json"
+        )
+        try:
+            path.write_text(
+                serialized,
+                encoding="utf-8",
+            )
+            with patch.dict(
+                os.environ,
+                {_WINDOWS_ARGV_ROOT_ENV: tempfile.gettempdir()},
+                clear=False,
+            ):
+                prepared = _prepare_argv(
+                    [_WINDOWS_ARGV_SENTINEL, str(path)]
+                )
+                self.assertNotIn(_WINDOWS_ARGV_ROOT_ENV, os.environ)
+            self.assertTrue(path.exists())
+        finally:
+            path.unlink(missing_ok=True)
+
+        parsed = build_parser().parse_args(prepared)
+        self.assertEqual(parsed.code, code)
+        self.assertEqual(parsed.title, "Deep validation")
+        self.assertEqual(parsed.timeout_ms, 4321)
+
+    def test_windows_argv_transport_requires_existing_file(
+        self,
+    ) -> None:
+        path = (
+            Path(tempfile.gettempdir())
+            / f"nexum-browser-argv-{uuid.uuid4().hex}.json"
+        )
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "argv file is unavailable",
+        ):
+            with patch.dict(
+                os.environ,
+                {_WINDOWS_ARGV_ROOT_ENV: tempfile.gettempdir()},
+                clear=False,
+            ):
+                _prepare_argv(
+                    [
+                        _WINDOWS_ARGV_SENTINEL,
+                        str(path),
+                    ]
+                )
+
+    def test_windows_argv_transport_preserves_non_launcher_file(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "user-file.txt"
+            path.write_text("do not delete", encoding="utf-8")
+            with self.assertRaisesRegex(
+                RuntimeError,
+                "not a launcher-owned temp file",
+            ):
+                with patch.dict(
+                    os.environ,
+                    {_WINDOWS_ARGV_ROOT_ENV: tempfile.gettempdir()},
+                    clear=False,
+                ):
+                    _prepare_argv(
+                        [_WINDOWS_ARGV_SENTINEL, str(path)]
+                    )
+            self.assertEqual(
+                path.read_text(encoding="utf-8"),
+                "do not delete",
+            )
+
+    def test_windows_argv_transport_rejects_symlink_without_touching_target(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "target.json"
+            target.write_text('["run","1+1"]', encoding="utf-8")
+            link = (
+                Path(tempfile.gettempdir())
+                / f"nexum-browser-argv-{uuid.uuid4().hex}.json"
+            )
+            link.unlink(missing_ok=True)
+            try:
+                link.symlink_to(target)
+            except OSError:
+                self.skipTest("symlink creation is unavailable")
+            try:
+                with self.assertRaisesRegex(
+                    RuntimeError,
+                    "not a launcher-owned temp file",
+                ):
+                    with patch.dict(
+                        os.environ,
+                        {_WINDOWS_ARGV_ROOT_ENV: tempfile.gettempdir()},
+                        clear=False,
+                    ):
+                        _prepare_argv(
+                            [_WINDOWS_ARGV_SENTINEL, str(link)]
+                        )
+                self.assertTrue(link.is_symlink())
+                self.assertEqual(
+                    target.read_text(encoding="utf-8"),
+                    '["run","1+1"]',
+                )
+            finally:
+                link.unlink(missing_ok=True)
+
+    def test_windows_launcher_protocol_matches_python_transport(
+        self,
+    ) -> None:
+        launcher = (ROOT / "scripts/browser.ps1").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            f'$argvSentinel = "{_WINDOWS_ARGV_SENTINEL}"',
+            launcher,
+        )
+        self.assertIn(
+            f'$argvRootEnvName = "{_WINDOWS_ARGV_ROOT_ENV}"',
+            launcher,
+        )
+        self.assertIn(
+            'ConvertTo-Json -Compress -InputObject @($browserArgs)',
+            launcher,
+        )
+        self.assertIn(
+            '[IO.File]::WriteAllText($argvFile, $argvJson, $utf8NoBom)',
+            launcher,
+        )
+        self.assertIn(
+            '& $pythonCommand.Executable @prefixArgs $browser $argvSentinel $argvFile',
+            launcher,
+        )
+        self.assertIn(
+            'Remove-Item -LiteralPath $argvFile -Force',
+            launcher,
+        )
+
+    def test_windows_argv_transport_uses_launcher_temp_root(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            launcher_root = root / "launcher"
+            python_root = root / "python"
+            launcher_root.mkdir()
+            python_root.mkdir()
+            path = (
+                launcher_root
+                / f"nexum-browser-argv-{uuid.uuid4().hex}.json"
+            )
+            path.write_text('["doctor"]', encoding="utf-8")
+            with patch.dict(
+                os.environ,
+                {
+                    _WINDOWS_ARGV_ROOT_ENV: str(launcher_root),
+                    "TMPDIR": str(python_root),
+                },
+                clear=False,
+            ):
+                prepared = _prepare_argv(
+                    [_WINDOWS_ARGV_SENTINEL, str(path)]
+                )
+            self.assertEqual(prepared, ["doctor"])
+            self.assertTrue(path.exists())
+
+    def test_windows_argv_transport_requires_launcher_temp_root(
+        self,
+    ) -> None:
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop(_WINDOWS_ARGV_ROOT_ENV, None)
+            with self.assertRaisesRegex(
+                RuntimeError,
+                _WINDOWS_ARGV_ROOT_ENV,
+            ):
+                _prepare_argv(
+                    [
+                        _WINDOWS_ARGV_SENTINEL,
+                        str(
+                            Path(tempfile.gettempdir())
+                            / f"nexum-browser-argv-{uuid.uuid4().hex}.json"
+                        ),
+                    ]
+                )
+
+    def test_windows_transport_ignores_file_without_sentinel(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "leave-me.json"
+            path.write_text('["leave-me"]', encoding="utf-8")
+            prepared = _prepare_argv(["run", str(path)])
+            self.assertEqual(prepared, ["run", str(path)])
+            self.assertTrue(path.exists())
+
     def test_public_cli_exposes_only_four_commands(self) -> None:
         parser = build_parser()
         cases = [

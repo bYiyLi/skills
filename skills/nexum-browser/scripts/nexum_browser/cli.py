@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+from pathlib import Path
+import re
 import sys
 
 from .broker import (
@@ -13,6 +16,65 @@ from .broker import (
 )
 from .common import emit, fail, operation_lock
 from .doctor import run_doctor
+
+
+_WINDOWS_ARGV_SENTINEL = "__NEXUM_BROWSER_WINDOWS_ARGV__"
+_WINDOWS_ARGV_ROOT_ENV = "NEXUM_BROWSER_ARGV_ROOT"
+_WINDOWS_ARGV_FILE = re.compile(
+    r"^nexum-browser-argv-[0-9a-f]{32}\.json$",
+    re.IGNORECASE,
+)
+
+
+def _windows_argv_path(value: str, temp_root: str) -> Path:
+    path = Path(value)
+    try:
+        in_temp_root = os.path.samefile(
+            path.parent,
+            temp_root,
+        )
+    except OSError:
+        in_temp_root = False
+    if (
+        not in_temp_root
+        or _WINDOWS_ARGV_FILE.fullmatch(path.name) is None
+        or path.is_symlink()
+    ):
+        raise RuntimeError(
+            "Windows launcher argv path is not a launcher-owned temp file"
+        )
+    return path
+
+
+def _prepare_argv(argv: list[str]) -> list[str]:
+    argsv = list(argv)
+    if len(argsv) == 2 and argsv[0] == _WINDOWS_ARGV_SENTINEL:
+        temp_root = os.environ.pop(_WINDOWS_ARGV_ROOT_ENV, None)
+        if not temp_root:
+            raise RuntimeError(
+                f"{_WINDOWS_ARGV_ROOT_ENV} is unavailable for Windows launcher"
+            )
+        path = _windows_argv_path(argsv[1], temp_root)
+        try:
+            raw = path.read_text(encoding="utf-8")
+        except OSError as exc:
+            raise RuntimeError(
+                f"Windows launcher argv file is unavailable: {exc}"
+            ) from exc
+        try:
+            parsed = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(
+                f"Windows launcher argv file is invalid JSON: {exc}"
+            ) from exc
+        if not isinstance(parsed, list) or not all(
+            isinstance(item, str) for item in parsed
+        ):
+            raise RuntimeError(
+                "Windows launcher argv file must contain a JSON string array"
+            )
+        argsv = parsed
+    return argsv
 
 
 def _json_object(value: str) -> dict:
@@ -159,7 +221,16 @@ def _run_internal(argv: list[str]) -> int | None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    argsv = list(sys.argv[1:] if argv is None else argv)
+    try:
+        argsv = _prepare_argv(
+            list(sys.argv[1:] if argv is None else argv)
+        )
+    except RuntimeError as exc:
+        fail(
+            "invalid_request",
+            str(exc),
+            retryable=False,
+        )
     internal = _run_internal(argsv)
     if internal is not None:
         return internal
