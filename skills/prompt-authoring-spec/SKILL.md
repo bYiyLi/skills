@@ -1,70 +1,62 @@
 ---
 name: prompt-authoring-spec
-description: Apply instruction-writing rules when authoring, revising or reviewing text intended to instruct a model. Covers semantic clarity, scope, authority and evidence; the host retains artifact delivery.
+description: Guide the design, writing and review of prompts, AGENTS and Skill instructions. Covers necessity, ownership, executable wording and validation; the host owns delivery.
 ---
 
 # Prompt Authoring Spec
 
-Guide decisions inside the host task. A prompt is text intended to change model
-selection, interpretation, action or evaluation, regardless of storage. Preserve
-the requested mode: review reports findings; revision needs task authorization.
-Naming this Skill alone does not authorize rewriting.
+Guide decisions within the requested task; the host owns edits, tests and delivery.
+Discussion returns analysis, review-only returns findings, and revision permits
+in-scope fixes. Selecting this Skill grants no additional authority.
 
-## Establish the behavioral contract
+## Decide what belongs
 
-Locate the target and source requirements through current context and authorized
-sources. Missing material blocks only dependent judgments; report the exact gap
-rather than inventing text, facts or resources. A source-limited text review can
-still proceed. Let the artifact's own specification govern its native semantics
-and format; this Skill governs its model-visible instructions.
+For a concrete instruction task, establish purpose, requirements and executor
+context from the request and authorized sources. An existing draft is material
+to assess, not authority for its own rules. Do not demand a draft or separate
+requirements document when the request supplies what is needed. For discussion,
+resolve only details needed for the question. Investigate consequential unknowns
+before asking; missing evidence blocks only dependent work.
 
-Resolve the observable condition, actor, action, available evidence and intended
-result before drafting. This is a reasoning aid, not a required output schema.
-Keep a sentence only when removing it changes a decision, action, permission,
-output, recovery or evidence requirement.
+Before polishing a candidate rule, decide:
 
-- Specify a method or ordering only when alternatives change the required result
-  or its evidence, authority, side effects or recovery. Preserve useful judgment.
-- Distinguish requested output constraints from heuristics used to organize work.
-  A part's label or local check does not by itself make it a separately governed
-  result. Define units and precedence when confusing them changes the outcome.
-- Identify necessary inputs and authority from available sources before asking.
-  Only unresolved choices that materially affect the result need clarification;
-  routine details and existing decisions do not need approval again.
-- Handle reachable missing, invalid, conflicting, denied and post-start failure
-  states when they change the result. Use observable behavior instead of demands
-  for hidden effort, certainty or private reasoning.
-- Define completion evidence and distinguish checkpoints from approval or task
-  completion. Continue the authorized goal across progress questions and context
-  recovery; revise it when the user changes scope or rejects an assumption.
+- **Need:** What required decision or result would be lost without it? Delete it
+  if its removal permits no concrete in-scope error and loses no requirement.
+- **Owner:** Does this instruction unit own that decision? Use the target's actual
+  responsibilities, not its filename, an analogy or where a symptom appeared.
+  Relocate misplaced guidance within authorized scope; otherwise propose the move.
+- **Basis:** What supports the requirement or suspected cause? A failed outcome
+  does not establish its cause; a useful remedy does not establish a mandatory
+  method. Keep unverified causal explanations as hypotheses.
+- **Action:** Can the executor identify the condition and use the required inputs
+  and capabilities at that point? Handle a missing dependency without inventing
+  an alternative or silently discarding the required boundary.
 
-When reviewing this specification itself, treat its normative rules as policy
-under review, not proof of external host, format or runtime guarantees.
+## Write, then remove what adds no decision
 
-## Read only applicable references
+State outcomes and boundaries directly. Require a method or order only when the
+task selects it or a supported failure mechanism makes it necessary. Preserve
+other valid approaches; one failure does not justify a whole new workflow.
 
-| Decision being written or reviewed | Required reference |
+Use familiar words and precise verbs. Replace vague exhortations with the actual
+condition or action. Remove repeated rules, ornamental roles and explanations
+that leave the required decision unchanged. Do not shorten away conditions,
+exceptions or needed context. Useful density is not minimum word count.
+
+## Load the applicable checks
+
+Read these references before the corresponding work; paths are relative to this Skill.
+
+| Work | Reference |
 | --- | --- |
-| Wording, terms, requirement strength, prohibitions, bounds or branches | [references/executable-language.md](references/executable-language.md) |
-| Context, history, examples, placeholders or variable data | [references/context-and-examples.md](references/context-and-examples.md) |
-| Retrieved/quoted content, user variables or instruction precedence | [references/instruction-authority.md](references/instruction-authority.md) |
-| Source-dependent claims, permissions, runtime behavior or completion evidence | [references/evidence-and-enforcement.md](references/evidence-and-enforcement.md) |
-| Review, counterexamples, evaluation or final instruction validation | [references/prompt-contract-validation.md](references/prompt-contract-validation.md) |
+| Wording, terms, strength, prohibitions, sets or branches | [references/executable-language.md](references/executable-language.md) |
+| Context, explanations, examples or variables | [references/context-and-examples.md](references/context-and-examples.md) |
+| Instruction priority, permissions or untrusted data | [references/instruction-authority.md](references/instruction-authority.md) |
+| Source claims, causal reasoning or runtime guarantees | [references/evidence-and-enforcement.md](references/evidence-and-enforcement.md) |
+| Reviewing or delivering instructions, self-review or behavior claims | [references/prompt-contract-validation.md](references/prompt-contract-validation.md) |
 
-A missing required reference blocks its path, not independent work. Report exact
-paths and uncovered rules; do not call affected instructions complete or validated.
-
-## Review the actual executor-facing text
-
-Apply the closed-contract checks before completion. Include independently used
-invocation prompts and output instruction templates; review notes cannot supply
-rules absent from the text the executor receives. Resolve a demonstrated defect
-with the smallest correction that preserves other valid behavior. Do not turn
-this guidance into a mandatory template, scenario quota, score or new workflow.
-
-Report findings with location, reachable request/state, permitted wrong behavior,
-minimal correction and evidence level. Keep source checks, text review, scenario
-walkthrough, independent model evaluation and runtime validation distinct.
-Fewer words alone do not demonstrate better model behavior; require controlled
-evaluation before claiming a phrase causally improves it. The host owns artifact
-changes, validation execution and final delivery.
+If a required reference is unreadable, report its path and the uncovered check.
+Before delivering instructions, apply the validation reference to the text the
+executor will actually receive. Return the requested result; include an authoring
+checklist only when requested. When this Skill is revised, apply that reference's
+self-review to the whole package, including its invocation text.

@@ -1,36 +1,30 @@
 # Context and Examples
 
-Use this reference when the target prompt includes or needs source context,
-history, examples, placeholders, variable input, or illustrative data.
+Use when choosing context, rationale, examples or variable data.
 
-## Select Context by Decision Value
+## Include information that changes the task decision
 
-- Include a context item only when it can change the intended selection,
-  interpretation, judgment, action, evidence, or output.
-- Provide the actual fact, source, or constraint instead of referring to
-  unidentified `relevant context`.
-- Preserve source scope, version, freshness, or uncertainty when it changes a
-  future decision.
-- Keep governing instructions separate from source material and variable data.
+Retain a fact, explanation or pointer when it prevents a specific misunderstanding
+or supplies needed context. Omit generic lessons the executor can reliably supply;
+do not assume it knows missing project facts, permissions or capabilities. Preserve
+source scope, version and uncertainty when they affect use.
 
-## Add Examples Only for a Decision Edge
+Remove an explanation while leaving the rule intact. If the required decision
+remains clear, keep the explanation in authoring notes, not the prompt. Do not
+teach internal implementation merely to justify a boundary. A short explanation
+that distinguishes valid choices belongs with the rule it clarifies.
 
-- Add an example only when it resolves an ambiguity, boundary, or output pattern
-  that changes the executor's choice and the rule alone does not resolve it.
-- Start without examples and add them in response to a concrete need, not a
-  fixed quota.
-- Keep every example consistent with its governing rule.
-- Vary only details the rule leaves unconstrained. Do not let accidental details
-  become unstated rules.
-- Use consistent formatting across examples so formatting noise does not imply
-  a behavioral distinction.
+## Choose examples for a distinct purpose
 
-## Mark Placeholders and Example Data
+Use an example to resolve a decision edge or output pattern more clearly than
+additional prose, or when applicable evaluation supports its use. Keep it consistent
+with the rule. Remove redundant examples; do not turn incidental names, counts or
+step order into requirements. Preserve examples explicitly required by the task.
 
-- Give each runtime placeholder distinctive syntax. Define its source, type, and
-  meaning when the surrounding contract does not already do so.
-- Keep placeholders visibly separate from literal examples.
-- Use synthetic, reserved, or redacted data in illustrative examples.
-- Omit secrets and personal or proprietary data that does not change the
-  example's decision. Use real values only when required, authorized, and
-  explicitly marked as data.
+## Make variable data distinguishable
+
+Separate variables and source material from instructions. Give placeholders a
+recognizable syntax, source, type and meaning when the surrounding contract does
+not. Distinguish substituted values from literal examples. Use synthetic or
+redacted examples unless real data is necessary and authorized; omit secrets and
+personal details that add no decision value.

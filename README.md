@@ -7,7 +7,7 @@
 
 | 当前要完成的结果 | Skill | 主要职责边界 |
 | --- | --- | --- |
-| 编写或评审模型指令 | [prompt-authoring-spec](skills/prompt-authoring-spec/SKILL.md) | 指令质量 guidance，宿主持有交付 |
+| 编写或评审模型指令 | [prompt-authoring-spec](skills/prompt-authoring-spec/SKILL.md) | 指令必要性、归属、表达与自检 guidance，宿主持有交付 |
 | 编写或评审 Skill | [skill-authoring-spec](skills/skill-authoring-spec/SKILL.md) | Skill 合同 guidance，与提示词规范共用 |
 | 区分文档类型、核对共性质量 | [software-doc-writing-standards](skills/software-doc-writing-standards/SKILL.md) | 分类 guidance，不接管具体产物 |
 | 产品要求、约束和验收 | [software-requirements-spec](skills/software-requirements-spec/SKILL.md) | 单份需求文档 |
@@ -50,4 +50,5 @@ Windows 使用 `.venv/Scripts/python.exe`。检查覆盖全体包的官方格式
 最新逐 Skill 审核与验证见 [2026-09-28 记录](docs/vlog/2026-09-28.md)及
 [保留证据](tests/evidence/2026-09-28-skills-review.json)；历史集合调整见
 [2026-09-19 记录](docs/vlog/2026-09-19.md)。
+提示词规范的职责、自检与试跑更新见 [2026-09-29 专项记录](docs/vlog/2026-09-29.md)。
 Nexum 工作流用法见[专项说明](docs/skills/nexum-chatgpt-development.md)。

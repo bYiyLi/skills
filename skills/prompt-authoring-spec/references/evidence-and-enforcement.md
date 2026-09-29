@@ -1,69 +1,41 @@
 # Evidence and Enforcement
 
-Use this reference when instructions assert source-dependent rules or current
-facts, depend on runtime or host behavior, govern permissions or side effects,
-define completion evidence, or specify an evaluation.
+Use for source-dependent claims, causal reasoning or runtime guarantees.
 
-## Ground Source-Dependent Claims
+## Identify what the evidence establishes
 
-Ground a statement when it asserts a project rule, external contract, current
-fact, required procedure, or representative behavior and an error could change
-a decision. The normative writing rules in this specification are policy defined
-by the specification and do not require external citation.
+Use applicable requirements and authorized decisions to establish project policy.
+Ground external capabilities and guarantees in primary documentation or observed
+runtime evidence; deciding to use a tool does not prove it exists. Qualify claims
+whose evidence is unavailable. Check authority, scope and freshness when they
+affect the decision. Resolve conflicts by precedence or leave them explicit.
 
-Valid evidence includes applicable project sources, authoritative documentation
-or policy, representative artifacts or task traces, failure records, and
-explicit user decisions.
+A requirement can define a desired result without a prior failure. An observation
+shows what happened, not necessarily why. To justify a corrective rule, trace the
+proposed restriction to the failure mechanism it addresses and check whether it
+belongs in this prompt. Keep unsupported causes provisional; do not invent facts,
+permissions or capabilities to complete the explanation. A counterexample can
+prove a textual gap without measuring its frequency in model behavior.
 
-Before turning evidence into an instruction or claim:
+Public prompts and analogies provide candidates, not authority for local policy
+or evidence that a technique works on the target model. This specification's own
+rules are likewise policies to assess, not evidence that they are effective.
 
-- verify authority and scope;
-- verify version and freshness when the source can change;
-- distinguish a fact or requirement from a contextual heuristic;
-- resolve material conflicts through precedence or preserve uncertainty;
-- omit an unsupported claim or condition it on the evidence that makes it
-  useful.
+## Match guarantees to their enforcing layer
 
-When authority is missing, define only supported temporary behavior. Do not
-invent prerequisites, approvals, fields, schemas, safeguards, runtime states, or
-machine-enforced guarantees. Model recall, repetition, and popularity do not
-ground a mandatory rule. A local decision establishes local policy; an observed
-artifact establishes behavior only in its observed scope.
-
-## Assign Each Requirement to Its Enforcing Layer
-
-| Layer | Put here |
+| Layer | Can establish |
 | --- | --- |
-| Model-visible instruction | Semantic choices, priorities, interpretation, context use, requested behavior, and reporting boundaries. |
-| Schema or protocol | Field names, types, required properties, enums, and machine-checkable structure. |
-| Host implementation or policy | Authorization, permission enforcement, invariants, side-effect control, secrets, and deterministic limits. |
-| Runtime context or tool result | Current state, observations, returned evidence, and actual success or failure. |
-| Evaluation fixture or harness | Cases, expected outcomes, baselines, repetitions, thresholds, and comparison logic. |
+| Model instructions | Requested decisions and reporting behavior, not guaranteed compliance. |
+| Schema or protocol | Validated fields, types and structure. |
+| Host controls | Enforced permissions, side effects, secrets and deterministic limits. |
+| Runtime or tool results | Observed state and execution outcomes. |
+| Evaluation | Recorded behavior under specified inputs and conditions. |
 
-Do not ask a prompt to simulate a guarantee owned by another layer. Repeat a
-machine-enforced rule in model-visible text only when the model must know it
-before choosing an action or interpreting a result.
+Keep model-visible boundaries the executor needs before acting, even when another
+layer enforces them. Do not claim wording provides a machine guarantee or implement
+host changes merely because the task asks for instructions.
 
-## Inspect Runtime Only When It Changes the Contract
-
-Do not require runtime or model identification by default. Inspect a runtime fact
-only when it changes instruction priority, visible context, available behavior,
-syntax, or the strength of a possible guarantee.
-
-When such a dependency exists:
-
-- identify what the model can see at the decision point;
-- identify the behavior the text can affect;
-- identify available authority and tools;
-- inspect the authoritative source for version-sensitive claims; and
-- preserve a material unknown as an assumption and limit the resulting claim.
-
-Do not silently assume unavailable context, authority, tools, or host behavior.
-
-## Resolve Scope and Conflict
-
-- State a condition and scope when placement does not make them evident.
-- State precedence only for conflicts reachable within the declared scope. Name
-  the winner, applicable exception, or unresolved behavior.
-- Do not require incompatible actions. If satisfying one priority can violate
-  another, state the condition that decides between them.
+Inspect model or host details only when they change instruction priority, visible
+context, syntax, capabilities or a claimed guarantee. Assess the executor's access
+at the decision point, not the author's access during development. Report missing
+capabilities and limit dependent claims; availability never supplies permission.
