@@ -1,6 +1,6 @@
 ---
 name: software-development-plan
-description: 创建、修订或评审软件实施计划、roadmap 和进度证据。用于安排已明确目标的工作、依赖与验收；产品需求和技术设计由各自文档负责。
+description: 创建、修订或评审软件实施计划、roadmap 和进度证据。用于安排已明确目标的工作、依赖与验收；产品需求和技术设计由各自文档负责，纯文档位置/生命周期审查由 software-doc-writing-standards 负责。
 ---
 
 # Software Development Plan
@@ -10,12 +10,15 @@ description: 创建、修订或评审软件实施计划、roadmap 和进度证�
 ## 确定范围与来源
 
 从请求和上下文判断创建、修订或只读评审；评审不写文件或日志。读取适用仓库指令、
-当前 Git 状态、已有同主题计划及本次需求/设计来源。先查已有决定，只有仍会改变范围、
-交付物或验收的未决选择才询问。目标已明确的小任务不以缺少独立设计文件为阻塞。
+已有同主题计划及本次需求/设计来源；目标为 Git 仓库且工作树或 commit 状态会改变
+计划状态/证据时再读取当前 Git 状态。先查已有决定，只有仍会改变范围、交付物或验收
+的未决选择才询问。目标已明确的小任务不以缺少独立设计文件为阻塞。
 
-正文操作读取 [references/plan-contract.md](references/plan-contract.md)；写入或判断路径、
-状态、移动和归档时读取 [references/doc-management-contract.md](references/doc-management-contract.md)。
-仅检查管理事实时不要求完整计划正文。必需资源不可读时报告准确路径，只暂停依赖部分。
+正文操作读取 [references/plan-contract.md](references/plan-contract.md)；涉及写入、文档
+路径、metadata/lifecycle 状态、移动或归档时读取
+[references/doc-management-contract.md](references/doc-management-contract.md)。
+计划内容本身的进行中/阻塞/完成状态由 plan-contract 判断。必需资源不可读时报告
+准确路径，只暂停依赖部分。
 
 ## 先确定计划单元，再组织实施阶段
 
@@ -53,10 +56,6 @@ description: 创建、修订或评审软件实施计划、roadmap 和进度证�
 按已核对输入填充，删除不适用章节和占位符。
 
 ## 编写、更新与评审
-
-把范围组织成工作项，关联设计输入、依赖、交付物、可观察验收及验证方法。覆盖必要
-集成检查和评审修复后的复验；尚不存在的命令标为待建立。计划引用技术决定，不另造设计。
-未决依赖注明受影响工作；允许交付带缺口的计划，但不能声称全部工作已可执行。
 
 更新进度时保留原验收，用当前实现、检查和评审证据判断完成。计划写完、代码存在、
 局部测试通过或已提交，均不单独证明计划范围已实现。Roadmap 只同步摘要和链接。

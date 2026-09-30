@@ -1,6 +1,6 @@
 ---
 name: nexum-operations
-description: Research, prepare, execute, or review Nexum growth and community operations using live Feishu state. Includes authorized recurring operations; product development belongs to the development workflow.
+description: Research, prepare, execute, or review Nexum growth and community operations, using live Feishu state when the requested result depends on it. Includes authorized recurring operations; product development belongs to the development workflow.
 ---
 
 # Nexum Operations

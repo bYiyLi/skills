@@ -25,33 +25,69 @@ _BOOTSTRAP_RETRY_PREFIX = "NEXUM_BROWSER_BOOTSTRAP_RETRY:"
 _BOOTSTRAP_RETRY_MARKER = "__NEXUM_BROWSER_BOOTSTRAP_RETRY_MARKER__"
 _BOOTSTRAP_ATTEMPTS = 5
 _BOOTSTRAP = 'await import("@oai/cua/tinyskyAlt");'
+_POLICY_READY_YES = "__NEXUM_BROWSER_POLICY_READY_YES__"
+_POLICY_READY_NO = "__NEXUM_BROWSER_POLICY_READY_NO__"
 _BOOTSTRAP_WITH_READINESS = r'''await import("@oai/cua/tinyskyAlt");
 {
-  let __nexumProbeTab;
-  try {
-    let __nexumBrowsers = await agent.browsers.list();
-    let __nexumInfo =
-      __nexumBrowsers.find(__nexumItem => __nexumItem.type === "extension")
-      || __nexumBrowsers[0];
-    if (__nexumInfo != null) {
+  let __nexumReady = false;
+  let __nexumBrowsers = await agent.browsers.list();
+  let __nexumOrdered = [...__nexumBrowsers].sort(
+    (__nexumLeft, __nexumRight) =>
+      Number(__nexumRight.type === "extension")
+      - Number(__nexumLeft.type === "extension")
+  );
+  let __nexumErrors = [];
+  for (let __nexumInfo of __nexumOrdered) {
+    let __nexumProbeTab;
+    try {
       let __nexumBrowser = await agent.browsers.get(__nexumInfo.id);
       __nexumProbeTab = await __nexumBrowser.tabs.new();
+      await __nexumProbeTab.close();
+      __nexumProbeTab = undefined;
+      __nexumReady = true;
+      break;
+    } catch (__nexumError) {
+      if (__nexumProbeTab != null) {
+        try {
+          await __nexumProbeTab.close();
+          __nexumProbeTab = undefined;
+        } catch (__nexumCleanupError) {
+          throw new Error(
+            "Unable to close temporary browser readiness tab: "
+            + String(
+              __nexumCleanupError?.message || __nexumCleanupError
+            )
+          );
+        }
+      }
+      __nexumErrors.push(__nexumError);
     }
-  } catch (__nexumError) {
-    let __nexumMessage = String(__nexumError?.message || __nexumError);
-    if (__nexumMessage.includes(
-      "Unable to load browser request-header policy"
-    )) {
+  }
+  if (
+    __nexumBrowsers.length > 0
+    && __nexumReady !== true
+  ) {
+    let __nexumPolicyError = __nexumErrors.find(
+      __nexumError => String(
+        __nexumError?.message || __nexumError
+      ).includes("Unable to load browser request-header policy")
+    );
+    let __nexumError = __nexumPolicyError || __nexumErrors[0];
+    let __nexumMessage = String(
+      __nexumError?.message || __nexumError
+    );
+    if (__nexumPolicyError != null) {
       throw new Error(
         __NEXUM_BROWSER_BOOTSTRAP_RETRY_MARKER__ + __nexumMessage
       );
     }
     throw __nexumError;
-  } finally {
-    if (__nexumProbeTab != null) {
-      await __nexumProbeTab.close();
-    }
   }
+  nodeRepl.write(
+    __nexumReady
+      ? "__NEXUM_BROWSER_POLICY_READY_YES__"
+      : "__NEXUM_BROWSER_POLICY_READY_NO__"
+  );
 }'''
 
 
@@ -59,6 +95,10 @@ class CuaToolError(RuntimeError):
     def __init__(self, message: str, result: dict[str, Any]) -> None:
         super().__init__(message)
         self.result = result
+
+
+class CuaRuntimeRestartError(RuntimeError):
+    pass
 
 
 @dataclass(frozen=True)
@@ -603,9 +643,16 @@ class CuaRuntime:
 
     def _restart_after_bootstrap_failure(self) -> None:
         self.client.close()
-        self.client, self.initialize_info = self._open_client()
         self.bootstrapped = False
         self.policy_ready = False
+        try:
+            client, initialize_info = self._open_client()
+        except Exception as exc:
+            raise CuaRuntimeRestartError(
+                "Browser Runtime restart failed during readiness recovery"
+            ) from exc
+        self.client = client
+        self.initialize_info = initialize_info
 
     @property
     def allowed_tools(self) -> set[str]:
@@ -653,8 +700,7 @@ class CuaRuntime:
         if timeout_ms <= 0:
             raise ValueError("timeout_ms must be greater than zero")
 
-        bootstrap = not self.bootstrapped
-        needs_readiness = bootstrap and not self.policy_ready
+        needs_readiness = not self.policy_ready
         attempts = _BOOTSTRAP_ATTEMPTS if needs_readiness else 1
         retry_marker = (
             _BOOTSTRAP_RETRY_PREFIX + uuid.uuid4().hex + ":"
@@ -666,41 +712,96 @@ class CuaRuntime:
                 _BOOTSTRAP_RETRY_MARKER,
                 json.dumps(retry_marker),
             )
-        elif bootstrap:
-            bootstrap_code = _BOOTSTRAP
-        else:
-            bootstrap_code = ""
-        for attempt in range(attempts):
-            actual_code = f"{bootstrap_code}\n{code}" if bootstrap else code
-            result = self.client.call_tool(
+            for attempt in range(attempts):
+                readiness = self.client.call_tool(
+                    "js",
+                    {
+                        "code": bootstrap_code,
+                        "timeout_ms": int(timeout_ms),
+                        "title": "Browser readiness",
+                    },
+                    meta=self._meta(),
+                    timeout=rpc_timeout,
+                )
+                error_texts = [
+                    str(item.get("text") or "").strip()
+                    for item in readiness.get("content") or []
+                    if isinstance(item, dict)
+                    and item.get("type") == "text"
+                    and str(item.get("text") or "").strip()
+                ]
+                marked_error = next(
+                    (
+                        value
+                        for value in error_texts
+                        if retry_marker in value
+                    ),
+                    None,
+                )
+                if readiness.get("isError") and marked_error is not None:
+                    if attempt + 1 < attempts:
+                        self._restart_after_bootstrap_failure()
+                        continue
+                    raise CuaToolError(
+                        marked_error.split(retry_marker, 1)[1],
+                        readiness,
+                    )
+                self._raise_tool_error(readiness)
+
+                texts = [
+                    str(item.get("text") or "")
+                    for item in readiness.get("content") or []
+                    if isinstance(item, dict) and item.get("type") == "text"
+                ]
+                readiness_states = set()
+                if any(_POLICY_READY_YES in value for value in texts):
+                    readiness_states.add(True)
+                if any(_POLICY_READY_NO in value for value in texts):
+                    readiness_states.add(False)
+                if readiness_states == {True}:
+                    self.policy_ready = True
+                elif readiness_states == {False}:
+                    self.policy_ready = False
+                elif not readiness_states:
+                    raise RuntimeError(
+                        "Browser readiness probe returned no readiness marker"
+                    )
+                else:
+                    raise RuntimeError(
+                        "Browser readiness probe returned conflicting readiness markers"
+                    )
+                self.bootstrapped = True
+                break
+            else:
+                raise RuntimeError(
+                    "Browser Runtime bootstrap retry loop exhausted"
+                )
+        elif not self.bootstrapped:
+            bootstrap = self.client.call_tool(
                 "js",
                 {
-                    "code": actual_code,
+                    "code": _BOOTSTRAP,
                     "timeout_ms": int(timeout_ms),
-                    "title": title[:80],
+                    "title": "Browser bootstrap",
                 },
                 meta=self._meta(),
                 timeout=rpc_timeout,
             )
-            try:
-                self._raise_tool_error(result)
-            except CuaToolError as exc:
-                if (
-                    needs_readiness
-                    and str(exc).startswith(retry_marker)
-                    and attempt + 1 < attempts
-                ):
-                    self._restart_after_bootstrap_failure()
-                    continue
-                if needs_readiness and str(exc).startswith(retry_marker):
-                    message = str(exc)[len(retry_marker):]
-                    raise CuaToolError(message, exc.result) from None
-                raise
+            self._raise_tool_error(bootstrap)
             self.bootstrapped = True
-            if needs_readiness:
-                self.policy_ready = True
-            return result
-        raise RuntimeError("Browser Runtime bootstrap retry loop exhausted")
+
+        result = self.client.call_tool(
+            "js",
+            {
+                "code": code,
+                "timeout_ms": int(timeout_ms),
+                "title": title[:80],
+            },
+            meta=self._meta(),
+            timeout=rpc_timeout,
+        )
+        self._raise_tool_error(result)
+        return result
 
     def reset(self) -> dict[str, Any]:
         result = self.client.call_tool(
@@ -711,6 +812,7 @@ class CuaRuntime:
         )
         self._raise_tool_error(result)
         self.bootstrapped = False
+        self.policy_ready = False
         return result
 
     def release(self) -> dict[str, Any] | None:

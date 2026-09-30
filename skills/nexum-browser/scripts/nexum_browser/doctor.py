@@ -14,7 +14,13 @@ from .common import (
     is_executable_file,
     run_json_script,
 )
-from .runtime import CuaLaunchContract, CuaRuntime, discover_launch_contract
+from .mcp import McpRequestOutcomeUnknown
+from .runtime import (
+    CuaLaunchContract,
+    CuaRuntime,
+    CuaToolError,
+    discover_launch_contract,
+)
 
 
 _URL_CREDENTIALS = re.compile(
@@ -163,16 +169,6 @@ def _failure_category(message: str) -> str:
     if any(
         token in lower
         for token in (
-            "access is denied",
-            "access denied",
-            "createprocessasuserw failed: 5",
-            "winerror 5",
-        )
-    ):
-        return "sandbox-acl"
-    if any(
-        token in lower
-        for token in (
             "fetch request failed",
             "timed out",
             "timeout",
@@ -183,6 +179,16 @@ def _failure_category(message: str) -> str:
         )
     ):
         return "network"
+    if any(
+        token in lower
+        for token in (
+            "access is denied",
+            "access denied",
+            "createprocessasuserw failed: 5",
+            "winerror 5",
+        )
+    ):
+        return "sandbox-acl"
     if any(
         token in lower
         for token in (
@@ -389,6 +395,147 @@ def _browser_checks(
         )
 
 
+def _runtime_browser_checks(
+    checks: list[dict[str, Any]],
+    contract: CuaLaunchContract,
+    runtime: CuaRuntime,
+) -> None:
+    def browser_probe(name: str, title: str) -> bool:
+        try:
+            runtime.run(
+                """
+let __doctorBrowser = await cua.getBrowser({id: "chrome"});
+let __doctorTab;
+try {
+  __doctorTab = await cua.createBrowserTab(__doctorBrowser.browserId);
+  nodeRepl.write("nexum-browser doctor tab ok");
+} finally {
+  if (__doctorTab) await __doctorTab.close();
+}
+""".strip(),
+                title=title,
+                timeout_ms=60000,
+                rpc_timeout=max(60.0, contract.startup_timeout),
+            )
+        except McpRequestOutcomeUnknown as exc:
+            details = _runtime_failure_details(contract, str(exc))
+            _entry(
+                checks,
+                name,
+                "fail",
+                str(exc),
+                outcomeUnknown=True,
+                **details,
+            )
+            return False
+        except Exception as exc:
+            details = _runtime_failure_details(contract, str(exc))
+            _entry(checks, name, "fail", str(exc), **details)
+            return False
+        else:
+            _entry(
+                checks,
+                name,
+                "pass",
+                "Created and closed a temporary controlled Chrome tab",
+            )
+        return True
+
+    if not browser_probe(
+        "js + Browser backend",
+        "nexum-browser doctor controlled tab",
+    ):
+        for name in (
+            "js_reset",
+            "post-reset bootstrap",
+            "turn_ended",
+        ):
+            _entry(
+                checks,
+                name,
+                "skip",
+                (
+                    "Skipped because the prior controlled-tab probe "
+                    "did not complete safely"
+                ),
+            )
+        runtime.close()
+        return
+
+    try:
+        runtime.reset()
+    except (McpRequestOutcomeUnknown, CuaToolError) as exc:
+        details = _runtime_failure_details(contract, str(exc))
+        _entry(
+            checks,
+            "js_reset",
+            "fail",
+            str(exc),
+            outcomeUnknown=True,
+            **details,
+        )
+        for name in ("post-reset bootstrap", "turn_ended"):
+            _entry(
+                checks,
+                name,
+                "skip",
+                (
+                    "Skipped because the Browser Runtime reset "
+                    "has unknown outcome"
+                ),
+            )
+        runtime.close()
+        return
+    except Exception as exc:
+        _entry(checks, "js_reset", "fail", str(exc))
+    else:
+        _entry(
+            checks,
+            "js_reset",
+            "pass",
+            "Node REPL context reset completed",
+        )
+        if not browser_probe(
+            "post-reset bootstrap",
+            "nexum-browser doctor post-reset controlled tab",
+        ):
+            _entry(
+                checks,
+                "turn_ended",
+                "skip",
+                (
+                    "Skipped because the post-reset controlled-tab "
+                    "probe did not complete safely"
+                ),
+            )
+            runtime.close()
+            return
+
+    try:
+        runtime.release()
+    except McpRequestOutcomeUnknown as exc:
+        details = _runtime_failure_details(contract, str(exc))
+        _entry(
+            checks,
+            "turn_ended",
+            "fail",
+            str(exc),
+            outcomeUnknown=True,
+            **details,
+        )
+    except Exception as exc:
+        _entry(checks, "turn_ended", "fail", str(exc))
+    else:
+        _entry(
+            checks,
+            "turn_ended",
+            "pass",
+            "Browser Runtime turn ended cleanly",
+        )
+    finally:
+        runtime.close()
+
+
 def run_doctor() -> dict[str, Any]:
     checks: list[dict[str, Any]] = []
     contract: CuaLaunchContract | None = None
@@ -488,7 +635,7 @@ def run_doctor() -> dict[str, Any]:
                         output=_bounded(output),
                     )
                 else:
-                    details = _windows_acl_details(contract.node_path, output)
+                    details = _runtime_failure_details(contract, output)
                     _entry(
                         checks,
                         "Codex sandbox node.exe",
@@ -499,7 +646,7 @@ def run_doctor() -> dict[str, Any]:
                         **details,
                     )
             except Exception as exc:
-                details = _windows_acl_details(contract.node_path, str(exc))
+                details = _runtime_failure_details(contract, str(exc))
                 _entry(
                     checks,
                     "Codex sandbox node.exe",
@@ -538,68 +685,7 @@ def run_doctor() -> dict[str, Any]:
             tools=sorted(runtime.allowed_tools),
         )
 
-        def browser_probe(name: str, title: str) -> None:
-            try:
-                runtime.run(
-                    """
-let __doctorBrowser = await cua.getBrowser({id: "chrome"});
-let __doctorTab;
-try {
-  __doctorTab = await cua.createBrowserTab(__doctorBrowser.browserId);
-  nodeRepl.write("nexum-browser doctor tab ok");
-} finally {
-  if (__doctorTab) await __doctorTab.close();
-}
-""".strip(),
-                    title=title,
-                    timeout_ms=60000,
-                    rpc_timeout=max(60.0, contract.startup_timeout),
-                )
-            except Exception as exc:
-                details = _runtime_failure_details(contract, str(exc))
-                _entry(checks, name, "fail", str(exc), **details)
-            else:
-                _entry(
-                    checks,
-                    name,
-                    "pass",
-                    "Created and closed a temporary controlled Chrome tab",
-                )
-
-        browser_probe(
-            "js + Browser backend",
-            "nexum-browser doctor controlled tab",
-        )
-
-        try:
-            runtime.reset()
-        except Exception as exc:
-            _entry(checks, "js_reset", "fail", str(exc))
-        else:
-            _entry(
-                checks,
-                "js_reset",
-                "pass",
-                "Node REPL context reset completed",
-            )
-            browser_probe(
-                "post-reset bootstrap",
-                "nexum-browser doctor post-reset controlled tab",
-            )
-
-        try:
-            runtime.release()
-        except Exception as exc:
-            _entry(checks, "turn_ended", "fail", str(exc))
-        else:
-            _entry(
-                checks,
-                "turn_ended",
-                "pass",
-                "Browser Runtime turn ended cleanly",
-            )
-        finally:
-            runtime.close()
+        _runtime_browser_checks(checks, contract, runtime)
 
     healthy = not any(item["status"] == "fail" for item in checks)
     return {

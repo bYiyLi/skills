@@ -11,7 +11,7 @@ Journal: {{JOURNAL_PATH}}; timezone: {{JOURNAL_TIMEZONE}}
 These sources own different facts: requirements define product commitments,
 design defines the technical contract, code/runtime establish implementation,
 and the journal records history. Read applicable nested instructions before
-changing a directory. Preserve host/tool authority.
+reviewing, running commands in, or changing a directory. Preserve host/tool authority.
 
 ## Inspect before changing
 
@@ -58,9 +58,10 @@ and rerun invalidated checks. Classify failures rather than weakening tests.
 
 ## Synchronize and finish
 
-Synchronize affected design, development status, and the dated journal for
-authorized changes. Append decisions and observed evidence; do not copy chat
-transcripts or overwrite prior historical entries.
+Synchronize affected design and development status. Update the dated journal
+only when the repository already uses it or the current project setup establishes
+it. Append decisions and observed evidence; do not copy chat transcripts or
+overwrite prior historical entries.
 
 Before implementation completion, map acceptance to current evidence and inspect
 the final staged/unstaged/task-owned untracked diff. Missing mandatory evidence

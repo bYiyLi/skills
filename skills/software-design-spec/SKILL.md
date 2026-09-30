@@ -1,6 +1,6 @@
 ---
 name: software-design-spec
-description: 创建、修订或评审软件设计文档和 ADR，定义结构、接口、数据及运行行为。产品承诺由需求负责，工作安排由实施计划负责。
+description: 创建、修订或评审软件设计文档和 ADR，定义结构、接口、数据及运行行为。产品承诺由需求负责，工作安排由实施计划负责；纯文档位置/生命周期审查由 software-doc-writing-standards 负责。
 ---
 
 # Software Design Spec
@@ -28,8 +28,9 @@ description: 创建、修订或评审软件设计文档和 ADR，定义结构、
 
 ## 加载所需资源
 
-正文 create、revise 或 review 读取
+创建、修订或评审设计内容时读取
 [references/design-view-set.md](references/design-view-set.md)，按实际问题选择视图。
+仅做拼写、链接或其他不改变设计语义的编辑时不加载该 reference。
 涉及仓库写入、路径或生命周期判断时读取
 [references/doc-management-contract.md](references/doc-management-contract.md)。
 仅核对或修改 metadata、状态、位置时不要求正文输入，也不加载设计视图。

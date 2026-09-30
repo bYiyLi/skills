@@ -59,15 +59,17 @@ A short self-contained Skill needs no router or extra files.
 
 Read [references/resource-layering.md](references/resource-layering.md) when
 placing or auditing instructions, references, scripts, assets or metadata.
-Add a resource only for an existing runtime role. Link each required resource
-from the body with its exact native path and use condition. Move substantial
-conditional detail off the ordinary path; do not repeat its full rules there.
+Add a resource only for an existing runtime role. Give every required resource
+an exact conditional route: first-level routes belong in the body; a routed
+reference may route deeper detail when that branch is only knowable there. Move
+substantial conditional detail off the ordinary path; do not repeat its rules.
 
 ## Validate the closed contract
 
 Read [references/skill-contract-validation.md](references/skill-contract-validation.md)
-for review and before calling a revision complete. Use only the name, description,
-body, reachable resources, declared dependencies and verified host/runtime behavior.
+for review and before calling a creation or revision complete. Use only the name,
+description, body, reachable resources, declared dependencies and verified
+host/runtime behavior.
 Do not fill gaps from author intent or assumed permissions/capabilities.
 
 Include independently used invocation prompts and generated instruction templates.

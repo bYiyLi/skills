@@ -1,8 +1,8 @@
 # Requirements Modes And Quality Contract
 
 在 `create`、`revise` 或 `review` 中选择或审查文档模式。create 和全文 review 检查每条正式
-requirement；限定范围的 revise 或 review 只检查请求改变、指定或受影响的 requirement 及其
-必要依赖，并把其余内容列为 out-of-scope。
+requirement；限定范围的 revise 或 review 只检查用户指定的章节、requirements、其他元素或
+本次修改影响的内容及其必要依赖，并把其余内容列为 out-of-scope。
 
 ## Select the Document Mode
 
@@ -47,7 +47,7 @@ SRS 至少覆盖 purpose、scope、audience、stakeholders/actors、system conte
 分期取舍时添加，值来自明确决定；没有优先级不阻止一组全部必须满足的要求形成基线。
 不得为凑字段发明优先级、负责人或批准状态。稳定 ID 可沿用已有编号或可定位锚点。
 
-创建的 artifact 及每条新增或修订的正式 requirement 都要让这些字段可恢复，不要求目标仓库采用固定标题。全文 `review` 对所有正式 requirements 检查这些字段；用户明确限定的 review 只检查指定 requirements 和判断它们所需的依赖，并把其余内容列为 out-of-scope。范围受限的 `revise` 报告未修改的既有缺陷，不要借机扩大变更。不要使用未定义的“关键”或“重要”子集。约束如果会规范目标系统行为，也要写成正式 requirement；只描述既定外部条件时，可作为有来源的 constraint 单独列出。
+创建的 artifact 及每条新增或修订的正式 requirement 都要让这些字段可恢复，不要求目标仓库采用固定标题。全文 `review` 对所有正式 requirements 检查这些字段；用户明确限定的 review 只检查指定章节、requirements 或其他元素及判断它们所需的依赖，并把其余内容列为 out-of-scope。只有纳入范围的正式 requirement 才应用完整 requirement record 检查。范围受限的 `revise` 只报告在该范围及必要依赖中实际遇到、会影响本次修改的既有缺陷，不另行扫描无关内容。不要使用未定义的“关键”或“重要”子集。约束如果会规范目标系统行为，也要写成正式 requirement；只描述既定外部条件时，可作为有来源的 constraint 单独列出。
 
 ## Check Every Formal Requirement
 

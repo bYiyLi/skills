@@ -47,6 +47,10 @@ implementation progress and daily history out of Project Instructions.
 | WORKING_LANGUAGE | Existing project convention or user's working language |
 | AGENTS_PATH, REQUIREMENTS_SOURCE, DESIGN_SOURCE, DEVELOPMENT_SOURCE, JOURNAL_PATH, PROJECT_INSTRUCTIONS_SOURCE | Actual repository source map; use repository-relative paths where applicable |
 
+Each source row retained in generated Project Instructions or AGENTS must name an
+inspected source. Omit a row when that source does not exist and the current setup
+does not establish it; do not invent a path merely to fill a template.
+
 REQUIREMENTS_SOURCE identifies the inspected PRD/SRS, product requirements section,
 or explicit decision source when one exists. Do not create a requirements file
 just to fill the template. If none exists, omit that source row or state the

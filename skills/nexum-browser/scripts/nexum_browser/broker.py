@@ -24,27 +24,80 @@ from .common import (
     RUNTIME_DIR,
     SKILL_ROOT,
 )
-from .runtime import CuaRuntime, CuaToolError
+from .mcp import McpRequestOutcomeUnknown
+from .runtime import (
+    _BOOTSTRAP_ATTEMPTS,
+    _DEFAULT_STARTUP_TIMEOUT,
+    CuaRuntime,
+    CuaToolError,
+    discover_launch_contract,
+)
 
 
 _STATE_VERSION = 1
 _BROKER_PROTOCOL = 3
 _MAX_MESSAGE_BYTES = 64 * 1024 * 1024
+_RUN_COMPLETION_GRACE_SECONDS = 15.0
 _WINDOWS_TASK_ENV_PATH = RUNTIME_DIR / "broker-task-env.json"
 
 
+class BrokerRequestOutcomeUnknown(RuntimeError):
+    """The broker may have received a request whose outcome is not known."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        data: dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.data = data
+
+
+class BrokerRequestTimeout(BrokerRequestOutcomeUnknown, TimeoutError):
+    pass
+
+
+class BrokerRuntimeReleaseFailed(RuntimeError):
+    def __init__(
+        self,
+        message: str,
+        *,
+        data: dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.data = data
+
+
+class BrokerBusy(RuntimeError):
+    pass
+
+
 class ActiveOperation:
-    def __init__(self, code: str, title: str, timeout_ms: int) -> None:
+    def __init__(
+        self,
+        code: str,
+        title: str,
+        timeout_ms: int,
+        completion_budget: float,
+    ) -> None:
         self.id = "op_" + uuid.uuid4().hex
         self.code = code
         self.title = title
         self.timeout_ms = timeout_ms
+        self.completion_budget = completion_budget
         self.state = "running"
         self.terminal_decision: str | None = None
+        self.elicitation_id: str | None = None
         self.result: dict[str, Any] | None = None
         self.error: BaseException | None = None
         self.done = threading.Event()
         self.thread: threading.Thread | None = None
+        self.deadline: float | None = None
+        self.arm_deadline()
+
+    def arm_deadline(self) -> None:
+        self.deadline = time.monotonic() + self.completion_budget
 
 
 class Broker:
@@ -62,6 +115,29 @@ class Broker:
             self.runtime = CuaRuntime()
         return self.runtime
 
+    @staticmethod
+    def _completion_budget(runtime: CuaRuntime, timeout_ms: int) -> float:
+        execution = timeout_ms / 1000
+        contract = getattr(runtime, "contract", None)
+        startup_timeout = float(
+            getattr(contract, "startup_timeout", 0.0) or 0.0
+        )
+        if runtime.policy_ready:
+            return (
+                startup_timeout
+                + execution
+                + _RUN_COMPLETION_GRACE_SECONDS
+            )
+        restart_budget = (
+            2 * startup_timeout * max(0, _BOOTSTRAP_ATTEMPTS - 1)
+        )
+        return (
+            startup_timeout
+            + execution * (_BOOTSTRAP_ATTEMPTS + 1)
+            + restart_budget
+            + _RUN_COMPLETION_GRACE_SECONDS
+        )
+
     def has_active_operation(self) -> bool:
         with self._operation_lock:
             return self.active_operation is not None
@@ -74,11 +150,73 @@ class Broker:
             "id": operation.id,
             "command": "run",
             "state": operation.state,
+            "timeoutMs": operation.timeout_ms,
         }
 
     def _operation_status(self) -> dict[str, Any] | None:
         with self._operation_lock:
             return self._operation_status_unlocked()
+
+    def _reconcile_withdrawn_confirmation(
+        self,
+    ) -> dict[str, Any] | None:
+        with self._operation_lock:
+            operation = self.active_operation
+            if (
+                operation is None
+                or operation.state != "awaiting_confirmation"
+            ):
+                return None
+
+        runtime = self.runtime
+        pending = (
+            runtime.pending_elicitation()
+            if runtime is not None
+            else None
+        )
+        if pending is not None:
+            if operation.elicitation_id == pending.elicitation_id:
+                return None
+            operation.elicitation_id = pending.elicitation_id
+            return {
+                "code": "confirmation_required",
+                "message": str(
+                    pending.params.get("message")
+                    or "Browser Runtime requires confirmation"
+                ),
+                "retryable": True,
+                "data": {
+                    "operationId": operation.id,
+                    "elicitationId": pending.elicitation_id,
+                    "request": pending.params,
+                    "replacement": True,
+                },
+            }
+
+        operation.state = "outcome_unknown"
+        if runtime is not None:
+            with contextlib.suppress(Exception):
+                runtime.close()
+            if self.runtime is runtime:
+                self.runtime = None
+        operation.done.wait(2)
+        with self._operation_lock:
+            if self.active_operation is operation:
+                self.active_operation = None
+        return {
+            "code": "run_outcome_unknown",
+            "message": (
+                "Browser Runtime confirmation was withdrawn before a "
+                "continuation completed; inspect browser state before retrying"
+            ),
+            "retryable": False,
+            "data": {
+                "operationId": operation.id,
+                "outcomeUnknown": True,
+                "confirmationWithdrawn": True,
+                "runtimeDiscarded": runtime is not None,
+            },
+        }
 
     def handle(self, request: dict[str, Any]) -> dict[str, Any]:
         command = str(request.get("command") or "")
@@ -105,6 +243,11 @@ class Broker:
                         if self.runtime is not None
                         else False
                     ),
+                    "policyReady": (
+                        self.runtime.policy_ready
+                        if self.runtime is not None
+                        else False
+                    ),
                     "activeOperation": self._operation_status(),
                 },
             }
@@ -124,19 +267,74 @@ class Broker:
                             "activeOperation": self._operation_status_unlocked()
                         },
                     }
+            paused_operation = (
+                active
+                if active is not None
+                and active.state == "awaiting_confirmation"
+                else None
+            )
             try:
                 self._shutdown_runtime()
+            except McpRequestOutcomeUnknown as exc:
+                self.stop_requested = True
+                data = {"outcomeUnknown": True}
+                if paused_operation is not None:
+                    data.update(
+                        {
+                            "activeRunOutcomeUnknown": True,
+                            "operationId": paused_operation.id,
+                        }
+                    )
+                return {
+                    "code": "stop_outcome_unknown",
+                    "message": str(exc),
+                    "retryable": False,
+                    "data": data,
+                }
             except Exception as exc:
                 self.stop_requested = True
+                data = {
+                    "stopped": True,
+                    "turnEnded": False,
+                }
+                if paused_operation is not None:
+                    data.update(
+                        {
+                            "activeRunOutcomeUnknown": True,
+                            "operationId": paused_operation.id,
+                            "outcomeUnknown": True,
+                        }
+                    )
                 return {
                     "code": "runtime_release_failed",
                     "message": str(exc),
-                    "retryable": True,
+                    "retryable": False,
+                    "data": data,
                 }
             self.stop_requested = True
+            if paused_operation is not None:
+                return {
+                    "code": "stop_outcome_unknown",
+                    "message": (
+                        "Browser Runtime stopped and turn_ended completed, "
+                        "but the previously paused run outcome is unknown"
+                    ),
+                    "retryable": False,
+                    "data": {
+                        "stopped": True,
+                        "turnEnded": True,
+                        "activeRunOutcomeUnknown": True,
+                        "operationId": paused_operation.id,
+                        "outcomeUnknown": True,
+                    },
+                }
             return {"code": "ok", "data": {"stopped": True}}
 
         self.last_activity = time.monotonic()
+
+        withdrawn = self._reconcile_withdrawn_confirmation()
+        if withdrawn is not None:
+            return withdrawn
 
         if command == "_resume":
             return self._resume_operation(args)
@@ -173,11 +371,35 @@ class Broker:
 
         try:
             result = self.runtime.reset()
-        except Exception as exc:
+        except McpRequestOutcomeUnknown as exc:
+            runtime = self.runtime
+            with contextlib.suppress(Exception):
+                runtime.close()
+            if self.runtime is runtime:
+                self.runtime = None
             return {
-                "code": "reset_failed",
+                "code": "reset_outcome_unknown",
                 "message": str(exc),
-                "retryable": True,
+                "retryable": False,
+                "data": {
+                    "outcomeUnknown": True,
+                    "runtimeDiscarded": True,
+                },
+            }
+        except Exception as exc:
+            runtime = self.runtime
+            with contextlib.suppress(Exception):
+                runtime.close()
+            if self.runtime is runtime:
+                self.runtime = None
+            return {
+                "code": "reset_state_unknown",
+                "message": str(exc),
+                "retryable": False,
+                "data": {
+                    "stateUnknown": True,
+                    "runtimeDiscarded": True,
+                },
             }
         return {
             "code": "ok",
@@ -213,6 +435,8 @@ class Broker:
                 "retryable": False,
             }
 
+        no_startup_tab = bool(args.get("noStartupTab"))
+
         with self._operation_lock:
             if self.active_operation is not None:
                 return {
@@ -224,16 +448,34 @@ class Broker:
                     },
                 }
 
-        try:
-            runtime = self.ensure_runtime()
-        except Exception as exc:
-            return {
-                "code": "runtime_unavailable",
-                "message": str(exc),
-                "retryable": True,
-            }
+        runtime = self.runtime
+        if no_startup_tab:
+            if runtime is None or not runtime.policy_ready:
+                return {
+                    "code": "runtime_not_passive_ready",
+                    "message": (
+                        "An existing Browser Runtime with completed "
+                        "controlled-tab readiness is required"
+                    ),
+                    "retryable": False,
+                }
+        else:
+            try:
+                runtime = self.ensure_runtime()
+            except Exception as exc:
+                return {
+                    "code": "runtime_unavailable",
+                    "message": str(exc),
+                    "retryable": True,
+                }
+        assert runtime is not None
 
-        operation = ActiveOperation(code, title, timeout_ms)
+        operation = ActiveOperation(
+            code,
+            title,
+            timeout_ms,
+            self._completion_budget(runtime, timeout_ms),
+        )
         with self._operation_lock:
             if self.active_operation is not None:
                 return {
@@ -276,18 +518,67 @@ class Broker:
                     if self.active_operation is operation:
                         self.active_operation = None
 
-                if operation.terminal_decision is not None:
-                    if operation.terminal_decision == "decline":
+                if operation.error is not None:
+                    if isinstance(
+                        operation.error,
+                        McpRequestOutcomeUnknown,
+                    ):
+                        runtime = self.runtime
+                        if runtime is not None:
+                            with contextlib.suppress(Exception):
+                                runtime.close()
+                            if self.runtime is runtime:
+                                self.runtime = None
                         return {
-                            "code": "operation_declined",
-                            "message": "Browser Runtime confirmation was declined",
+                            "code": "run_outcome_unknown",
+                            "message": str(operation.error),
                             "retryable": False,
+                            "data": {
+                                "operationId": operation.id,
+                                "outcomeUnknown": True,
+                                "runtimeDiscarded": runtime is not None,
+                            },
                         }
+
+                if (
+                    operation.terminal_decision is not None
+                    and operation.result is not None
+                    and operation.error is None
+                ):
                     return {
-                        "code": "operation_cancelled",
-                        "message": "Browser Runtime operation was cancelled",
+                        "code": "run_outcome_unknown",
+                        "message": (
+                            "Browser Runtime returned a successful result after "
+                            "the confirmation was declined or cancelled"
+                        ),
+                        "retryable": False,
+                        "data": {
+                            "operationId": operation.id,
+                            "confirmationDecision": operation.terminal_decision,
+                            "outcomeUnknown": True,
+                            "result": operation.result,
+                        },
+                    }
+
+                if operation.terminal_decision is not None:
+                    response = {
+                        "code": (
+                            "operation_declined"
+                            if operation.terminal_decision == "decline"
+                            else "operation_cancelled"
+                        ),
+                        "message": (
+                            "Browser Runtime confirmation was declined"
+                            if operation.terminal_decision == "decline"
+                            else "Browser Runtime operation was cancelled"
+                        ),
                         "retryable": False,
                     }
+                    if isinstance(operation.error, CuaToolError):
+                        response["data"] = operation.error.result
+                    elif operation.result is not None:
+                        response["data"] = operation.result
+                    return response
 
                 if operation.error is not None:
                     response = {
@@ -310,6 +601,8 @@ class Broker:
             elicitation = runtime.pending_elicitation()
             if elicitation is not None:
                 operation.state = "awaiting_confirmation"
+                operation.elicitation_id = elicitation.elicitation_id
+                operation.deadline = None
                 return {
                     "code": "confirmation_required",
                     "message": str(
@@ -324,8 +617,38 @@ class Broker:
                     },
                 }
 
+            if (
+                operation.deadline is not None
+                and time.monotonic() >= operation.deadline
+                and not operation.done.is_set()
+            ):
+                operation.state = "outcome_unknown"
+                with contextlib.suppress(Exception):
+                    runtime.close()
+                if self.runtime is runtime:
+                    self.runtime = None
+                operation.done.wait(2)
+                with self._operation_lock:
+                    if self.active_operation is operation:
+                        self.active_operation = None
+                return {
+                    "code": "run_outcome_unknown",
+                    "message": (
+                        "Browser Runtime did not report completion before the "
+                        "broker deadline; inspect current browser state before "
+                        "retrying"
+                    ),
+                    "retryable": False,
+                    "data": {
+                        "operationId": operation.id,
+                        "outcomeUnknown": True,
+                        "runtimeDiscarded": True,
+                    },
+                }
+
     def _resume_operation(self, args: dict[str, Any]) -> dict[str, Any]:
         operation_id = str(args.get("operation") or "")
+        elicitation_id = str(args.get("elicitation") or "")
         decision = str(args.get("decision") or "")
         content = args.get("content")
 
@@ -374,13 +697,42 @@ class Broker:
                 "message": "Pending Browser Runtime confirmation was lost",
                 "retryable": False,
             }
+        if elicitation.elicitation_id != elicitation_id:
+            return {
+                "code": "elicitation_mismatch",
+                "message": (
+                    "The supplied elicitation no longer matches the pending "
+                    "Browser Runtime confirmation"
+                ),
+                "retryable": False,
+            }
 
         try:
             runtime.respond_elicitation(
-                elicitation.elicitation_id,
+                elicitation_id,
                 action=decision,
                 content=content,
             )
+        except McpRequestOutcomeUnknown as exc:
+            operation.state = "outcome_unknown"
+            with contextlib.suppress(Exception):
+                runtime.close()
+            if self.runtime is runtime:
+                self.runtime = None
+            operation.done.wait(2)
+            with self._operation_lock:
+                if self.active_operation is operation:
+                    self.active_operation = None
+            return {
+                "code": "run_outcome_unknown",
+                "message": str(exc),
+                "retryable": False,
+                "data": {
+                    "operationId": operation.id,
+                    "outcomeUnknown": True,
+                    "runtimeDiscarded": True,
+                },
+            }
         except Exception as exc:
             return {
                 "code": "runtime_unavailable",
@@ -390,13 +742,21 @@ class Broker:
 
         if decision == "accept":
             operation.state = "running"
+            operation.elicitation_id = None
         else:
             operation.terminal_decision = "decline"
+            operation.elicitation_id = None
             operation.state = "cancelled"
+        operation.completion_budget = self._completion_budget(
+            runtime,
+            operation.timeout_ms,
+        )
+        operation.arm_deadline()
         return self._wait_for_operation(operation)
 
     def _cancel_operation(self, args: dict[str, Any]) -> dict[str, Any]:
         operation_id = str(args.get("operation") or "")
+        elicitation_id = str(args.get("elicitation") or "")
         with self._operation_lock:
             operation = self.active_operation
             if operation is None or operation.id != operation_id:
@@ -429,12 +789,41 @@ class Broker:
                 "message": "Pending Browser Runtime confirmation was lost",
                 "retryable": False,
             }
+        if elicitation.elicitation_id != elicitation_id:
+            return {
+                "code": "elicitation_mismatch",
+                "message": (
+                    "The supplied elicitation no longer matches the pending "
+                    "Browser Runtime confirmation"
+                ),
+                "retryable": False,
+            }
 
         try:
             runtime.respond_elicitation(
-                elicitation.elicitation_id,
+                elicitation_id,
                 action="cancel",
             )
+        except McpRequestOutcomeUnknown as exc:
+            operation.state = "outcome_unknown"
+            with contextlib.suppress(Exception):
+                runtime.close()
+            if self.runtime is runtime:
+                self.runtime = None
+            operation.done.wait(2)
+            with self._operation_lock:
+                if self.active_operation is operation:
+                    self.active_operation = None
+            return {
+                "code": "run_outcome_unknown",
+                "message": str(exc),
+                "retryable": False,
+                "data": {
+                    "operationId": operation.id,
+                    "outcomeUnknown": True,
+                    "runtimeDiscarded": True,
+                },
+            }
         except Exception as exc:
             return {
                 "code": "runtime_unavailable",
@@ -443,7 +832,13 @@ class Broker:
             }
 
         operation.terminal_decision = "cancel"
+        operation.elicitation_id = None
         operation.state = "cancelled"
+        operation.completion_budget = self._completion_budget(
+            runtime,
+            operation.timeout_ms,
+        )
+        operation.arm_deadline()
         return self._wait_for_operation(operation)
 
     def _cancel_pending_elicitation(self) -> None:
@@ -461,6 +856,7 @@ class Broker:
                 and operation.state == "awaiting_confirmation"
             ):
                 operation.terminal_decision = "cancel"
+                operation.elicitation_id = None
                 operation.state = "cancelled"
 
         with contextlib.suppress(Exception):
@@ -660,6 +1056,47 @@ def _run_windows_task_script(
     )
 
 
+def _windows_task_running() -> bool | None:
+    if os.name != "nt":
+        return False
+    task_name = _windows_task_name()
+    script = (
+        "$ErrorActionPreference='Stop';"
+        f"$name={_ps_quote(task_name)};"
+        "$task=Get-ScheduledTask -TaskName $name "
+        "-ErrorAction SilentlyContinue;"
+        "if(!$task){Write-Output 'missing';exit 0};"
+        "if($task.State -eq 'Running'){Write-Output 'running';exit 0};"
+        "Write-Output 'stopped'"
+    )
+    try:
+        result = _run_windows_task_script(script, timeout=10)
+    except Exception:
+        return None
+    if result.returncode != 0:
+        return None
+    task_state = (result.stdout or "").strip().lower()
+    if task_state == "running":
+        return True
+    if task_state in {"missing", "stopped"}:
+        return False
+    return None
+
+
+def _maintenance_request_timeout(tool_timeout: float) -> float:
+    try:
+        startup_timeout = float(
+            discover_launch_contract().startup_timeout
+        )
+    except Exception:
+        startup_timeout = _DEFAULT_STARTUP_TIMEOUT
+    return (
+        startup_timeout
+        + float(tool_timeout)
+        + _RUN_COMPLETION_GRACE_SECONDS
+    )
+
+
 def _remove_windows_task() -> None:
     if os.name != "nt":
         return
@@ -772,26 +1209,110 @@ def _request(
         separators=(",", ":"),
     ).encode("utf-8") + b"\n"
 
-    with socket.create_connection(
-        ("127.0.0.1", int(state["port"])),
-        timeout=timeout,
-    ) as conn:
-        conn.sendall(payload)
-        conn.shutdown(socket.SHUT_WR)
-        raw = _recv_line(conn, timeout)
+    may_have_dispatched = False
+    try:
+        with socket.create_connection(
+            ("127.0.0.1", int(state["port"])),
+            timeout=timeout,
+        ) as conn:
+            may_have_dispatched = True
+            conn.sendall(payload)
+            conn.shutdown(socket.SHUT_WR)
+            raw = _recv_line(conn, timeout)
+    except TimeoutError as exc:
+        if may_have_dispatched:
+            raise BrokerRequestTimeout(
+                "Timed out waiting for nexum-browser after request dispatch; "
+                "the operation outcome may be unknown"
+            ) from exc
+        raise
+    except OSError as exc:
+        if may_have_dispatched:
+            raise BrokerRequestOutcomeUnknown(
+                "Lost nexum-browser transport after request dispatch; "
+                "the operation outcome may be unknown"
+            ) from exc
+        raise
+    except Exception as exc:
+        if may_have_dispatched:
+            raise BrokerRequestOutcomeUnknown(
+                "Unable to read nexum-browser response after request dispatch; "
+                "the operation outcome may be unknown"
+            ) from exc
+        raise
 
     if not raw:
-        raise RuntimeError("nexum-browser broker returned an empty response")
+        raise BrokerRequestOutcomeUnknown(
+            "nexum-browser returned no response after request dispatch; "
+            "the operation outcome may be unknown"
+        )
     try:
         response = json.loads(raw.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise RuntimeError(
-            "nexum-browser broker returned invalid JSON"
+        raise BrokerRequestOutcomeUnknown(
+            "nexum-browser returned invalid data after request dispatch; "
+            "the operation outcome may be unknown"
         ) from exc
     if not isinstance(response, dict):
-        raise RuntimeError(
-            "nexum-browser broker returned a non-object response"
+        raise BrokerRequestOutcomeUnknown(
+            "nexum-browser returned an invalid response after request dispatch; "
+            "the operation outcome may be unknown"
         )
+    code = response.get("code")
+    if not isinstance(code, str) or not code:
+        raise BrokerRequestOutcomeUnknown(
+            "nexum-browser returned a response without a valid code; "
+            "the operation outcome may be unknown"
+        )
+    if code in {"ok", "confirmation_required"} and not isinstance(
+        response.get("data"),
+        dict,
+    ):
+        raise BrokerRequestOutcomeUnknown(
+            "nexum-browser returned an incomplete success response; "
+            "the operation outcome may be unknown"
+        )
+    data = response.get("data")
+    if code == "confirmation_required":
+        if not (
+            isinstance(data.get("operationId"), str)
+            and data.get("operationId")
+            and isinstance(data.get("elicitationId"), str)
+            and data.get("elicitationId")
+        ):
+            raise BrokerRequestOutcomeUnknown(
+                "nexum-browser returned an incomplete confirmation response; "
+                "the operation outcome may be unknown"
+            )
+    elif code == "ok":
+        if command in {"run", "_resume"} and not (
+            isinstance(data.get("content"), list)
+            and (
+                "isError" not in data
+                or isinstance(data.get("isError"), bool)
+            )
+        ):
+            raise BrokerRequestOutcomeUnknown(
+                "nexum-browser returned an incomplete run result; "
+                "the operation outcome may be unknown"
+            )
+        if command == "__ping__" and not isinstance(
+            data.get("brokerProtocol"),
+            int,
+        ):
+            raise BrokerRequestOutcomeUnknown(
+                "nexum-browser returned an incomplete ping response"
+            )
+        if command == "reset" and not isinstance(data.get("reset"), bool):
+            raise BrokerRequestOutcomeUnknown(
+                "nexum-browser returned an incomplete reset response; "
+                "the operation outcome may be unknown"
+            )
+        if command == "__stop__" and data.get("stopped") is not True:
+            raise BrokerRequestOutcomeUnknown(
+                "nexum-browser returned an incomplete stop response; "
+                "the operation outcome may be unknown"
+            )
     return response
 
 
@@ -819,24 +1340,142 @@ def _compatible_ping(response: dict[str, Any] | None) -> bool:
     )
 
 
+def _state_process_alive(state: dict[str, Any]) -> bool | None:
+    try:
+        pid = int(state.get("pid") or 0)
+    except (TypeError, ValueError):
+        return False
+    if pid <= 0:
+        return False
+
+    if os.name == "nt":
+        try:
+            import ctypes
+
+            kernel32 = ctypes.windll.kernel32
+            handle = kernel32.OpenProcess(0x1000, False, pid)
+            if not handle:
+                if int(kernel32.GetLastError()) == 87:
+                    return False
+                return None
+            try:
+                exit_code = ctypes.c_ulong()
+                if not kernel32.GetExitCodeProcess(
+                    handle,
+                    ctypes.byref(exit_code),
+                ):
+                    return None
+                return exit_code.value == 259
+            finally:
+                kernel32.CloseHandle(handle)
+        except Exception:
+            return None
+
+    pids = _unix_broker_pids()
+    if pids is None:
+        return None
+    return pid in pids
+
+
+def _unix_broker_pids(
+    entry: str | None = None,
+) -> list[int] | None:
+    if os.name == "nt":
+        return []
+    entry = entry or str(
+        Path(__file__).resolve().parents[1] / "browser"
+    )
+    try:
+        result = subprocess.run(
+            ["ps", "-ww", "-axo", "pid=,command="],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+    except Exception:
+        return None
+    if result.returncode != 0:
+        return None
+
+    pids: list[int] = []
+    for line in (result.stdout or "").splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        pid_text, _, command = stripped.partition(" ")
+        try:
+            pid = int(pid_text)
+        except ValueError:
+            continue
+        if command.rstrip().endswith(f"{entry} _broker"):
+            pids.append(pid)
+    return pids
+
+
 def broker_status() -> dict[str, Any]:
     state = _load_state()
     if not state:
-        return {"running": False}
+        if os.name == "nt":
+            task_running = _windows_task_running()
+            if task_running is not False:
+                return {
+                    "running": False,
+                    "stateUncertain": True,
+                    "taskRunning": task_running is True,
+                }
+        else:
+            pids = _unix_broker_pids()
+            if pids is None:
+                return {"running": False, "stateUncertain": True}
+            if pids:
+                return {
+                    "running": True,
+                    "unresponsive": True,
+                    "stateUncertain": True,
+                    "pids": pids,
+                }
+        return {"running": False, "confirmedStopped": True}
 
     response = _ping_response(state)
     if response is None:
-        return {
+        if os.name == "nt" and _windows_task_running() is False:
+            return {
+                "running": False,
+                "staleState": True,
+                "confirmedStopped": True,
+                "pid": state.get("pid"),
+            }
+        alive = _state_process_alive(state)
+        if alive is not False:
+            status = {
+                "running": True,
+                "unresponsive": True,
+                "pid": state.get("pid"),
+            }
+            if alive is None:
+                status["livenessUnknown"] = True
+            return status
+        status = {
             "running": False,
             "staleState": True,
             "pid": state.get("pid"),
         }
+        if os.name == "nt":
+            task_running = _windows_task_running()
+            if task_running is not False:
+                status["stateUncertain"] = True
+                status["taskRunning"] = task_running is True
+                return status
+        status["confirmedStopped"] = True
+        return status
 
     data = response.get("data")
     if not isinstance(data, dict) or not _compatible_ping(response):
         return {
             "running": False,
             "incompatibleProtocol": True,
+            "stateUncertain": True,
             "pid": state.get("pid"),
         }
 
@@ -849,6 +1488,7 @@ def broker_status() -> dict[str, Any]:
         "runtimeActive": bool(data.get("runtimeActive")),
         "runtimeBackend": data.get("runtimeBackend"),
         "bootstrapped": bool(data.get("bootstrapped")),
+        "policyReady": bool(data.get("policyReady")),
         "activeOperation": data.get("activeOperation"),
     }
 
@@ -881,25 +1521,44 @@ def _spawn() -> subprocess.Popen[Any] | None:
 
 def ensure_broker() -> dict[str, Any]:
     state = _load_state()
+    if not state and os.name != "nt":
+        pids = _unix_broker_pids()
+        if pids is None:
+            raise RuntimeError(
+                "Cannot determine whether a nexum-browser broker is already "
+                "running; refusing to start a second broker"
+            )
+        if pids:
+            raise RuntimeError(
+                "A nexum-browser broker appears to be running without state; "
+                "refusing to start a second broker"
+            )
     if state:
         ping = _ping_response(state)
         if _compatible_ping(ping):
             return state
         if ping is not None:
-            _request(state, "__stop__", {}, timeout=2)
-            deadline = time.monotonic() + 2
-            while time.monotonic() < deadline:
-                if _ping_response(state, timeout=0.2) is None:
-                    break
-                time.sleep(0.05)
-            else:
-                raise RuntimeError(
-                    "An incompatible nexum-browser broker is still running; "
-                    "refusing to start a second broker"
-                )
+            raise RuntimeError(
+                "An incompatible nexum-browser broker is responding; "
+                "refusing automatic replacement. Stop it explicitly after "
+                "resolving any active operation."
+            )
+        elif not (
+            os.name == "nt" and _windows_task_running() is False
+        ) and _state_process_alive(state) is not False:
+            raise RuntimeError(
+                "The nexum-browser broker is running but not responding; "
+                "refusing to replace it while an operation may still be active"
+            )
         _clear_state_if_token(str(state.get("token") or ""))
 
     if os.name == "nt":
+        task_running = _windows_task_running()
+        if task_running is not False:
+            raise RuntimeError(
+                "Windows nexum-browser broker task may still be running "
+                "but broker state is unavailable; refusing to replace it"
+            )
         _remove_windows_task()
 
     process = _spawn()
@@ -955,23 +1614,67 @@ def stop_broker() -> bool:
     state = _load_state()
     if not state:
         if os.name == "nt":
+            task_running = _windows_task_running()
+            if task_running is not False:
+                raise RuntimeError(
+                    "Windows nexum-browser broker task may still be running "
+                    "but broker state is unavailable; refusing to force-stop it"
+                )
             _remove_windows_task()
+        else:
+            pids = _unix_broker_pids()
+            if pids is None:
+                raise RuntimeError(
+                    "Cannot determine whether a nexum-browser broker is still "
+                    "running because broker state is unavailable"
+                )
+            if pids:
+                raise RuntimeError(
+                    "A nexum-browser broker appears to be running without state; "
+                    "refusing to report it stopped"
+                )
         return False
 
     if _ping_response(state) is None:
+        if os.name == "nt" and _windows_task_running() is False:
+            _clear_state_if_token(str(state.get("token") or ""))
+            _remove_windows_task()
+            return False
+        if _state_process_alive(state) is not False:
+            raise RuntimeError(
+                "The nexum-browser broker is running but not responding; "
+                "refusing to force-stop it while an operation outcome may be unknown"
+            )
         _clear_state_if_token(str(state.get("token") or ""))
         if os.name == "nt":
+            task_running = _windows_task_running()
+            if task_running is not False:
+                raise RuntimeError(
+                    "Windows nexum-browser broker task may still be running; "
+                    "refusing to force-stop it while outcome is unknown"
+                )
             _remove_windows_task()
         return False
 
-    response = _request(state, "__stop__", {}, timeout=5)
+    response = _request(
+        state,
+        "__stop__",
+        {},
+        timeout=_maintenance_request_timeout(15),
+    )
     response_error = (
         str(response.get("message") or response)
         if response.get("code") != "ok"
         else None
     )
     if response.get("code") == "broker_busy":
-        raise RuntimeError(response_error or "nexum-browser broker is busy")
+        raise BrokerBusy(
+            response_error or "nexum-browser broker is busy"
+        )
+    response_unknown = response.get("code") == "stop_outcome_unknown"
+    response_release_failed = (
+        response.get("code") == "runtime_release_failed"
+    )
     deadline = time.monotonic() + 5
     while time.monotonic() < deadline:
         if _ping_response(state, timeout=0.2) is None:
@@ -979,6 +1682,24 @@ def stop_broker() -> bool:
             if os.name == "nt":
                 _remove_windows_task()
             if response_error is not None:
+                if response_unknown:
+                    raise BrokerRequestOutcomeUnknown(
+                        response_error,
+                        data=(
+                            response.get("data")
+                            if isinstance(response.get("data"), dict)
+                            else None
+                        ),
+                    )
+                if response_release_failed:
+                    raise BrokerRuntimeReleaseFailed(
+                        response_error,
+                        data=(
+                            response.get("data")
+                            if isinstance(response.get("data"), dict)
+                            else None
+                        ),
+                    )
                 raise RuntimeError(response_error)
             return True
         time.sleep(0.05)

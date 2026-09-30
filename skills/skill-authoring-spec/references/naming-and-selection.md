@@ -126,11 +126,13 @@ These are written selection cases, not evidence of actual model selection. To
 claim observed selection, evaluate independently without naming the target Skill
 or exposing the intended answer.
 
-Delete or shorten a description phrase and rerun the cases. Keep it only when
-removal creates a missed trigger, false trigger, incorrect order, or unresolved
-sibling ambiguity. Call a phrase causally necessary only after repeated
-comparisons hold cases, model, host, surrounding instructions, and environment
-constant while changing only that phrase.
+For authorized creation or revision, delete or shorten a description phrase and
+rerun the cases. In read-only review, compare the hypothetical omission against
+the same cases without editing the target. Keep the phrase only when removal
+creates a missed trigger, false trigger, incorrect order, or unresolved sibling
+ambiguity. Call a phrase causally necessary only after repeated comparisons hold
+cases, model, host, surrounding instructions, and environment constant while
+changing only that phrase.
 
 When the selection surface may shorten metadata, verify that the opening still
 identifies responsibility and applicability before optional detail is lost.

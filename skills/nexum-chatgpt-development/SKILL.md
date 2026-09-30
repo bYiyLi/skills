@@ -20,7 +20,8 @@ Reuse existing authorization without per-step approval.
 For live local access, discover Nexum tools, call `project.list`, then `project.open` on the
 selected Agent and absolute directory. Copy returned opaque IDs exactly; refresh
 the existing `contextId` at the next user turn. Use live schemas. Read applicable
-instructions and required skills completely before dependent edits. In a Git
+instructions and required skills completely before dependent review, commands or
+edits. In a Git
 repository, inspect status and relevant staged/unstaged changes; preserve unrelated
 work. Without Git, report that fact and continue supported file inspection; initialize
 it only for authorized setup. Inspect
@@ -47,7 +48,7 @@ not independent results supported by available inputs.
 | --- | --- |
 | Establish/repair ChatGPT workspace or Skill loading | [references/project-setup.md](references/project-setup.md) |
 | Write/review README, AGENTS, ownership, quality commands | [references/repository-contract.md](references/repository-contract.md) |
-| Change design, plan/status or journal; record authorized repository work | [references/documentation.md](references/documentation.md) |
+| Change design, plan/status or an applicable journal | [references/documentation.md](references/documentation.md) |
 | Implementation, repair, acceptance, or repository review | [references/verification.md](references/verification.md) |
 | Commit, push, CI, publication, or deployment | [references/git-delivery.md](references/git-delivery.md) |
 | Write/review model-visible instructions or this Skill | [references/prompt-writing.md](references/prompt-writing.md) |
@@ -70,20 +71,16 @@ and document the affected contract before dependent implementation. Do not
 manufacture a full architecture for a small fix. Unresolved product choices pause
 only dependent work.
 
-Run checks for affected behavior and mandatory gates, review correctness and
-omissions, fix in-scope findings, and rerun invalidated checks. Continue between
-execution units until the requested acceptance has current evidence or a real
-blocker remains. Do not stop at a patch, green test, or specialist result; do not
-repeat or broaden checks without new changes, failures, or a concrete concern.
-
 Poll running sessions to their result within the active task. After interruption,
 inspect sessions, files, and Git before resuming. Never blindly replay an uncertain
 side effect or bypass a denial. Before a required approval, finish independent
 authorized preparation and present the concrete decision. Give factual progress
 updates; do not promise work after the response ends.
 
-Synchronize affected documentation and record meaningful repository changes using
-the documentation reference, respecting writable-file limits. Before declaring
+Synchronize affected documentation. Record repository changes through the
+documentation reference when the target repository already uses that journal,
+project setup establishes it, or the user requests it; otherwise report changes
+and evidence in the response. Respect writable-file limits. Before declaring
 implementation complete, check requested acceptance, required gates, unresolved
 findings, and the full task-owned diff including untracked outputs.
 

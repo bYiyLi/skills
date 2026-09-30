@@ -1,9 +1,11 @@
 # Scheduled operations and recovery
 
 Read for authorized scheduler maintenance, guardian patrol or run recovery.
-Resolve `Nexum 运营资料库 / 运营守护机制`, the matching `运营任务` contract, recent logs,
-and the real scheduler through available authorized tools. These instructions do
-not guarantee a scheduler, original-conversation access or a resume interface.
+For scheduler-state maintenance, resolve the matching `运营任务` contract and real
+scheduler. Additionally resolve `Nexum 运营资料库 / 运营守护机制` and recent logs for
+guardian patrol, recovery, or a maintenance decision that depends on those rules
+or observations. These instructions do not guarantee a scheduler,
+original-conversation access or a resume interface.
 Unavailable capabilities block that action; do not simulate them with a record.
 
 ## Maintain intent separately from observations

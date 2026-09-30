@@ -90,6 +90,16 @@ Shared implementation lowers duplication but does not establish a shared
 responsibility. Different providers, formats, or internal paths do not require
 separate Skills when they remain variants of one result or operation boundary.
 
+For any assessment-only gate, whether classified as a capability or workflow,
+also check:
+
+- `pass` requires current evidence for every mandatory criterion;
+- `fail` requires evidence that at least one criterion is not satisfied;
+- missing evidence remains indeterminate unless the governing policy explicitly
+  defines unknown as failure;
+- the gate may collect evidence but must not repair the subject or continue into
+  the gated action.
+
 ## Review Capability Contracts
 
 Trace the capability as:
@@ -159,15 +169,6 @@ Check that:
   releases, deployments, or other downstream work;
 - recovery reads current state and avoids repeating completed side effects
   blindly.
-
-For a gate, preserve the assessment-only subtype:
-
-- `pass` requires current evidence for every mandatory criterion;
-- `fail` requires evidence that at least one criterion is not satisfied;
-- missing evidence remains indeterminate unless the governing policy explicitly
-  defines unknown as failure;
-- the gate may collect evidence but must not repair the subject or continue into
-  the gated action.
 
 ## Review Guidance Contracts
 

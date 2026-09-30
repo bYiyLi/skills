@@ -19,6 +19,10 @@ class McpError(RuntimeError):
     pass
 
 
+class McpRequestOutcomeUnknown(McpError):
+    pass
+
+
 @dataclass
 class _PendingRequest:
     event: threading.Event = field(default_factory=threading.Event)
@@ -114,7 +118,18 @@ class StdioMcpClient:
         return result
 
     def refresh_tools(self, *, timeout: float | None = None) -> set[str]:
-        result = self.request("tools/list", {}, timeout=timeout or self._startup_timeout)
+        with self._state_lock:
+            self._tools_dirty = False
+        try:
+            result = self.request(
+                "tools/list",
+                {},
+                timeout=timeout or self._startup_timeout,
+            )
+        except Exception:
+            with self._state_lock:
+                self._tools_dirty = True
+            raise
         tools = result.get("tools") or []
         names = {
             str(item.get("name"))
@@ -124,13 +139,14 @@ class StdioMcpClient:
         allowed = names & self._configured_tools & _INTERNAL_TOOL_ALLOWLIST
         missing = _INTERNAL_TOOL_ALLOWLIST - allowed
         if missing:
+            with self._state_lock:
+                self._tools_dirty = True
             raise RuntimeError(
                 "cua_repl is missing required enabled tools: " + ", ".join(sorted(missing))
             )
         with self._state_lock:
             self._tool_names = names
             self._allowed_tools = allowed
-            self._tools_dirty = False
         return allowed
 
     def call_tool(
@@ -150,7 +166,35 @@ class StdioMcpClient:
         params: dict[str, Any] = {"name": name, "arguments": arguments}
         if meta:
             params["_meta"] = meta
-        return self.request("tools/call", params, timeout=timeout)
+        result = self.request("tools/call", params, timeout=timeout)
+        content = result.get("content")
+        is_error = result.get("isError", False)
+        def valid_block(item: Any) -> bool:
+            if not isinstance(item, dict):
+                return False
+            block_type = item.get("type")
+            if not isinstance(block_type, str) or not block_type:
+                return False
+            if block_type == "text":
+                return isinstance(item.get("text"), str)
+            if block_type in {"image", "audio"}:
+                return (
+                    isinstance(item.get("data"), str)
+                    and isinstance(item.get("mimeType"), str)
+                    and bool(item.get("mimeType"))
+                )
+            return False
+
+        valid_content = (
+            isinstance(content, list)
+            and all(valid_block(item) for item in content)
+        )
+        valid_error = isinstance(is_error, bool)
+        if not valid_content or not valid_error:
+            raise McpRequestOutcomeUnknown(
+                f"cua_repl tool {name} returned an invalid result"
+            )
+        return result
 
     def request(
         self,
@@ -159,6 +203,7 @@ class StdioMcpClient:
         *,
         timeout: float | None,
     ) -> dict[str, Any]:
+        outcome_unknown = method == "tools/call"
         with self._state_lock:
             if self._closed.is_set():
                 raise McpError("cua_repl connection is closed")
@@ -175,28 +220,43 @@ class StdioMcpClient:
                     "params": params,
                 }
             )
-        except Exception:
+        except Exception as exc:
             with self._state_lock:
                 self._pending.pop(request_id, None)
+            if outcome_unknown:
+                raise McpRequestOutcomeUnknown(
+                    f"Lost cua_repl dispatch for {method}; outcome may be unknown"
+                ) from exc
             raise
         completed = pending.event.wait(timeout)
         if not completed:
             with self._state_lock:
                 self._pending.pop(request_id, None)
-            with self._write_lock:
-                if not self._closed.is_set():
-                    self._write_json(
-                        {
-                            "jsonrpc": "2.0",
-                            "method": "notifications/cancelled",
-                            "params": {
-                                "requestId": request_id,
-                                "reason": f"nexum-browser timed out waiting for {method}",
-                            },
-                        }
-                    )
+            try:
+                with self._write_lock:
+                    if not self._closed.is_set():
+                        self._write_json(
+                            {
+                                "jsonrpc": "2.0",
+                                "method": "notifications/cancelled",
+                                "params": {
+                                    "requestId": request_id,
+                                    "reason": f"nexum-browser timed out waiting for {method}",
+                                },
+                            }
+                        )
+            except Exception:
+                pass
+            if outcome_unknown:
+                raise McpRequestOutcomeUnknown(
+                    f"Timed out waiting for dispatched cua_repl method {method}"
+                )
             raise TimeoutError(f"Timed out waiting for cua_repl method {method}")
         if pending.error is not None:
+            if outcome_unknown:
+                raise McpRequestOutcomeUnknown(
+                    f"Lost cua_repl result after dispatch: {pending.error}"
+                )
             raise McpError(str(pending.error))
         response = pending.response or {}
         if "error" in response:
@@ -205,9 +265,21 @@ class StdioMcpClient:
                 message = str(error.get("message") or error)
             else:
                 message = str(error)
+            if outcome_unknown:
+                raise McpRequestOutcomeUnknown(
+                    f"cua_repl returned no ToolResult for {method}: {message}"
+                )
             raise McpError(message)
         result = response.get("result")
-        return result if isinstance(result, dict) else {}
+        if not isinstance(result, dict):
+            if outcome_unknown:
+                raise McpRequestOutcomeUnknown(
+                    f"cua_repl method {method} returned an invalid result"
+                )
+            raise McpError(
+                f"cua_repl method {method} returned an invalid result"
+            )
+        return result
 
     def notify(self, method: str, params: dict[str, Any]) -> None:
         self._send({"jsonrpc": "2.0", "method": method, "params": params})
@@ -226,19 +298,28 @@ class StdioMcpClient:
         if action not in {"accept", "decline", "cancel"}:
             raise ValueError(f"Unsupported elicitation action: {action}")
         with self._state_lock:
-            elicitation = self._elicitations.pop(elicitation_id, None)
+            elicitation = self._elicitations.get(elicitation_id)
             if elicitation is None:
                 raise RuntimeError(f"Unknown or resolved elicitation: {elicitation_id}")
         result: dict[str, Any] = {"action": action}
         if content is not None:
             result["content"] = content
-        self._send(
-            {
-                "jsonrpc": "2.0",
-                "id": elicitation.request_id,
-                "result": result,
-            }
-        )
+        try:
+            self._send(
+                {
+                    "jsonrpc": "2.0",
+                    "id": elicitation.request_id,
+                    "result": result,
+                }
+            )
+        except Exception as exc:
+            with self._state_lock:
+                self._elicitations.pop(elicitation_id, None)
+            raise McpRequestOutcomeUnknown(
+                "Lost cua_repl confirmation response after dispatch"
+            ) from exc
+        with self._state_lock:
+            self._elicitations.pop(elicitation_id, None)
 
     def close(self) -> None:
         self._closed.set()
@@ -336,14 +417,19 @@ class StdioMcpClient:
             elif method == "notifications/cancelled":
                 params = message.get("params") or {}
                 cancelled = params.get("requestId")
-                if isinstance(cancelled, int):
+                if isinstance(cancelled, (int, str)):
                     with self._state_lock:
-                        pending = self._pending.pop(cancelled, None)
-                    if pending is not None:
-                        pending.error = McpError(
-                            str(params.get("reason") or "cua_repl cancelled the request")
-                        )
-                        pending.event.set()
+                        stale_elicitations = [
+                            elicitation_id
+                            for elicitation_id, elicitation
+                            in self._elicitations.items()
+                            if elicitation.request_id == cancelled
+                        ]
+                        for elicitation_id in stale_elicitations:
+                            self._elicitations.pop(
+                                elicitation_id,
+                                None,
+                            )
 
     def _handle_server_request(self, message: dict[str, Any]) -> None:
         method = str(message.get("method") or "")
@@ -378,6 +464,7 @@ class StdioMcpClient:
         with self._state_lock:
             pending = list(self._pending.values())
             self._pending.clear()
+            self._elicitations.clear()
         for item in pending:
             item.error = error
             item.event.set()

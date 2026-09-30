@@ -6,7 +6,6 @@ import os
 from pathlib import Path
 import shutil
 import time
-import uuid
 from typing import Any
 
 
@@ -20,9 +19,6 @@ IDLE_SECONDS = int(os.environ.get("NEXUM_BROWSER_IDLE_SECONDS", "3600"))
 REQUEST_TIMEOUT_SECONDS = int(
     os.environ.get("NEXUM_BROWSER_REQUEST_TIMEOUT_SECONDS", "45")
 )
-LOCK_STALE_SECONDS = int(
-    os.environ.get("NEXUM_BROWSER_LOCK_STALE_SECONDS", "900")
-)
 PROXY_ENV_NAMES = (
     "HTTP_PROXY",
     "HTTPS_PROXY",
@@ -34,44 +30,58 @@ PROXY_ENV_NAMES = (
 @contextlib.contextmanager
 def operation_lock(timeout: float = REQUEST_TIMEOUT_SECONDS + 15):
     RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
-    token = uuid.uuid4().hex
     deadline = time.monotonic() + timeout
-
-    while True:
-        try:
-            fd = os.open(
-                OPERATION_LOCK_PATH,
-                os.O_CREAT | os.O_EXCL | os.O_WRONLY,
-                0o600,
-            )
-        except FileExistsError:
-            try:
-                age = time.time() - OPERATION_LOCK_PATH.stat().st_mtime
-            except FileNotFoundError:
-                continue
-            if age > LOCK_STALE_SECONDS:
-                with contextlib.suppress(FileNotFoundError):
-                    OPERATION_LOCK_PATH.unlink()
-                continue
-            if time.monotonic() >= deadline:
-                raise TimeoutError("Another nexum-browser operation is still running")
-            time.sleep(0.05)
-            continue
-
-        try:
-            os.write(fd, token.encode("ascii"))
-        finally:
-            os.close(fd)
-        break
-
+    fd = os.open(
+        OPERATION_LOCK_PATH,
+        os.O_CREAT | os.O_RDWR,
+        0o600,
+    )
+    locked = False
     try:
+        while True:
+            if os.name == "nt":
+                import msvcrt
+
+                if os.fstat(fd).st_size == 0:
+                    os.write(fd, b"0")
+                os.lseek(fd, 0, os.SEEK_SET)
+                try:
+                    msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+                    locked = True
+                except OSError:
+                    locked = False
+            else:
+                import fcntl
+
+                try:
+                    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    locked = True
+                except OSError:
+                    locked = False
+
+            if locked:
+                break
+            if time.monotonic() >= deadline:
+                raise TimeoutError(
+                    "Another nexum-browser operation is still running"
+                )
+            time.sleep(0.05)
+
         yield
     finally:
         try:
-            if OPERATION_LOCK_PATH.read_text(encoding="ascii") == token:
-                OPERATION_LOCK_PATH.unlink()
-        except (FileNotFoundError, OSError, UnicodeDecodeError):
-            pass
+            if locked:
+                if os.name == "nt":
+                    import msvcrt
+
+                    os.lseek(fd, 0, os.SEEK_SET)
+                    msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+                else:
+                    import fcntl
+
+                    fcntl.flock(fd, fcntl.LOCK_UN)
+        finally:
+            os.close(fd)
 
 
 def emit(value: dict[str, Any]) -> None:

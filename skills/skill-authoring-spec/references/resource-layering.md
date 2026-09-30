@@ -63,7 +63,12 @@ Give each reference one coherent subject. State authority, scope, version, or fr
 
 Bundling a document does not make its claims authoritative. Inspect the source before deriving mandatory instructions, resolve material conflicts, and preserve uncertainty when the available evidence does not support one rule.
 
-Keep the reference reachable by an exact path from `SKILL.md`. Avoid chains in which one reference must be discovered through another. Do not repeat the same rule in the body and reference; keep the decision or routing rule in the body and the conditional detail in the reference.
+Keep every reference reachable through explicit, conditional links. Route the
+first-level decision from `SKILL.md`; a loaded reference may route a deeper
+reference when the need for that branch is determined only after reading it.
+Do not rely on directory browsing or implicit file discovery. Do not repeat the
+same rule in the body and reference; keep each routing decision at the earliest
+point that can identify the branch and keep its detail in the selected reference.
 
 ## Use Scripts for Deterministic Execution
 

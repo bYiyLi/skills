@@ -63,11 +63,13 @@ selection boundary or owned result.
 
 ## Handle Special Cases
 
-Treat `gate` as a `workflow` subtype. A gate assesses declared criteria and ends
-with a decision about whether work may continue or a state is trustworthy. It may
-collect evidence but must not repair the subject or continue into the gated
-action. Missing evidence remains unresolved unless the governing policy defines
-it as failure.
+Treat `gate` as an assessment contract, not a fifth primary type. Classify it by
+the rules above: use `workflow` when reaching the gate decision requires an
+intermediate boundary; otherwise a single independently invocable assessment can
+be a `capability`. In either case, the gate ends with a decision about whether
+work may continue or a state is trustworthy. It may collect evidence but must not
+repair the subject or continue into the gated action. Missing evidence remains
+unresolved unless the governing policy defines it as failure.
 
 Treat a source-to-target transformation as a workflow naming variant when the
 Skill owns progression to one transformed result. It is not a fifth primary

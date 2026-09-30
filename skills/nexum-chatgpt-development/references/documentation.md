@@ -53,10 +53,12 @@ the date from the repository's declared IANA timezone; if none exists, use UTC
 for the entry and state it explicitly. Do not use a guessed date from chat
 history or silently switch between the developer's and Agent's local timezone.
 
-For authorized repository changes, append a meaningful task entry after a
-decision, a verified milestone, or a genuine blocker. Use the daily-log asset
-routed from SKILL.md. A request restricting writable files takes precedence;
-return the journal entry in chat when persistence is outside that scope. Record:
+When the target repository already uses a development journal, project setup
+establishes one, or the user requests one, append a meaningful task entry after a
+decision, verified milestone, or genuine blocker. Use the daily-log asset routed
+from SKILL.md. Do not create a journal in an existing repository solely because
+code changed. A request restricting writable files takes precedence; return the
+entry in chat when persistence is outside that scope. Record:
 
 - The task and authorization scope; decisions with rationale and authoritative
   source locations, separating adopted decisions from unresolved proposals.

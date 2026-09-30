@@ -9,12 +9,12 @@
 | --- | --- | --- |
 | 编写或评审模型指令 | [prompt-authoring-spec](skills/prompt-authoring-spec/SKILL.md) | 指令必要性、归属、表达与自检 guidance，宿主持有交付 |
 | 编写或评审 Skill | [skill-authoring-spec](skills/skill-authoring-spec/SKILL.md) | Skill 合同 guidance，与提示词规范共用 |
-| 区分文档类型、核对共性质量 | [software-doc-writing-standards](skills/software-doc-writing-standards/SKILL.md) | 分类 guidance，不接管具体产物 |
+| 区分文档类型、核对共性质量或单文档生命周期 | [software-doc-writing-standards](skills/software-doc-writing-standards/SKILL.md) | 分类/质量/管理 guidance，不接管具体正文 |
 | 产品要求、约束和验收 | [software-requirements-spec](skills/software-requirements-spec/SKILL.md) | 单份需求文档 |
 | 技术结构、行为合同和 ADR | [software-design-spec](skills/software-design-spec/SKILL.md) | 单份设计文档 |
 | 实施计划、路线图与完成证据 | [software-development-plan](skills/software-development-plan/SKILL.md) | 独立计划单元、内部阶段与总览分开判断 |
-| 安装运行、操作方法、接口查询 | [software-usage-docs](skills/software-usage-docs/SKILL.md) | 同一产品的使用文档 |
-| 一次变更影响多份文档 | [sync-software-docs](skills/sync-software-docs/SKILL.md) | 同步工作流，正文共用对应类型 Skill |
+| 安装运行、操作方法、接口查询 | [software-usage-docs](skills/software-usage-docs/SKILL.md) | 单份使用文档正文；多文档变更由同步 Skill 协调 |
+| 一次变更影响多份文档 | [sync-software-docs](skills/sync-software-docs/SKILL.md) | 多文档协调含创建/更新，正文共用对应类型 Skill |
 | ChatGPT Web 通过 Nexum 开发本地项目 | [nexum-chatgpt-development](skills/nexum-chatgpt-development/SKILL.md) | 特定环境的完整开发工作流 |
 | 通过 Nexum 控制用户本地浏览器状态 | [nexum-browser](skills/nexum-browser/SKILL.md) | Browser Runtime capability，不接管代码修改或上层任务 |
 | 运营 Nexum 增长、渠道、社区和用户转化 | [nexum-operations](skills/nexum-operations/SKILL.md) | 运营工作流；产品开发仍由开发工作流负责 |
