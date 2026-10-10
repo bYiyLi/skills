@@ -16,7 +16,7 @@ inventory, not from a list of document types every project supposedly needs.
 | Product promise, actors, constraints or acceptance | Requirements: does the accepted product answer change? |
 | Structure/interface/data/runtime or significant choice | Design/ADR: does the implementation contract change? |
 | Work, dependency, deliverable or completion evidence | Plan: do work, inputs, criteria and state still correspond? |
-| Learning/task/operation path | Guide: do prerequisites, steps, permissions or recovery change? |
+| Learning/task/operation path, risk or impact | Guide: do prerequisites, steps, permissions, impact/risk notices or recovery change, even with unchanged commands? |
 | API/CLI/configuration/error/compatibility surface | Reference: do published interface facts change? |
 | Duplicate/stale/broken/state-conflicting documents | Existing sources: which authority determines the intended relationship? |
 
@@ -52,9 +52,10 @@ metadata contract exists. Never add a lifecycle framework just for this change.
 ## Execute the requested scope
 
 Order by actual inputs, state and side effects, not an unconditional sequence
-of document types. Apply common documentation rules to file/status changes;
-load the matching requirements/design/planning/usage reference from the main
-entrypoint before writing that content. Analysis and lifecycle-only operations
+of document types. File/status or purely mechanical edits use doc-management.
+Meaning-changing content also uses documentation and the matching requirements/
+design/planning/usage reference from the main entrypoint before writing it.
+Analysis and lifecycle-only operations
 do not require every type's body contract. Preserve unrelated content and history.
 
 For a saved synchronization plan without a suitable repository template, optionally

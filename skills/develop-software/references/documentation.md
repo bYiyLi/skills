@@ -1,9 +1,8 @@
 # Common software document contract
 
-Use this for document content, classification, file placement or lifecycle work.
-Type-specific requirements, design, plan and usage rules come from the main
-entrypoint's matching route. Pure file/status or mechanical edits need no full
-content review. Preserve the requested single-file or multi-file result.
+Use for document meaning, classification and engineering research records.
+Apply the main entrypoint's type-specific route for specialized content; file or
+state work uses doc-management. Preserve the requested single-/multi-file result.
 
 ## Identify the owning source and reader result
 
@@ -32,45 +31,26 @@ unresolved conflicts. Code proves implementation, not product authorization;
 a proposed command is not evidence it ran. Traceability required by the content
 contract must be recoverable; add other links only when they help a real consumer.
 
-## Create, revise and manage files
+When external research supports a software claim or decision, record its source
+URL, version or access date, applicability and limitations. Missing provenance
+remains a gap; an external implementation does not authorize a product commitment.
 
-Inspect repository instructions, document entrypoints, current files, templates
-and generators. Reuse the source already owning the result; do not ask permission
-again merely because revise is more appropriate than create. Use the user's
-path, then repository convention, then a simple non-overwriting location.
-A consequential conflict over ownership, a published entrypoint, compatibility
-links or retention needs resolution; absent conventions alone do not.
+Use the project's language and preserve valid structure. Prefer its templates;
+packaged templates are optional. Fill retained fields from inspected facts, repeat
+records for real items and remove inapplicable sections and placeholders. Missing
+inputs can remain explicit draft gaps, never ready-to-use template tokens.
 
-Use the project's language and preserve valid structure. Existing templates take
-precedence; packaged templates are optional for new artifacts. Their named
-placeholders denote the corresponding inspected fact, requirement, design,
-work item or evidence. Repeat records for actual items, remove inapplicable
-sections and replace every retained placeholder. Missing inputs may remain
-explicit gaps in a labeled draft, never as ready-to-use template tokens.
+For model-visible instructions, read a discovered `prompt-authoring-spec` and its
+selected references when available or required. A required missing spec blocks
+its dependent work. Otherwise, check the generated instructions independently:
+clear conditions/actions, trusted rules separated from source data, supported
+capabilities, scope/approval boundaries and observable completion. Do not claim
+a specification review that was not performed.
 
-Keep established metadata and lifecycle expressions. Add no owner field,
-frontmatter, approval state machine or fixed document tree without a consumer.
-A document being written does not make it accepted, approved, released or
-implemented. Meet the real conditions and authority for protected states.
-When drafting model-visible instructions, separate trusted governing text from
-source data, preserve host authority and use applicable authoring guidance.
-
-Authorized moves/archives update references and preserve required history.
-Deletion additionally needs authority for the actual targets and checks of
-references, retention and recovery. An already-deleted target can be assessed
-from its prior identity and Git/reference evidence; absence is not by itself a
-missing input. For cross-document actions use the synchronization route.
-
-## Validate the requested artifact
-
-Reread the saved output when persistence was requested. Check the actual diff,
-local links/casing, examples, source and version consistency, placeholders and
-status relationships; in Git run `git diff --check` and separately inspect new
-files. A pure metadata/path change must leave unrelated body content intact.
-Scope content review to changed/requested elements and necessary dependencies;
-full review covers all applicable elements of the chosen type.
-
-Report actionable findings with location, reachable reader/implementation error,
-evidence and minimum correction. Review completion need not mean the reviewed
-subject passes. Distinguish source review, executed examples and reader/runtime
-validation. Do not run production or external writes merely to verify a guide.
+Scope review to requested/changed content and necessary dependencies; a full review
+covers all applicable elements. Check examples, sources, version consistency and
+local link targets/casing. Unavailable targets remain unverified, not assumed
+broken; classification alone does not require a navigation audit.
+Report findings with location, reachable reader/implementation error, evidence and
+minimum correction. Separate text/source review from executed examples and runtime
+validation; do not operate production merely to verify documentation.

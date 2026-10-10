@@ -35,10 +35,11 @@ setup is still pending; drafting this text establishes neither.
 ## Working agreement
 
 Apply `nexum-chatgpt-development` for Web/Nexum environment rules when available.
-For software implementation, repair, repository review or software-document work
-beyond workspace setup, read `develop-software` and its applicable resources from
-verified paths, together with repository rules. Connection and workspace-only
-tasks do not require that package.
+For software implementation, repair, repository review beyond raw status, general
+software documentation or repository AGENTS work, read `develop-software` and
+its applicable resources from verified paths alongside repository rules.
+Environment diagnosis, raw file/Git status reporting and Project Instructions
+alone do not require that package.
 Naming a Skill is not proof it was loaded. Missing required guidance blocks only
 its dependent work; do not invent it or stop independent authorized preparation.
 

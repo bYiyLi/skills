@@ -22,9 +22,11 @@ records for real requirements and remove inapplicable sections, not requirements
 
 A feature specification covers problem/evidence, goal, scope, actors, formal
 requirements, constraints/dependencies, acceptance, assumptions and unresolved
-issues. A system specification additionally establishes audience, system context
-and cross-requirement traceability. Equivalent semantic coverage is sufficient;
-no empty section or predetermined heading is required.
+issues. A system specification additionally establishes audience, stakeholders,
+system context and cross-requirement traceability. Stakeholders include affected
+or responsible parties who do not directly interact with the system; actors are
+its interacting roles. Cover both from the supplied sources, even without a
+packaged template. Equivalent semantic coverage needs no fixed headings.
 
 ## Preserve a recoverable requirement record
 

@@ -7,7 +7,9 @@ implementation. A missing implementation does not imply a missing design.
 
 ## Define only the contract this work needs
 
-Map current goals, constraints and quality requirements to the affected design.
+Design drivers include declared goals, constraints, quality requirements,
+stakeholder concerns, and required compatibility/migration conditions. Map every
+in-scope driver to the affected design, including concerns from non-user parties.
 Reuse confirmed decisions. Routine fields, encodings or adapter mappings derivable
 from the existing contract are engineering choices, not new user approval gates.
 Where viable alternatives change external results, ownership, identity/lifecycle

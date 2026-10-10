@@ -1,52 +1,50 @@
 ---
 name: nexum-chatgpt-development
-description: Apply ChatGPT Web + Nexum workspace and local-execution rules when development needs an Agent-hosted repository, Project Instructions, or Skill discovery. Complements general software development; not a Codex-local workflow, browser-control capability, or Nexum product-design specification.
+description: Apply ChatGPT Web + Nexum rules for Agent-hosted repository access, connection/status checks, Project Instructions and Skill discovery/installation. Provides environment guidance alongside general software engineering; not Codex-local execution, browser control or Nexum product design.
 ---
 
 # Nexum ChatGPT Development
 
-Guide the host's development task in ChatGPT Web through the actual Nexum
-workspace. This package owns environment-specific decisions, not the software
-lifecycle, document standards or code-quality loop. The host retains the task
-result, current scope and permissions.
+Guide the host's work through the actual Nexum environment. Own environment
+rules, not the software lifecycle or task result; grant no tools or permissions.
 
 ## Select the environment path
 
-| Current need | Read before acting |
+| Need | Read before acting |
 | --- | --- |
-| Access Agent-hosted files/processes, resolve targets or recover a local operation | [references/local-execution.md](references/local-execution.md) |
-| Establish/repair a ChatGPT Project, generate its instructions or inspect/install Skill discovery | [references/project-setup.md](references/project-setup.md) |
+| Agent files/processes, target resolution or operation recovery | [references/local-execution.md](references/local-execution.md) |
+| Project setup, Project Instructions authoring/review, or Skill discovery/install/repair | [references/project-setup.md](references/project-setup.md) |
 
-Do not configure a Project, install Skills or change user settings merely because
-a code task uses ChatGPT Web. Supplied-text discussion can finish without live
-access when no local-state claim is needed. Missing required tools/resources
-block only dependent work; name the actual gap rather than imitating the user's
-machine in a sandbox.
+Use only the needed path. Ordinary code work does not authorize Project settings
+or Skill installation. Supplied-text work needs no unrelated live access; an
+unavailable Agent cannot be replaced by sandbox or another machine's facts.
 
-## Compose with the software task
+## Pair only for engineering work
 
-For software implementation, repair, repository review or software-document work
-beyond this package's workspace setup, read `develop-software` before that work,
-alongside applicable repository instructions. Locate its actual entrypoint through
-host/Agent discovery or an explicitly supplied repository source, then read the
-references its task conditions select. Naming a Skill does not load it.
-Do not assume a sibling install path, Codex invocation
-syntax, delegated agent or unavailable capability in ChatGPT Web.
+Software implementation, repair, repository review beyond raw status, and general
+software-document work require a readable `develop-software` package alongside
+repository instructions. This package alone supports environment diagnosis,
+raw file/Git status reporting and Project Instructions; those tasks do not need
+the general package. Creating repository AGENTS uses the general engineering path.
 
-A required but unreadable development contract blocks dependent development;
-environment discovery or instruction drafting may still proceed independently.
-This environment guidance does not impose a new `develop-software` dependency
-on a connection-only or workspace-only request. Do not copy general software
-rules into this package or add approval gates when changing instruction sources.
+Locate required Skills through current host/Agent discovery or an explicit
+repository source; read the actual entrypoint and selected references before
+that work. Do not assume sibling paths, Codex invocation syntax or automatic
+activation. If a required package/resource is unreadable, name it and the affected
+work; use the setup route to resolve discovery/installation within authority.
+Before engineering assessment or execution, resolve and load its required guidance.
+If unreadable, finish source/availability inventory and independent setup only.
+Code-defect judgments and behavior probes still depend on that guidance, even
+when labeled partial review or accompanied by a disclaimer. Report the exact gap;
+Nexum discovery alone is not development readiness. Do not reconstruct missing rules.
 
-After environment preparation or recovery, the host continues all remaining
-authorized development. A refreshed context, generated instruction file or
-connected Agent does not prove the software was implemented or verified.
+The host continues remaining authorized engineering after setup/recovery. A
+connected Agent or saved instruction file is not an implemented software result.
 
-## Report only observed environment state
+## Report observed state
 
-Distinguish Agent availability, opened repository, readable instructions/Skills,
-actual command results, saved instruction source, and observed/user-confirmed
-ChatGPT UI settings. Setup may be partial while supported development continues.
-Do not claim a pending process or UI change completed. External writes, settings
-changes and destructive actions remain subject to user and host/tool authority.
+Distinguish Agent/target availability, readable rules/Skills, terminal command
+results, saved source and observed/user-confirmed UI settings. Missing mandatory
+results remain partial/blocked; no pending process or UI change is completed.
+External writes, settings changes and destructive actions retain their own user
+and host/tool authority.

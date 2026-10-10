@@ -29,6 +29,12 @@ claims unverified rather than prescribing stale UI behavior.
 
 ## Maintain the Project Instructions source
 
+For Project Instructions creation or review, use a discovered
+`prompt-authoring-spec` and its selected references when available or required.
+A required missing spec blocks dependent work; otherwise apply the local checks
+below without claiming that external specification was reviewed. Do not make
+ordinary connection checks depend on prompt-authoring guidance.
+
 For a requested new instruction text without an existing suitable template,
 adapt [../assets/project-instructions.md](../assets/project-instructions.md).
 Preserve identity, workspace, sources, working agreement and delivery meanings;
@@ -51,14 +57,28 @@ Replace all retained placeholders; missing mandatory fields mean draft, not
 ready-to-use instructions. Before delivery, check that the generated text retains
 the template's software-work requirement to read `develop-software`, its workspace-
 only exception, and its read-only/full-task boundaries. Missing repository paths
-are draft data gaps, not a reason to drop these execution rules. Review source
-authority without claiming a required Skill is already installed or readable.
+are draft data gaps, not a reason to drop these execution rules. Review the actual
+output independently: identifiable conditions/actions, consistent terms and
+requirement strength, scope, approvals, unavailable inputs, recovery and completion.
+Separate trusted instructions from retrieved text/examples; formatting is not a
+security control. Request decisions and brief rationale, not hidden reasoning or
+coercive personas. API model/temperature/token parameters are not ChatGPT Web
+settings, and prompt text does not grant tools, delegation or enforcement. Ground
+new host-capability claims in current official documentation or observed controls;
+report unsupported claims as unknown. Review-only reports findings without edits.
 
 When repository writing is authorized, keep the maintained source in its existing
 location, otherwise `docs/chatgpt-project.md`. Keep private machine settings out
 of public repositories; use an authorized private location when needed. Treat
 ChatGPT UI text as a deployed copy and report updated, user-confirmed or pending
 status separately. Do not overwrite newer UI/source changes without comparison.
+When authorized setup also creates/updates AGENTS and an instruction maintenance
+source exists inside the repository and is appropriate for its readers, add the
+verified repository-relative pointer to AGENTS. Do not expose an external private
+source path in a public repository or fabricate a local counterpart. Use the
+discovered develop-software repository-instruction route for that artifact; do not
+make a ChatGPT-specific field mandatory in all repositories or create a source
+just to fill one. Verify the link and that it claims no saved UI state.
 
 ## Verify discovery separately from installation or use
 
@@ -68,12 +88,20 @@ No assumption that Codex `$skill` syntax or `agents/openai.yaml` activates a Ski
 in this Web session. Supplied repository Skill sources can be explicitly read
 without claiming personal installation.
 
-For an authorized installation, inspect destination contents and preserve user
-changes. Use a verified discovery root and supported installation mechanism;
-then refresh `project.open` and check name, description, root and readable
-resources. Without installation authority, do not change personal Skill folders
-or connector settings. A required absent package remains a reported dependency,
-not a reason to recreate it from memory.
+For Web software development, verify both nexum-chatgpt-development and
+develop-software entrypoints and the current task's routed resources. Use current
+discovery first, then any authorized explicit repository source; an available
+source can be read without claiming installation. Verify package-local references
+relative to each actual root, not one assumed shared directory.
+
+An authorized full Web-development installation includes both packages from the
+intended source. A Nexum-only/environment-only install remains limited to that
+scope. Inspect destinations and preserve user edits; use the supported installer,
+then refresh `project.open` and verify each required name, root and resource.
+Do not invent installer flags or dependency metadata. Without installation
+authority, report the precise missing source and continue independent work; never
+write personal Skill folders merely to satisfy a dependency. Discovery, successful
+loading and actual development are separate results.
 
 Report repository mapping, source readability and actual UI/discovery evidence.
 Do not claim full setup when a requested UI or environment step remains pending.

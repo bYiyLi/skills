@@ -28,7 +28,8 @@
 | references/design.md | 技术合同、条件视图、设计驱动与决策 | 产品授权、任务台账和开发日志 |
 | references/planning.md | 独立计划/内部阶段/roadmap、工作与完成证据 | 从目录名推导 Phase 数量、改弱验收 |
 | references/usage-docs.md | 教程、指南、CLI/API 查询及使用解释 | 执行文档里的生产操作 |
-| references/documentation.md | 分类、共同质量、文件/状态管理与验证 | 平行产品真源或第二套实现流程 |
+| references/documentation.md | 内容分类、共同语义质量、研究来源、指令产物检查 | 文件移动/归档或第二套实施流程 |
+| references/doc-management.md | 写入、路径、metadata/状态、归档删除与持久化验证 | 纯内容分类及只读正文评审 |
 | references/doc-sync.md | 多文档变化分析、同步计划与实际同步的区别 | 无条件创建全部文档类型 |
 | references/journal.md | 有需要时记录日期、决定、检查与历史 | 替代当前设计或计划、只读评审写日志 |
 | references/git-delivery.md | 已授权 Git/CI/release/deploy 的边界与证据 | 自动授权发布或推送 |
@@ -37,7 +38,14 @@
 主入口直接列出全部一级参考。只有当前工作条件命中才读取；参考内按创建类型和现有
 模板是否适用，进一步链接具体 assets。没有“再找一个路由 Skill”的交接。
 一般路径是 `SKILL.md → 专业 reference → 可选 asset`；references 不是一次性全量上下文。
-原来的五份相同文件管理合同合并到一处，不留相互独立维护的副本。
+原来的五份文件管理合同仅由 doc-management.md 维护。只读内容评审不加载持久化规则，
+机械编辑和纯状态核对不加载专业正文合同；内容写入按需要同时应用两者。资源可达不等于
+模型实际使用，必须从执行轨迹核对加载。
+
+此次补强保留原模板，但将 SRS 的 stakeholders/actors、设计 drivers 中的 stakeholder
+concerns 放回必读专业正文；使用仓库自有模板时也不能遗漏。同步候选发现包含仅风险或
+影响范围变化，外部研究入设计/日志时记录来源 URL、版本或访问日期、适用性与限制。
+不新增研究报告、人工审批或每方一个单独文档。
 
 ## 如何推进项目
 
@@ -58,7 +66,7 @@
 | software-requirements-spec | requirements.md + 原需求模板 |
 | software-design-spec | design.md + 原设计模板 |
 | software-development-plan | planning.md + 原单计划和 roadmap 模板 |
-| software-doc-writing-standards | documentation.md |
+| software-doc-writing-standards | documentation.md（内容）+ doc-management.md（文件/状态） |
 | software-usage-docs | usage-docs.md + 原使用文档模板 |
 | sync-software-docs | doc-sync.md + 原同步计划模板 |
 | Nexum 通用仓库/质量规则 | repository-contract.md、verification.md、git-delivery.md |
@@ -96,3 +104,6 @@ metadata 用于发现，主入口在选择后加载，资源按任务需要读�
 
 本次实际审阅、修正及验证结果见 [2026-10-10 日志](../vlog/2026-10-10.md)与
 [持久证据](../../tests/evidence/2026-10-10-software-consolidation.json)，不将设计预期视为运行证明。
+
+能力回归补强的输入和边界见[专项场景](../../tests/develop-software/regression-scenarios.md)，
+实际结果、失败与候选哈希见[本轮证据](../../tests/evidence/2026-10-10-software-hardening.json)。

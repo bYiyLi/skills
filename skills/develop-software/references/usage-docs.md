@@ -2,8 +2,8 @@
 
 Create, revise or review documentation for readers learning, operating, querying
 or understanding the product. Establish the reader goal, interface/product scope,
-version/environment and factual sources. A typo/link-only edit uses the common
-documentation rules without re-auditing the whole interface.
+version/environment and factual sources. A purely mechanical typo/link edit uses
+the main doc-management route without an interface/body-content audit.
 
 ## Select the reader result
 

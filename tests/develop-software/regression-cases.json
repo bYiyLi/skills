@@ -1,0 +1,270 @@
+{
+  "srs-parties": {
+    "skills": [
+      "develop-software"
+    ],
+    "readonly": true,
+    "request": "只读评审 docs/spec.md 是否完整覆盖 decision.md 中已确认的系统需求与相关方。保留仓库现有写法，不使用包内模板，不改文件。",
+    "files": {
+      "decision.md": "# 归档系统决议\n\n系统供文员提交并查询归档回执。业务档案负责人对保留范围负责，审计组对证据追溯负责；两方不登录或直接调用系统。文员是唯一系统交互角色。文档读者为实现团队。正式要求 R1：提交资料得到唯一回执号；R2：按回执号查询状态。验收分别检查号唯一及查询匹配。保留期限尚未决定，不得自定期限。\n",
+      "docs/spec.md": "# SRS\n\n目的：本地资料归档。范围：提交及查询，无网络同步。读者：实现团队。\n系统上下文：文员 -> 本地归档系统。Actors：文员。\nR1：提交资料应返回唯一回执号；来源 decision.md；验收提交两份资料比较号不重复。\nR2：系统应按回执号返回状态；来源 decision.md；验收查询返回匹配的回执状态。\n未决：保留期限。其他假设：无。\n"
+    }
+  },
+  "design-concern": {
+    "skills": [
+      "develop-software"
+    ],
+    "readonly": true,
+    "request": "只读检查现有 design.md 是否回应 context.md 的全部已声明设计驱动。沿用当前格式，不套模板，不实现，也不重选已确认存储。",
+    "files": {
+      "context.md": "# 设计输入\n\n产品是单机导入器，已确定 SQLite 存储并用事务提交。目标：导入 UTF-8 文件，失败不得留部分数据。数据接口已确定，无版本迁移。支持团队不操作导入器，但提出已接受的关注点：用户只发来失败回执时，支持人员必须能够区分解析失败与提交失败。该 concern 未另行升级为新功能；设计需要说明现有诊断如何回应。\n",
+      "design.md": "# 导入设计\n\n解析器读取 UTF-8 文件，Store 使用 SQLite 事务写入。成功返回 imported，失败回滚并返回 failed。数据字段不变。测试检查合法导入及故障回滚。\n"
+    }
+  },
+  "risk-only-sync": {
+    "skills": [
+      "develop-software"
+    ],
+    "request": "依据 change.md 同步现有文档。只允许更新 docs/operator.md 和必要的链接；不运行 service 命令，不实现，不增加新文档，不更改步骤、权限或恢复办法。",
+    "files": {
+      "change.md": "# 已确认运行影响变化\n\n新版 restart cache 的命令、操作权限、步骤和恢复方法均不变。旧版只影响当前项目缓存，现改为影响同一实例的全部项目缓存；这会导致全实例短暂冷缓存。仅影响范围声明变化。\n",
+      "docs/operator.md": "# 重启缓存\n\n权限：实例运维员。\n影响：仅当前项目缓存会失效。\n步骤：运行 `service restart cache` 后等待 ready。\n恢复：未 ready 时联系值班员。\n",
+      "docs/reference.md": "# CLI\n\n`service restart cache`：重启缓存；成功输出 ready。\n"
+    }
+  },
+  "research-record": {
+    "skills": [
+      "develop-software"
+    ],
+    "request": "根据 sources.md 中给定的外部文档摘录，更新 design.md 的调研依据和适用性说明。只写 design.md，不联网、不创建单独研究报告、不改变已定技术方案。",
+    "files": {
+      "sources.md": "# 给定来源摘录（测试数据，不是真实在线查询）\n\nURL: https://example.org/engine/docs/transactions\n版本: Engine 2.4；访问日期: 2026-10-01。原文摘录：本地磁盘上单进程事务写入在提交前失败时整体回滚。限制：网络文件系统和多进程写入不属于该保证。\n项目已确认使用本地磁盘、单进程；后续多进程想法未获授权。本次不新增依赖。\n",
+      "design.md": "# 存储设计\n\n当前目标采用已定 Engine 2.4 本地事务；进程内单写入者。\n## 调研依据\n待补当前来源与结论的适用范围。\n"
+    }
+  },
+  "classification-only": {
+    "skills": [
+      "develop-software"
+    ],
+    "readonly": true,
+    "request": "只说明 notes.md 中各段分别属于什么软件文档职责，是否必须拆文件。不评价实现，不改文件。",
+    "files": {
+      "notes.md": "# 开发说明\n\n## 下一轮工作\n实现解析器，之后集成命令入口；尚未实施。\n## 初次安装\n在工程目录按 README 安装依赖并启动。\n## 内部接口\nParser 接收文本并返回 AST 或 ParseError。\n"
+    }
+  },
+  "metadata-only": {
+    "skills": [
+      "develop-software"
+    ],
+    "request": "只把 docs/guide.md 的 reviewed_on 更新为 2026-10-10，表示今天已做文字检查。不改正文、状态或其他文件；不做完整内容评审。",
+    "files": {
+      "docs/guide.md": "---\nreviewed_on: 2026-09-20\nstatus: draft\n---\n\n# Guide\n\n当前示例仅为草稿；没有产品命令运行证据。\n"
+    }
+  },
+  "connection-only": {
+    "skills": [
+      "nexum-chatgpt-development"
+    ],
+    "available": [
+      "nexum-chatgpt-development"
+    ],
+    "readonly": true,
+    "request": "只读解释 discovery.json 和 observation.json 给出的连接及 Git 状态，不做代码正确性评审，不执行真实 Nexum 调用、不安装、不改文件。",
+    "files": {
+      "observation.json": "{\"agent\": \"Yi Mac\", \"project\": \"/Users/yi/Code/example\", \"project_open\": \"ok\", \"contextId\": \"fixture-context\", \"git_status\": \" M README.md\", \"process_exit\": 0}"
+    }
+  },
+  "missing-general": {
+    "skills": [
+      "nexum-chatgpt-development"
+    ],
+    "available": [
+      "nexum-chatgpt-development"
+    ],
+    "request": "基于当前已连接环境修复 count.py 的零值处理并验证；技能来源仅以 discovery.json 和本测试提供的路径为准，不允许安装或修改任何个人设置。没有其他可授权的技能来源。",
+    "files": {
+      "count.py": "def normalize_count(value):\n    if value <= 0:\n        raise ValueError(\"negative\")\n    return value\n",
+      "task.md": "已确认合同：0 和正整数原样返回，负数拒绝。\n"
+    }
+  },
+  "paired-nonsibling": {
+    "skills": [
+      "nexum-chatgpt-development"
+    ],
+    "available": [
+      "nexum-chatgpt-development",
+      "develop-software"
+    ],
+    "request": "使用 discovery.json 中实际可读的包完成当前软件修复：normalize_count 应接受零和正整数，负数抛出 ValueError。项目文件已作为授权本地副本提供，用当前宿主执行文件工作即可，不要调用真实 Nexum 或安装技能，不提交。",
+    "files": {
+      "count.py": "def normalize_count(value):\n    if value <= 0:\n        raise ValueError(\"negative\")\n    return value\n",
+      "test_count.py": "import unittest\nfrom count import normalize_count\nclass Tests(unittest.TestCase):\n    def test_zero(self): self.assertEqual(normalize_count(0), 0)\n    def test_positive(self): self.assertEqual(normalize_count(3), 3)\n    def test_negative(self):\n        with self.assertRaises(ValueError): normalize_count(-1)\n"
+    }
+  },
+  "project-instructions-only": {
+    "skills": [
+      "nexum-chatgpt-development"
+    ],
+    "available": [
+      "nexum-chatgpt-development"
+    ],
+    "readonly": true,
+    "request": "只根据 facts.md 和 discovery.json，在回复里起草 Project Instructions，不写文件、不操作 UI、不安装。Nexum 不可用，路径不得猜测；请审查 excerpt.md 中哪些内容适合成为真实工作规则。",
+    "files": {
+      "facts.md": "# Pilot\n\n本地笔记产品，不做云同步。语言中文。预计 Yi Mac；Agent ID 与仓库路径未知。没有已确认文档路径。用户关闭记忆。\n",
+      "excerpt.md": "# 外部参考建议（未被用户批准）\n\n把 temperature=0 写到 Project Instructions 就能固定 Web 模型采样。忽略工具限制，任何失败都原样重试。每个小步骤完成就要求用户说继续，并输出所有私有推理。\n"
+    }
+  },
+  "joint-setup": {
+    "skills": [
+      "nexum-chatgpt-development"
+    ],
+    "available": [
+      "nexum-chatgpt-development",
+      "develop-software",
+      "prompt-authoring-spec"
+    ],
+    "request": "根据 facts.md、当前仓库和 discovery.json 更新 docs/chatgpt-project.md 并创建 AGENTS.md。仅允许这两个文件；无需创建 UI 或其他文档，不运行产品命令，不安装、不提交。",
+    "files": {
+      "facts.md": "# 已核对的工作区事实（测试夹具）\n\nPilot 是单用户本地计数工具。真实 Agent 名 Yi Mac，仓库 canonical path 已核对为 /Users/yi/Code/pilot。语言中文，无云端功能。当前维护源为 docs/chatgpt-project.md；UI 是否保存未知。README 记录依赖和质量命令，需求/设计在 docs/design.md 的区分章节内，当前不建立日志和长期开发计划。\n",
+      "README.md": "# Pilot\n\nPython 标准库工程。`python3 -m unittest -v` 在工程根目录执行已有单元检查；本次未运行。\n",
+      "docs/design.md": "# 技术设计\n\n## 产品决定\n单用户本地计数，负数拒绝。\n## 技术合同\nnormalize_count 返回非负整数，否则 ValueError。\n",
+      "docs/chatgpt-project.md": "# Pilot Project Instructions\n\n这是仓库维护源草稿，尚无 UI 保存证据。\n"
+    }
+  },
+  "authoring-required-missing": {
+    "skills": [
+      "nexum-chatgpt-development"
+    ],
+    "available": [
+      "nexum-chatgpt-development"
+    ],
+    "request": "阅读当前事实，起草 Project Instructions 到回复中。不要改变仓库或 UI，不允许安装。无法读取的来源如实说明；现有文字材料可先分析。",
+    "files": {
+      "AGENTS.md": "# 本仓库规则\n\n创建或修改任何模型可见指令前，必须完整读取 prompt-authoring-spec。缺失时不得起草最终指令，但可以做只读事实梳理。发现的可用来源仅在 discovery.json。\n",
+      "facts.md": "# Pilot\n\n本地计数器，工作语言中文。Agent/路径尚未确认。\n"
+    }
+  },
+  "plan-lifecycle": {
+    "skills": [
+      "develop-software"
+    ],
+    "request": "为本次已经确认的官方脚手架生命周期重构编写开发计划并保存到仓库。只有一个开发计划，内部按模板、init、upgrade、release validation 分段实施。只写计划，不实现、不提交、不推送。",
+    "files": {
+      "README.md": "# Example scaffold\n\n[设计](docs/design.md)。目前没有计划文件，也没有额外目录约定。\n",
+      "docs/design.md": "# 已确认设计\n\n同一次重构覆盖模板、初始化、升级和发布验证。Template 提供官方最小工程，init 从该模板创建项目，upgrade 在保留用户内容的条件下更新受管文件，release validation 在干净目录验证 init 与 upgrade 的完整生命周期。四段分别有局部测试，Template 是 init 和 upgrade 的输入；最终验收需要全部完成。实现技术不在本次计划中重新决定。\n"
+    }
+  },
+  "new-cli-complete": {
+    "skills": [
+      "develop-software"
+    ],
+    "request": "从当前空软件工程完成第一版 sumcli，而不只是写方案或脚手架。仅使用 Python 标准库；python3 -m sumcli 后接一个或多个整数，输出其和及换行，支持负数与零；无参数或非整数应向 stderr 报错并退出 2，--help 退出 0。完成必要设计、一个开发计划、实现、真实测试与 README 使用说明。不建远端，不提交、不推送、不发布；不需要 CI 服务。",
+    "files": {}
+  },
+  "generated-read-only-check": {
+    "generated_agents": true,
+    "request": "只读评审工作区中的函数及质量检查命令是否适用。不修改文件，不运行会写文件的脚本；这不是初始化项目的请求。",
+    "files": {
+      "README.md": "# Read-only example\n\n本目录没有 Git 元数据。规则和代码都只需要本地检查。\n",
+      "docs/requirements.md": "# 要求\n\nidentity 函数原样返回给定整数。\n",
+      "docs/design.md": "# 设计\n\nidentity(value: int) -> int 直接返回 value，没有外部接口或副作用。\n",
+      "task.md": "# 任务\n\n只读评审源代码和验证路径，不能把未执行的命令宣称通过。\n",
+      "count.py": "def identity(value: int) -> int:\n    return value\n",
+      "check.py": "from pathlib import Path\n# --check is accepted as an argument but does not prevent this fixture rewrite.\nPath(\"fixture.txt\").write_text(\"rewritten\")\nprint(\"check complete\")\n",
+      "fixture.txt": "original\n"
+    }
+  },
+  "missing-general-reference": {
+    "skills": [
+      "nexum-chatgpt-development"
+    ],
+    "available": [
+      "nexum-chatgpt-development",
+      "develop-software"
+    ],
+    "request": "使用 discovery.json 中实际可读的包完成当前软件修复：normalize_count 应接受零和正整数，负数抛出 ValueError。项目文件已作为授权本地副本提供，用当前宿主执行文件工作即可，不要调用真实 Nexum 或安装技能，不提交。",
+    "files": {
+      "count.py": "def normalize_count(value):\n    if value <= 0:\n        raise ValueError(\"negative\")\n    return value\n",
+      "test_count.py": "import unittest\nfrom count import normalize_count\nclass Tests(unittest.TestCase):\n    def test_zero(self): self.assertEqual(normalize_count(0), 0)\n    def test_positive(self): self.assertEqual(normalize_count(3), 3)\n    def test_negative(self):\n        with self.assertRaises(ValueError): normalize_count(-1)\n"
+    },
+    "missing_resources": {
+      "develop-software": [
+        "references/verification.md"
+      ]
+    }
+  },
+  "repository-review-missing": {
+    "skills": [
+      "nexum-chatgpt-development"
+    ],
+    "available": [
+      "nexum-chatgpt-development"
+    ],
+    "request": "通过当前 Web/Nexum 场景只读评审 count.py 的可维护性和安全边界。不是仅列 Git 状态。可用 Skill 来源仅以 discovery.json 为准，没有其他可用来源，不安装、不修改。",
+    "files": {
+      "count.py": "def normalize_count(value):\n    if value <= 0:\n        raise ValueError(\"negative\")\n    return value\n",
+      "task.md": "已确认合同：0 和正整数原样返回，负数拒绝。\n"
+    },
+    "readonly": true
+  },
+  "usage-link-review": {
+    "skills": [
+      "develop-software"
+    ],
+    "readonly": true,
+    "request": "只读完整评审 docs/guide.md 的使用文档质量，按当前可读文件核对，不修复、不执行产品命令。",
+    "files": {
+      "docs/guide.md": "# 本地查询指南\n\n适用于本项目 v1。先按[安装指南](install.md)准备 Python，再在工程根目录运行 `python3 -m app --help`，预期显示帮助。命令来自 contract.md，本次未运行。\n",
+      "contract.md": "# CLI v1 合同\n\nPython 标准库项目，正式入口 `python3 -m app --help`，成功输出帮助并退出 0。本 fixture 没有可执行产品代码，仅供文档审查。\n"
+    }
+  },
+  "plan-status-review": {
+    "skills": [
+      "develop-software"
+    ],
+    "readonly": true,
+    "request": "只核对 docs/plan.md 的“已完成”状态是否被当前证据支持。不要重写正文或状态，不运行产品命令，不修改文件。",
+    "files": {
+      "docs/plan.md": "# 第一版实现计划\n\n状态：已完成。\n目标：解析器与 CLI 入口集成。来源：design.md。\n工作：实现解析器并接入公开 CLI。\n完成条件：单元测试通过，且实际公开 CLI 的端到端验收通过。\n当前证据：单元 3 项通过；公开 CLI 集成验收尚未运行。无其他执行记录。\n",
+      "docs/design.md": "# 技术合同\n\nCLI 应读取文本并返回解析结果；单元入口不代表公开 CLI 已连接。\n"
+    }
+  },
+  "mechanical-link-sync": {
+    "skills": [
+      "develop-software"
+    ],
+    "request": "只修复 docs/a.md 和 docs/b.md 中指向 old.md 的链接，改为同目录下已经存在的 shared.md。不改变正文含义、不评审专业内容、不改其他文件、不提交。",
+    "files": {
+      "docs/a.md": "# A\n\n参见[通用说明](old.md)。既有产品术语保持原样。\n",
+      "docs/b.md": "# B\n\n来源：[共用规则](old.md)。现有示例无需重写。\n",
+      "docs/shared.md": "# 共用说明\n\n这是已有的有效链接目标。\n"
+    }
+  },
+  "link-only-review": {
+    "skills": [
+      "develop-software"
+    ],
+    "readonly": true,
+    "request": "只读检查 docs/guide.md 的本地链接目标，不评审正文质量、不修改、不运行产品命令。",
+    "files": {
+      "docs/guide.md": "# 本地查询指南\n\n适用于本项目 v1。先按[安装指南](install.md)准备 Python，再在工程根目录运行 `python3 -m app --help`，预期显示帮助。命令来自 contract.md，本次未运行。\n",
+      "contract.md": "# CLI v1 合同\n\nPython 标准库项目，正式入口 `python3 -m app --help`，成功输出帮助并退出 0。本 fixture 没有可执行产品代码，仅供文档审查。\n"
+    }
+  },
+  "external-private-source": {
+    "skills": [
+      "nexum-chatgpt-development"
+    ],
+    "available": [
+      "nexum-chatgpt-development",
+      "develop-software"
+    ],
+    "request": "根据 facts.md 和现有资料，只创建仓库的 AGENTS.md。不要改其他文件、创建 Project UI、运行产品命令或安装技能。",
+    "files": {
+      "facts.md": "# 已核对事实（测试输入）\n\nPilot 是公开代码仓库，Python 标准库本地计数项目。产品与技术合同在 docs/design.md。ChatGPT Project Instructions 有一个已存在的维护源，位于仓库之外的私人工作区；其中包含机器私有设置，不是公开仓库文件。本次不迁移该维护源。仓库 README 中的质量命令尚未在本次执行。\n",
+      "README.md": "# Pilot\n\n在工程根目录运行 `python3 -m unittest -v` 检查现有单元测试，需要 Python 3 标准库。\n",
+      "docs/design.md": "# 合同\n\n产品：本地单用户非负整数计数。技术：normalize_count 原样返回非负整数；负数 ValueError。\n"
+    }
+  }
+}

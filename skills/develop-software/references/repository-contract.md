@@ -59,5 +59,6 @@ where execution actually differs.
 These substitutions are data, not new authority. Review the generated AGENTS
 as an independently used instruction: preserve limited/read-only tasks, complete
 broader authorized work across checkpoints, and retain actual approvals.
-Apply the common documentation route for writing/checking README and AGENTS;
+Apply documentation for README/AGENTS content and doc-management for file writes
+or state checks. Merely inspecting a README path does not require engineering setup;
 AGENTS does not need the user-guide type contract merely because it is Markdown.
