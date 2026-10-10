@@ -1,115 +1,59 @@
-# Nexum ChatGPT Development
+# Nexum ChatGPT Development：Web 环境适配
 
-面向 **ChatGPT Web + Nexum + 本地仓库** 的开发 Skill。它把一个明确的项目开发任务
-推进到有证据的结果，覆盖初始化、实现、修复与只读评审；不是 Nexum 产品设计，
-也不是 Codex CLI 工作流。正式入口：
-[SKILL.md](../../skills/nexum-chatgpt-development/SKILL.md)。
+正式入口：[SKILL.md](../../skills/nexum-chatgpt-development/SKILL.md)。
+本包从完整开发 workflow 收敛为 ChatGPT Web + Nexum 场景 guidance；宿主持有任务结果，
+通用开发由 [develop-software](develop-software.md) 承担。不是 Nexum 产品架构规范，
+不为 Codex 本地执行增加 Nexum 前置依赖。
 
-## 内容与职责
+## 文件责任
 
-主文件只保留任务边界、Nexum 上下文、资源路由、执行闭环和结束条件。
-需要某类工作时才读取对应资料，不要求每次加载整套规范。
-
-| 资源 | 解决的问题 |
+| 文件 | 负责 |
 | --- | --- |
-| references/project-setup.md | ChatGPT Project 隔离、指令来源、UI 配置与 Skill 发现的证据 |
-| references/repository-contract.md | README、AGENTS、需求/设计/计划/历史的职责，真实质量命令 |
-| references/documentation.md | 设计变更、开发状态、按天记录的书面 vlog |
-| references/verification.md | 基线、局部到整体验证、review/fix 循环、验收与停止条件 |
-| references/git-delivery.md | 保护用户修改，独立处理 commit/push/CI/release/deploy |
-| references/prompt-writing.md | 可执行提示词、上下文与指令分离、输出与证据规范 |
-| assets/ | Project Instructions、AGENTS.md.tmpl、daily-log 三份输出模板 |
+| SKILL.md | 场景选择、两条资源路由、与通用任务的边界、环境结果报告 |
+| references/local-execution.md | 正确 Agent/仓库、上下文刷新、文件分页/版本、进程及未知副作用恢复 |
+| references/project-setup.md | Project 配置、指令来源与 UI 部署副本、Skill 发现和授权安装 |
+| assets/project-instructions.md | 输出到具体项目的指令模板，不是活跃仓库规则 |
 
-新项目默认使用 `README.md`、`AGENTS.md`、`docs/design.md`、`docs/development/`、
-`docs/vlog/` 和 `docs/chatgpt-project.md`。已有项目沿用自己的真源和日志路径，
-不为了目录统一迁移文件。沿用已有需求来源中的产品承诺，设计记录技术合同，vlog
-记录历史；不为填模板新增无需求的文档，也不让技术设计替代产品承诺。
+软件需求、设计、计划、测试、Review、Git 交付及日志不再在此重复定义。普通代码任务
+只需要 local-execution 分支；不因处于 Web 会话就加载 Project 配置或安装技能。
 
-## 完整目标与连续执行
+## 与通用开发的衔接
 
-完成范围由用户的实际目标、已约定范围和仓库验收决定，不用“最小实现”或补丁大小
-限制交付。需要的跨模块集成、错误处理、测试、设计和开发文档都属于完整结果。
-用户明确只要原型、某个子阶段或只读评审时，完成该范围，不扩大成整个产品。
+软件实现、修复、仓库评审及超出工作区设置的软件文档任务必须同时读取通用工程合同。
+通过 Nexum 当前返回的路径或用户明确
+指定的仓库路径读取 develop-software，而不是假定同级安装目录、自动激活或 Codex `$skill`
+语法在 Web 生效。文档细则均在通用包内部，不再继续跨多个软件文档 Skill 加载。
 
-AI 自行组织编辑与验证单元，在同一授权任务内持续推进。一次修改、一次测试、
-一个子阶段或一个专项 Skill 的结束只是检查点，不要求用户再次说“继续”。
-验证按受影响行为和必要门禁选择；没有新修改、失败或具体疑点时，不机械重复。
+连接、环境诊断或 Project Instructions 草稿可以独立完成。缺失一个确实必需的工程合同
+只阻塞依赖它的工程工作，不阻塞独立环境准备；Nexum 离线时也不能把 sandbox 当成本机。
+环境就绪不是更大开发目标已经完成，宿主随后继续当前请求剩余的授权工作。
 
-宿主与工具权限仍然有效。工作流默认规则不能覆盖用户的明确任务指令；必要审批前
-先完成不依赖审批的已授权准备。指令导致暂停、额外确认或遗漏工作时，说明具体
-文件位置、原句、受影响动作，并区分明确规则与 AI 自己的解释。
-
-## 在 ChatGPT Web 使用
-
-在目标 ChatGPT Project 内明确任务，连接 Nexum，并让当前会话读取正式 Skill。
-通过 Nexum 当前支持的发现机制加载时，以 `project.open` 实际返回的 Skill 路径为准。
-尚未加入发现目录时，可以打开本 skills 仓库，明确要求读取上述正式入口及所需资料；
-这只是显式加载，不代表已经安装到所有项目。
-
-示例请求：
+示例：
 
 ```text
-通过 Nexum 读取 nexum-chatgpt-development Skill，按目标仓库规范完成 Phase 03。
-本任务授权实现、测试、review 和必要文档同步，不包含 commit 或 push。
+通过 Nexum 打开指定 Agent 上的真实仓库，读取适用规则。
+使用 nexum-chatgpt-development 处理 Web 环境约束，使用实际可读的 develop-software
+完成本次功能、必要文档、测试与 Review；不提交、不推送。
 ```
 
 ```text
-通过 Nexum 使用 nexum-chatgpt-development，初始化这个项目的开发规范。
-生成项目专用的 ChatGPT Project Instructions、README、AGENTS 和必要 docs。
-已有内容先检查再适配，不能操作的 ChatGPT UI 配置明确标为待完成。
+只根据已核对的产品和仓库信息起草 ChatGPT Project Instructions。
+不要修改 UI 设置或仓库，缺失事实标为草案缺口。
 ```
 
-GitHub 上有文件、Nexum 能发现 Skill、会话已经读取 Skill、实际任务执行成功，是不同状态。
-本次交付不自动改变个人 Skill 目录或现有 ChatGPT Project 设置。
+仓库规则和工具权限仍优先；示例是调用方式，不是当前会话的额外授权。
 
-## 验证与维护
+## 验证及边界
 
-运行时包没有脚本或 Python 依赖。以下依赖仅用于维护者检查，隔离在本地虚拟环境：
+维护命令沿用[仓库 README](../../README.md)。
+[专项测试](../../tests/nexum-chatgpt-development/test_package.py)验证可达资源图、负例及
+Project Instructions 模板；通用 AGENTS 和日志模板测试已迁入 develop-software 测试。
+[场景集](../../tests/nexum-chatgpt-development/scenarios.md)覆盖正确目标、缺失能力、未知
+操作结果和独立输出。结构检查、模型决策试跑、真实 Nexum 操作、ChatGPT UI 验证分开记录。
 
-```sh
-python3 -m venv .venv/nexum-chatgpt-development
-.venv/nexum-chatgpt-development/bin/python -m pip install -r tests/nexum-chatgpt-development/requirements.txt
-.venv/nexum-chatgpt-development/bin/skills-ref validate skills/nexum-chatgpt-development
-.venv/nexum-chatgpt-development/bin/python -m unittest discover -s tests/nexum-chatgpt-development -v
-```
+2026-10-10 核对 [OpenAI Projects 文档](https://help.openai.com/en/articles/10169521-using-projects-in-chatgpt)
+及当次 Nexum 工具 schema。UI/记忆步骤仍要求执行时核对当前文档与真实设置；普通 Project
+组织不构成已验证的记忆隔离，禁用记忆不会因本 Skill 被自动开启。
 
-Windows 使用虚拟环境的 `Scripts/python.exe` 和对应 `skills-ref` 可执行文件。
-使用 uv 创建的无 pip 环境时，可以用 `uv pip install --python <venv-python> -r ...`。
-这两条安装路径只用于维护者环境，不是 Skill 对用户项目的前提。
-
-[测试](../../tests/nexum-chatgpt-development/test_package.py) 覆盖官方格式、直接资源路由、
-路径大小写、缺失/孤立/越界资源、模板字段与临时输出。主入口 150 行是本包维护预算，
-不是 Agent Skills 格式强制上限。[集合 CI](../../.github/workflows/skills.yml) 同时检查
-全部 Skill，并保留上述专项测试；全量命令见[仓库入口](../../README.md)。
-
-[场景集](../../tests/nexum-chatgpt-development/scenarios.md) 用于闭合合同评审，
-不作为真实模型行为测试的证明。需要验证模型选择、长任务表现或 UI 操作时，
-在相应宿主上独立测试，并区分观察结果与预期答案。
-
-## 规范来源与证据范围
-
-格式依据 [Agent Skills specification](https://agentskills.io/specification)，
-结构验证使用该项目的 `skills-ref`，开发依赖固定在已检查的上游 commit。
-编写时同时应用本仓库的 skill-authoring-spec、prompt-authoring-spec 和可用的
-skill-creator 指导；分发后的 Skill 不强迫使用者安装这些编写工具。
-
-提示词参考用户指定的
-[OpenAI prompt-engineering guide](https://help.openai.com/zh-hans-cn/articles/6654000-best-practices-for-prompt-engineering-with-the-openai-api)：
-前置明确指令、分隔上下文、定义输出、使用有必要的例子与正向动作要求。
-API 参数建议不转换成 ChatGPT Web 的虚构控制项。
-
-2026-09-10 复核用户指定的
-[OpenAI model guidance](https://developers.openai.com/api/docs/guides/latest-model)，
-采用与本场景相关的持续完成、指令冲突诊断和适度验证原则；没有把 API 参数、
-异步工具或子 Agent 示例写成本 Skill 的默认能力或权限。
-
-Project UI/记忆行为以当前
-[OpenAI Projects 文档](https://help.openai.com/en/articles/10169521-using-projects-in-chatgpt)
-和实际设置为准；普通项目组织不等于已验证的跨项目记忆隔离。
-Nexum 操作根据本次实际读取的工具 schema，以及后续调用时的当前 schema。
-提示词不能替代宿主权限与安全控制。
-
-本 Skill 的职责类型为 workflow：拥有当前请求的项目开发结果，不是只分发任务的 router。
-名称沿用已确认的产品/场景词，避免新增一个含义重叠的通用开发 Skill。
-初版评审见 [2026-09-10 日志](../vlog/2026-09-10.md)，最新全仓指令审核和
-生成资产验证见 [2026-09-28 日志](../vlog/2026-09-28.md)。
+本次改仓库不会自动更新个人 Skill 目录、已部署的 AGENTS 或 ChatGPT Project Instructions。
+原软件通用流程和历史验证请按[迁移说明](develop-software.md)查找，不能拿旧结果证明新包。

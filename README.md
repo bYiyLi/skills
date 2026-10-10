@@ -9,13 +9,8 @@
 | --- | --- | --- |
 | 编写或评审模型指令 | [prompt-authoring-spec](skills/prompt-authoring-spec/SKILL.md) | 指令必要性、归属、表达与自检 guidance，宿主持有交付 |
 | 编写或评审 Skill | [skill-authoring-spec](skills/skill-authoring-spec/SKILL.md) | Skill 合同 guidance，与提示词规范共用 |
-| 区分文档类型、核对共性质量或单文档生命周期 | [software-doc-writing-standards](skills/software-doc-writing-standards/SKILL.md) | 分类/质量/管理 guidance，不接管具体正文 |
-| 产品要求、约束和验收 | [software-requirements-spec](skills/software-requirements-spec/SKILL.md) | 单份需求文档 |
-| 技术结构、行为合同和 ADR | [software-design-spec](skills/software-design-spec/SKILL.md) | 单份设计文档 |
-| 实施计划、路线图与完成证据 | [software-development-plan](skills/software-development-plan/SKILL.md) | 独立计划单元、内部阶段与总览分开判断 |
-| 安装运行、操作方法、接口查询 | [software-usage-docs](skills/software-usage-docs/SKILL.md) | 单份使用文档正文；多文档变更由同步 Skill 协调 |
-| 一次变更影响多份文档 | [sync-software-docs](skills/sync-software-docs/SKILL.md) | 多文档协调含创建/更新，正文共用对应类型 Skill |
-| ChatGPT Web 通过 Nexum 开发本地项目 | [nexum-chatgpt-development](skills/nexum-chatgpt-development/SKILL.md) | 特定环境的完整开发工作流 |
+| 开发、修复、评审软件项目，或维护其需求、设计、计划与使用文档 | [develop-software](skills/develop-software/SKILL.md) | 通用工程工作流；按请求范围和包内条件资源执行 |
+| ChatGPT Web 通过 Nexum 访问开发环境或配置 Project | [nexum-chatgpt-development](skills/nexum-chatgpt-development/SKILL.md) | 场景 guidance；宿主持有开发结果，不重复通用流程 |
 | 通过 Nexum 控制用户本地浏览器状态 | [nexum-browser](skills/nexum-browser/SKILL.md) | Browser Runtime capability，不接管代码修改或上层任务 |
 | 运营 Nexum 增长、渠道、社区和用户转化 | [nexum-operations](skills/nexum-operations/SKILL.md) | 运营工作流；产品开发仍由开发工作流负责 |
 
@@ -38,7 +33,7 @@ python3 -m venv .venv
 git diff --check
 ```
 
-Windows 使用 `.venv/Scripts/python.exe`。检查覆盖全体包的官方格式、资源路由、路径
+Windows 使用 `.venv/Scripts/python.exe`。检查覆盖全体包的官方格式、可达资源图、路径
 大小写、本地链接、Codex 调用 metadata 和模板产物；Nexum 检查另含缺失、孤立、越界
 资源与无效模板的负例。[CI](.github/workflows/skills.yml) 运行相同结构测试，并检查
 提交内容的空白错误。
@@ -51,4 +46,9 @@ Windows 使用 `.venv/Scripts/python.exe`。检查覆盖全体包的官方格式
 [保留证据](tests/evidence/2026-09-28-skills-review.json)；历史集合调整见
 [2026-09-19 记录](docs/vlog/2026-09-19.md)。
 提示词规范的职责、自检与试跑更新见 [2026-09-29 专项记录](docs/vlog/2026-09-29.md)。
-Nexum 工作流用法见[专项说明](docs/skills/nexum-chatgpt-development.md)。
+通用软件工程及旧入口迁移见[develop-software 说明](docs/skills/develop-software.md)；
+Web/Nexum 场景用法见[专项说明](docs/skills/nexum-chatgpt-development.md)。
+测试数据和历史记录中的旧名称保留其当时语义，不表示旧入口仍在分发；个人安装不由仓库修改自动更新。
+
+本次软件领域整合与验证见 [2026-10-10 记录](docs/vlog/2026-10-10.md)及
+[保留证据](tests/evidence/2026-10-10-software-consolidation.json)。

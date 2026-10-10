@@ -1,69 +1,19 @@
-"""Package/resource tests, not claims about model selection or execution."""
+"""Nexum environment package and Project Instructions template checks."""
 
 import json
-import re
 import shutil
+import sys
 import tempfile
 import unittest
 from pathlib import Path
-from urllib.parse import unquote, urlsplit
-
 from skills_ref import read_properties, validate
 
-
 REPO = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO / "tests"))
+from package_checks import TOKEN, check_resources, local_targets, render_template
+
 SKILL = REPO / "skills/nexum-chatgpt-development"
 FIXTURE = Path(__file__).with_name("template-values.json")
-TOKEN = re.compile(r"\{\{([A-Z][A-Z0-9_]*)\}\}")
-# These files deliberately use simple inline Markdown links without titles.
-LINK = re.compile(r"\[[^\]\n]+\]\(([^\s)]+)\)")
-
-
-def local_targets(document: Path, boundary: Path) -> set[Path]:
-    """Resolve package-local links and check casing even on case-insensitive OSes."""
-    boundary = boundary.resolve()
-    targets = set()
-    for raw in LINK.findall(document.read_text(encoding="utf-8")):
-        url = urlsplit(raw)
-        if url.scheme or url.netloc or not url.path:
-            continue
-        path = (document.parent / unquote(url.path)).resolve()
-        try:
-            parts = path.relative_to(boundary).parts
-        except ValueError as exc:
-            raise ValueError(f"Link escapes package: {document}: {raw}") from exc
-        current = boundary
-        for part in parts:
-            if not current.is_dir() or part not in {p.name for p in current.iterdir()}:
-                raise ValueError(f"Missing or case-mismatched link: {document}: {raw}")
-            current /= part
-        if not current.exists():
-            raise ValueError(f"Missing link: {document}: {raw}")
-        targets.add(path)
-    return targets
-
-
-def check_resources(root: Path) -> None:
-    """Require every packaged resource to have a direct entrypoint route."""
-    root = root.resolve()
-    entry = root / "SKILL.md"
-    files = {p for p in root.rglob("*") if p.is_file() and p != entry}
-    routed = local_targets(entry, root)
-    if files != routed:
-        raise ValueError(f"Resource/route mismatch: {files.symmetric_difference(routed)}")
-    for document in files:
-        local_targets(document, root)
-
-
-def render_template(text: str, values: dict[str, str]) -> str:
-    """Instantiate a test asset; fail instead of publishing missing fields."""
-    missing = set(TOKEN.findall(text)) - values.keys()
-    if missing:
-        raise ValueError(f"Missing template fields: {sorted(missing)}")
-    output = TOKEN.sub(lambda match: values[match.group(1)], text)
-    if "{{" in output or "}}" in output:
-        raise ValueError("Unresolved or malformed template placeholder")
-    return output
 
 
 class PackageTests(unittest.TestCase):
@@ -92,7 +42,7 @@ class PackageTests(unittest.TestCase):
     def test_missing_reference_is_detected(self):
         with tempfile.TemporaryDirectory() as directory:
             root = self.copy_skill(directory)
-            (root / "references/verification.md").unlink()
+            (root / "references/local-execution.md").unlink()
             with self.assertRaises(ValueError):
                 check_resources(root)
 
@@ -107,7 +57,7 @@ class PackageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = self.copy_skill(directory)
             entry = root / "SKILL.md"
-            entry.write_text(entry.read_text().replace("references/verification.md", "references/Verification.md"))
+            entry.write_text(entry.read_text().replace("references/local-execution.md", "references/Local-execution.md"))
             with self.assertRaises(ValueError):
                 check_resources(root)
 
@@ -121,7 +71,7 @@ class PackageTests(unittest.TestCase):
 
     def test_templates_are_not_active_nested_instructions(self):
         self.assertFalse(list((SKILL / "assets").rglob("AGENTS.md")))
-        self.assertTrue((SKILL / "assets/AGENTS.md.tmpl").is_file())
+        self.assertTrue((SKILL / "assets/project-instructions.md").is_file())
 
     def test_template_fields_have_fixture_and_documentation(self):
         values = json.loads(FIXTURE.read_text(encoding="utf-8"))
@@ -138,8 +88,6 @@ class PackageTests(unittest.TestCase):
         values = json.loads(FIXTURE.read_text(encoding="utf-8"))
         outputs = {
             "project-instructions.md": "docs/chatgpt-project.md",
-            "AGENTS.md.tmpl": "AGENTS.md",
-            "daily-log.md": f"docs/vlog/{values['DATE']}.md",
         }
         with tempfile.TemporaryDirectory() as directory:
             for asset_name, output_name in outputs.items():

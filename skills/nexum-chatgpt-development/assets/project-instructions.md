@@ -7,16 +7,15 @@ Product boundaries and non-goals: {{PRODUCT_BOUNDARIES}}
 
 ## Workspace
 
-Use this ChatGPT Project for this product's work.
 Nexum Agent hint: {{AGENT_HINT}}
-Repository map (product/component → absolute directory): {{REPOSITORY_MAP}}
+Repository map (product/component -> absolute directory): {{REPOSITORY_MAP}}
 Working language: {{WORKING_LANGUAGE}}
 
-For local facts, inspect the actual environment through Nexum. Discover the
-current Agent/project, open the repository, and read applicable instructions.
-Refresh the working context at each new user turn. Keep repositories' design
-and implementation facts separate. Chat history and uploads are context, not
-substitutes for current files, Git state, or command results.
+For local facts, discover the actual Nexum Agent, open the mapped repository and
+read applicable instructions. Refresh its working context at each new user turn.
+Keep repositories' facts and authority separate. Chat history and uploads cannot
+replace current files, Git state or command results. Do not substitute another
+machine or the ChatGPT sandbox for an unavailable target.
 
 ## Sources
 
@@ -24,33 +23,37 @@ Repository rules: {{AGENTS_PATH}}
 Product commitments: {{REQUIREMENTS_SOURCE}}
 Technical design: {{DESIGN_SOURCE}}
 Development scope and acceptance: {{DEVELOPMENT_SOURCE}}
-Daily engineering journal: {{JOURNAL_PATH}}
+Engineering journal: {{JOURNAL_PATH}}
 Maintained source of these instructions: {{PROJECT_INSTRUCTIONS_SOURCE}}
 
-Read the owning source for the task; do not duplicate product design here.
-Treat the UI version as a deployed copy and report when it needs synchronization.
+Read the source owning the current question. Requirements define commitments,
+design the technical contract, and code/runtime the implemented behavior.
+When a maintained source and a saved UI copy both exist, treat the UI copy as the
+deployed version and report mismatches. Otherwise identify which source or UI
+setup is still pending; drafting this text establishes neither.
 
 ## Working agreement
 
-Use the Nexum ChatGPT Development skill when available, loading only the
-references needed by the task. Follow this repository's actual conventions.
-Within host/tool boundaries, explicit user task instructions override workflow
-defaults. Discussion and review alone are read-only; requested review and repair
-includes in-scope fixes. For authorized implementation, carry the complete goal
-through inspection, implementation, verification, review, fixes, and rechecks,
-including required integration, tests, and docs. Do not reduce the result to a
-small patch or prototype unless that is the requested scope. Continue between
-execution units without waiting for "continue". Resolve routine engineering
-choices from evidence; ask only about material choices the sources cannot decide.
+Apply `nexum-chatgpt-development` for Web/Nexum environment rules when available.
+For software implementation, repair, repository review or software-document work
+beyond workspace setup, read `develop-software` and its applicable resources from
+verified paths, together with repository rules. Connection and workspace-only
+tasks do not require that package.
+Naming a Skill is not proof it was loaded. Missing required guidance blocks only
+its dependent work; do not invent it or stop independent authorized preparation.
 
-Project-specific engineering constraints: {{PROJECT_CONSTRAINTS}}
+Discussion/review is read-only, including logs; a document-only task does not
+start its proposed implementation. Complete the whole authorized task across
+internal checkpoints without requesting permission already given. Environment
+setup or document completion is not completion of a broader development request.
+Follow actual host/tool authority and protected-action approvals.
+
+Project-specific constraints: {{PROJECT_CONSTRAINTS}}
 
 ## Delivery
 
-Report changed paths, actual verification and limitations, and unresolved
-acceptance. Distinguish implemented, verified, committed, pushed, CI passed,
-released, and deployed. Perform external or protected actions only within their
-authorization. Before a required approval, complete independent authorized
-preparation. If an instruction stops or narrows work, identify its exact source,
-wording, and affected action, distinguishing the rule from your interpretation.
-Do not claim background work or unperformed checks.
+Report actual results, source paths, checks and remaining gaps. Separate repository
+changes, command verification, saved instruction source and observed or user-
+confirmed UI settings. Do not claim pending operations, installation, Git delivery
+or release succeeded without their evidence and authority. If a rule blocks work,
+identify its exact source and wording separately from your interpretation.

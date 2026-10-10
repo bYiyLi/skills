@@ -27,7 +27,7 @@
   },
   "plan-lifecycle": {
     "skills": [
-      "software-development-plan"
+      "develop-software"
     ],
     "request": "为本次已经确认的官方脚手架生命周期重构编写开发计划并保存到仓库。只有一个开发计划，内部按模板、init、upgrade、release validation 分段实施。只写计划，不实现、不提交、不推送。",
     "files": {
@@ -37,7 +37,7 @@
   },
   "parallel-delivery": {
     "skills": [
-      "software-development-plan"
+      "develop-software"
     ],
     "request": "按设计编写 roadmap 和三个可独立跟踪与验收的 Phase 计划：API、管理界面、历史数据迁移。三组可以并行。保存计划，不实现、不提交。",
     "files": {
@@ -47,7 +47,7 @@
   },
   "existing-roadmap": {
     "skills": [
-      "software-development-plan"
+      "develop-software"
     ],
     "request": "本次只编写 Phase 05 的一个实施计划并更新已有 roadmap 摘要。Phase 05 内部有存储、API、界面三个顺序步骤；不要实施代码或改写已完成阶段的证据。",
     "files": {
@@ -59,8 +59,7 @@
   },
   "reader-task": {
     "skills": [
-      "software-usage-docs",
-      "software-doc-writing-standards"
+      "develop-software"
     ],
     "request": "依据给定合同写一份 docs/import.md 导入指南。读者要在一次连续任务中理解工作区、执行导入并查必要参数；只要一个文件，不执行指南中的产品命令、不新建其他文档；允许读取、保存和校验本地文档。",
     "files": {
@@ -99,8 +98,7 @@
   },
   "document-lifecycle": {
     "skills": [
-      "sync-software-docs",
-      "software-usage-docs"
+      "develop-software"
     ],
     "request": "按变更决定更新 docs/reference.md 的命令与版本信息，并在 docs/old-import.md 标记旧用法已弃用且链接到新参考。只允许修改这两份文档，保留旧文件，不新增状态框架、不提交、不执行产品命令。",
     "files": {
@@ -120,7 +118,7 @@
   },
   "sync-plan-evidence": {
     "skills": [
-      "sync-software-docs"
+      "develop-software"
     ],
     "request": "基于本次变更和现有文档，编写同步计划保存为 docs/doc-sync.md。只保存计划，不修改目标文档、提交或执行产品命令。未决项保持未决，不代替产品负责人做决定。",
     "files": {
@@ -369,6 +367,95 @@
     "request": "按 contract.md 写一段给测试执行者的简短英文指令，只返回最终指令。这次不执行测试、不修改文件；可以只读命令查资料。",
     "files": {
       "contract.md": "# Evaluation task\nThe evaluator receives a supplied classifier prompt and exactly one supplied input. It is authorized to run that one case once and report the actual response. No baseline comparison, additional inputs, repeated runs or claim about general reliability is requested or authorized. A missing input or unavailable evaluator is reported as not run. The evaluator must not invent a passing result.\n"
+    }
+  },
+  "new-cli-complete": {
+    "skills": [
+      "develop-software"
+    ],
+    "request": "从当前空软件工程完成第一版 sumcli，而不只是写方案或脚手架。仅使用 Python 标准库；python3 -m sumcli 后接一个或多个整数，输出其和及换行，支持负数与零；无参数或非整数应向 stderr 报错并退出 2，--help 退出 0。完成必要设计、一个开发计划、实现、真实测试与 README 使用说明。不建远端，不提交、不推送、不发布；不需要 CI 服务。",
+    "files": {}
+  },
+  "new-cli-setup-only": {
+    "skills": [
+      "develop-software"
+    ],
+    "request": "目标产品以后会做整数求和 CLI，但本次只初始化 Python 标准库工程，准备 python3 -m sumcli --help 的真实启动入口和必要开发说明。不要实现求和功能，不要开发后续增量，不建远端或 CI，不提交推送。",
+    "files": {}
+  },
+  "requirements-only": {
+    "skills": [
+      "develop-software"
+    ],
+    "request": "依据 product.md，创建并保存一份 docs/feature.md 需求文档。只写这一个文件，不实现、不补技术设计、不创建 SRS 或其他文档。现有要求没有优先级排序。",
+    "files": {
+      "product.md": "# 当前产品决定\n\n本地计数器接收整数，非负值原样返回，负值拒绝。只支持单用户本地调用，不需要网络、登录或数据持久化。正式验收：0 返回 0，3 返回 3，-1 返回明确的 negative count 错误。实现语言暂不指定。\n"
+    }
+  },
+  "design-only": {
+    "skills": [
+      "develop-software"
+    ],
+    "request": "只创建 docs/adr/001-storage.md，记录已确认的存储设计及相关失败行为，不写实现、不执行数据库操作。以 decision.md 为产品和技术输入。",
+    "files": {
+      "decision.md": "# 已确认决定\n\n产品是单用户本地笔记工具，需要保存 note_id、正文及更新时间。更新同一 note_id 替换正文，读取不存在的 note_id 返回 not found。已决定使用 SQLite 事务一次提交写入，进程在提交前失败不得留半条记录。此版不做远程同步。设计不重新选择数据库；历史选型候选的细节未保存。\n"
+    }
+  },
+  "nexum-offline-target": {
+    "skills": [
+      "nexum-chatgpt-development"
+    ],
+    "request": "只读分析 observations.json，说明在当前返回下应该怎么继续原来的 Mac 开发任务。不调用真实 Nexum、不运行产品命令、不改文件。",
+    "files": {
+      "observations.json": "{\n  \"request\": {\n    \"agent\": \"Yi Mac\",\n    \"path\": \"/Users/yi/Code/example\",\n    \"goal\": \"fix one function\"\n  },\n  \"project_list\": {\n    \"agents\": [\n      {\n        \"id\": \"mac-fixture\",\n        \"name\": \"Yi Mac\",\n        \"status\": \"offline\"\n      },\n      {\n        \"id\": \"win-fixture\",\n        \"name\": \"Yi Win\",\n        \"status\": \"online\"\n      }\n    ]\n  },\n  \"project_open\": {\n    \"code\": \"agent_offline\"\n  },\n  \"write_result\": null\n}"
+    }
+  },
+  "nexum-instructions-draft": {
+    "skills": [
+      "nexum-chatgpt-development"
+    ],
+    "request": "依据 facts.md 在回复中起草 ChatGPT Project Instructions。只起草，不写仓库，不操作 UI。Nexum 当前不可用；真实仓库路径还没有确认，请保持缺口，不编造路径或已保存的状态。",
+    "files": {
+      "facts.md": "# 已知事实\n\n项目 Pilot，用于本地整理笔记，当前不做云同步。工作语言中文。预计使用 Yi Mac，但真实 Agent 身份和 canonical 仓库路径待连接确认。用户已经明确关闭记忆，不要开启。尚无可确认的需求、设计、开发计划或日志文件路径。\n"
+    }
+  },
+  "nexum-unknown-patch": {
+    "skills": [
+      "nexum-chatgpt-development"
+    ],
+    "request": "只读评估 observations.json 中这次操作应该如何恢复。不要执行补丁或真实工具调用，不改文件；说明下一步需要的证据和操作。",
+    "files": {
+      "observations.json": "{\n  \"patch_targets\": [\n    \"src/a.py\",\n    \"src/b.py\"\n  ],\n  \"tool_response\": {\n    \"code\": \"partial_write\",\n    \"details\": {\n      \"written\": [\n        \"src/a.py\"\n      ],\n      \"failed\": \"src/b.py\"\n    }\n  },\n  \"later_read\": {\n    \"src/a.py\": {\n      \"changed\": true,\n      \"concurrent_user_edit\": true\n    },\n    \"src/b.py\": {\n      \"code\": \"read_unavailable\"\n    }\n  },\n  \"current_context\": \"fixture-context\"\n}"
+    }
+  },
+  "journal-existing-repair": {
+    "skills": [
+      "develop-software"
+    ],
+    "request": "修复 normalize_count(0) 错误拒绝零值的问题，并验证现有合同。完成本次修复，不提交或推送。",
+    "files": {
+      "README.md": "# Count example\n\n产品要求见 docs/requirements.md，技术合同见 docs/design.md。\n\n历史工程日志位于 docs/vlog/，条目时区为 UTC。\n",
+      "docs/requirements.md": "# 产品要求\n\nR1 接受非负整数计数，包含零。R2 负数必须拒绝。验收为输入 0 和 3 原样返回，-1 抛出 ValueError。\n",
+      "docs/design.md": "# 已确认技术合同\n\nnormalize_count(value: int) 返回非负输入本身；负数抛出 ValueError。当前只处理已是整数的输入，不新增字符串转换、服务接口或其他设计。\n",
+      "task.md": "# 修复验收\n\n现有 unittest 的零值、正值与负值用例全部通过，回归结论引用真实运行。\n",
+      "count.py": "def normalize_count(value: int) -> int:\n    if value <= 0:\n        raise ValueError(\"negative count\")\n    return value\n",
+      "test_count.py": "import unittest\nfrom count import normalize_count\n\nclass CountTests(unittest.TestCase):\n    def test_zero(self): self.assertEqual(normalize_count(0), 0)\n    def test_positive(self): self.assertEqual(normalize_count(3), 3)\n    def test_negative(self):\n        with self.assertRaises(ValueError): normalize_count(-1)\n\nif __name__ == \"__main__\": unittest.main()\n",
+      "docs/vlog/2026-10-09.md": "# 2026-10-09\n\nTimezone: UTC\n\n## Earlier work\n\nExisting count function and tests; this is historical evidence.\n"
+    }
+  },
+  "journal-existing-review": {
+    "skills": [
+      "develop-software"
+    ],
+    "request": "只读评审 normalize_count 和当前测试是否符合现有合同，不修改代码、文档或日志。",
+    "files": {
+      "README.md": "# Count example\n\n产品要求见 docs/requirements.md，技术合同见 docs/design.md。\n\n历史工程日志位于 docs/vlog/，条目时区为 UTC。\n",
+      "docs/requirements.md": "# 产品要求\n\nR1 接受非负整数计数，包含零。R2 负数必须拒绝。验收为输入 0 和 3 原样返回，-1 抛出 ValueError。\n",
+      "docs/design.md": "# 已确认技术合同\n\nnormalize_count(value: int) 返回非负输入本身；负数抛出 ValueError。当前只处理已是整数的输入，不新增字符串转换、服务接口或其他设计。\n",
+      "task.md": "# 修复验收\n\n现有 unittest 的零值、正值与负值用例全部通过，回归结论引用真实运行。\n",
+      "count.py": "def normalize_count(value: int) -> int:\n    if value <= 0:\n        raise ValueError(\"negative count\")\n    return value\n",
+      "test_count.py": "import unittest\nfrom count import normalize_count\n\nclass CountTests(unittest.TestCase):\n    def test_zero(self): self.assertEqual(normalize_count(0), 0)\n    def test_positive(self): self.assertEqual(normalize_count(3), 3)\n    def test_negative(self):\n        with self.assertRaises(ValueError): normalize_count(-1)\n\nif __name__ == \"__main__\": unittest.main()\n",
+      "docs/vlog/2026-10-09.md": "# 2026-10-09\n\nTimezone: UTC\n\n## Earlier work\n\nExisting count function and tests; this is historical evidence.\n"
     }
   }
 }

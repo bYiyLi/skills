@@ -1,96 +1,79 @@
-# Establish the ChatGPT Web workspace
+# ChatGPT workspace and Skill discovery
 
-Read this for project initialization, workspace repair, or skill discovery. It
-does not require reorganizing an existing workspace for an unrelated code task.
+Use for requested workspace setup/repair, Project Instructions or Skill loading,
+not for routine product initialization or an unrelated code change.
 
-## Establish isolation without claiming capabilities
+## Establish the requested ChatGPT workspace
 
-For a new independent product, guide the user to a separate ChatGPT Project
-before ongoing development conversations. Keep its project instructions, chats,
-and uploaded context scoped to that product. A deliberate multi-repository
-project needs an explicit repository map and separate design ownership; opening
-one repository does not authorize changes to another.
+For a new independent product, recommend a separate ChatGPT Project to keep its
+instructions, chats and supplied context scoped. Preserve deliberate shared or
+multi-repository workspaces; their repository map must distinguish ownership.
+Project UI availability is not a prerequisite for independent repository work.
 
-Check available app/browser tools before deciding whether setup can be performed.
-Use only a supported, authorized interface. Without one, deliver the instruction
-text and the concrete UI steps for the user; mark UI setup pending. Continue
-independent authorized repository preparation. A generated file is not evidence
-that a ChatGPT Project was created or its settings saved.
+Inspect supported app/browser tools before deciding whether an authorized UI
+change can be performed. Without a supported writer, return the instruction
+text and any steps supported by current documentation or observed UI, marking
+UI work pending. If neither source can be checked, leave the exact UI procedure
+unverified rather than inventing it. A generated document is not evidence that
+the Project exists or that its settings were saved.
 
-Consult the current [OpenAI Projects documentation](https://help.openai.com/en/articles/10169521-using-projects-in-chatgpt)
-when giving UI or memory instructions. Guide creation through New project and
-configuration through Project settings, adjusting to the observed UI. Recommend
-Project-only memory when the user needs cross-project memory isolation and the
-account supports it. Ordinary project organization alone is not proof of memory
-isolation. Respect intentionally disabled memory; do not turn it on, change
-sharing, or claim a privacy boundary through prompt text. If current docs or
-settings cannot be checked, distinguish verified organization from unverified
-memory behavior instead of presenting stale UI details as current.
+Before giving UI or memory directions, consult current
+[OpenAI Projects documentation](https://help.openai.com/en/articles/10169521-using-projects-in-chatgpt)
+when reachable and inspect the user's UI when available. Limit each claim to
+what those sources actually establish; documentation-backed general instructions
+do not prove this account's settings. Project organization alone does not prove memory isolation.
+Recommend project-only memory only for a requested isolation need and supported
+settings. Respect intentionally disabled memory; do not turn it on or change
+sharing without authority. If settings/docs cannot be checked, label those
+claims unverified rather than prescribing stale UI behavior.
 
-## Generate project-specific instructions
+## Maintain the Project Instructions source
 
-Use the project-instructions asset routed from SKILL.md. Preserve its sections:
-Identity, Workspace, Sources, Working agreement, and Delivery. These are this
-workflow's template convention, not an OpenAI-required schema.
-
-Fill purpose, non-goals, Agent hint, canonical repository path, source map, and
-working language from the user's request and inspected repository. Discover
-opaque Nexum IDs at runtime; store neither context IDs nor process IDs in durable
-instructions. Include only project-specific constraints that change decisions.
-Point to design and AGENTS instead of copying their changing contents. Keep
-implementation progress and daily history out of Project Instructions.
+For a requested new instruction text without an existing suitable template,
+adapt [../assets/project-instructions.md](../assets/project-instructions.md).
+Preserve identity, workspace, sources, working agreement and delivery meanings;
+these sections are package conventions, not a required OpenAI schema.
 
 | Fields | Value source |
 | --- | --- |
-| PROJECT_NAME, PROJECT_PURPOSE, PRODUCT_BOUNDARIES, PROJECT_CONSTRAINTS | User-approved goals and current design |
-| AGENT_HINT, REPOSITORY_MAP | Live Agent discovery and opened canonical directories; map each repository independently |
-| WORKING_LANGUAGE | Existing project convention or user's working language |
-| AGENTS_PATH, REQUIREMENTS_SOURCE, DESIGN_SOURCE, DEVELOPMENT_SOURCE, JOURNAL_PATH, PROJECT_INSTRUCTIONS_SOURCE | Actual repository source map; use repository-relative paths where applicable |
+| PROJECT_NAME, PROJECT_PURPOSE, PRODUCT_BOUNDARIES, PROJECT_CONSTRAINTS | Current authoritative project goals and constraints |
+| AGENT_HINT, REPOSITORY_MAP | Inspected Agent names and canonical repository locations; supplied but unverified locations stay draft |
+| WORKING_LANGUAGE | Project convention or user language |
+| AGENTS_PATH, REQUIREMENTS_SOURCE, DESIGN_SOURCE, DEVELOPMENT_SOURCE, JOURNAL_PATH, PROJECT_INSTRUCTIONS_SOURCE | Inspected source map, preferably repository-relative |
 
-Each source row retained in generated Project Instructions or AGENTS must name an
-inspected source. Omit a row when that source does not exist and the current setup
-does not establish it; do not invent a path merely to fill a template.
+Include only project-specific facts and boundaries that change decisions. Point
+to governing sources rather than copying design, progress or daily history.
+Do not store ephemeral context/process IDs. Each retained source row must name
+an inspected source or one actually established by the current setup. Omit unused
+missing rows; a real needed source gap stays explicit. No invented source files
+just to complete a template, and design does not replace product requirements.
+Replace all retained placeholders; missing mandatory fields mean draft, not
+ready-to-use instructions. Before delivery, check that the generated text retains
+the template's software-work requirement to read `develop-software`, its workspace-
+only exception, and its read-only/full-task boundaries. Missing repository paths
+are draft data gaps, not a reason to drop these execution rules. Review source
+authority without claiming a required Skill is already installed or readable.
 
-REQUIREMENTS_SOURCE identifies the inspected PRD/SRS, product requirements section,
-or explicit decision source when one exists. Do not create a requirements file
-just to fill the template. If none exists, omit that source row or state the
-actual source gap; do not transfer product authority to technical design.
+When repository writing is authorized, keep the maintained source in its existing
+location, otherwise `docs/chatgpt-project.md`. Keep private machine settings out
+of public repositories; use an authorized private location when needed. Treat
+ChatGPT UI text as a deployed copy and report updated, user-confirmed or pending
+status separately. Do not overwrite newer UI/source changes without comparison.
 
-Save a repository-maintained instruction source at `docs/chatgpt-project.md`
-when repository writing is authorized and no existing source already serves that
-role. Treat the ChatGPT UI text as its deployed copy. After a source change,
-report whether that copy was updated, user-confirmed, or remains pending. Keep
-machine-specific private settings out of a public repository; use a private
-workspace copy when real paths or organizational details cannot be published.
+## Verify discovery separately from installation or use
 
-## Open the actual environment
+Read current discovered Skill metadata and the actual entrypoint. A GitHub file,
+a discovered Skill, a loaded reference and a successful task are different states.
+No assumption that Codex `$skill` syntax or `agents/openai.yaml` activates a Skill
+in this Web session. Supplied repository Skill sources can be explicitly read
+without claiming personal installation.
 
-Resolve the desired Agent and directory from live `project.list` results and the
-workspace map. If several targets remain plausible, ask for the one distinction
-that changes the target. Do not infer an absolute path from a product name.
-When creating a directory, first open an authorized existing parent and confirm
-the new destination does not already contain user work.
+For an authorized installation, inspect destination contents and preserve user
+changes. Use a verified discovery root and supported installation mechanism;
+then refresh `project.open` and check name, description, root and readable
+resources. Without installation authority, do not change personal Skill folders
+or connector settings. A required absent package remains a reported dependency,
+not a reason to recreate it from memory.
 
-Use `project.open` before Files/Process operations. An `authorization_required`
-response needs its actual approval flow; do not work around it with another
-command. An offline Agent or unavailable connector blocks local claims. Report
-the missing capability while completing only work supported by available data.
-
-## Verify skill loading separately from GitHub delivery
-
-Read the current Nexum-discovered skill metadata and the actual `SKILL.md` path.
-Follow the supported discovery/install mechanism for that environment; GitHub
-availability alone does not install or activate a skill in ChatGPT. Do not
-assume Codex `$skill` syntax or `agents/openai.yaml` controls this Web session.
-
-For an installation request, inspect the existing destination and preserve its
-user changes. Use a verified skill-discovery root, then refresh `project.open`
-and confirm the skill's name, description, root, and readable references. Report
-discovery and successful task execution separately. If installation is not part
-of the request, provide the location/use instructions without changing personal
-skill directories or connector settings.
-
-Setup evidence consists of the repository mapping, readable instructions/source
-map, actual baseline results, and the observed or user-confirmed UI state. Mark
-unknowns individually; do not call the whole workspace configured when its
-required UI or environment step is still pending.
+Report repository mapping, source readability and actual UI/discovery evidence.
+Do not claim full setup when a requested UI or environment step remains pending.
