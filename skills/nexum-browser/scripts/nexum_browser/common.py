@@ -8,9 +8,14 @@ import shutil
 import time
 from typing import Any
 
+from .launcher import validate_session
 
 SKILL_ROOT = Path(__file__).resolve().parents[2]
-RUNTIME_DIR = SKILL_ROOT / ".runtime"
+SESSION_NAME = validate_session(os.environ.get("NEXUM_BROWSER_SESSION"))
+RUNTIME_DIR = (
+    SKILL_ROOT / ".runtime" / "sessions" / SESSION_NAME
+    if SESSION_NAME else SKILL_ROOT / ".runtime"
+)
 LOG_PATH = RUNTIME_DIR / "browser.log"
 BROKER_STATE_PATH = RUNTIME_DIR / "broker.json"
 OPERATION_LOCK_PATH = RUNTIME_DIR / "operation.lock"

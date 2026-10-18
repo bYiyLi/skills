@@ -22,6 +22,7 @@ from .common import (
     PROXY_ENV_NAMES,
     REQUEST_TIMEOUT_SECONDS,
     RUNTIME_DIR,
+    SESSION_NAME,
     SKILL_ROOT,
 )
 from .mcp import McpRequestOutcomeUnknown
@@ -1011,8 +1012,9 @@ def _windows_task_name() -> str:
         f"{os.environ.get('USERDOMAIN', '')}\\"
         f"{os.environ.get('USERNAME', '')}"
     )
+    suffix = f"|{SESSION_NAME}" if SESSION_NAME else ""
     digest = hashlib.sha256(
-        f"{user}|{SKILL_ROOT}".encode("utf-8", errors="replace")
+        f"{user}|{SKILL_ROOT}{suffix}".encode("utf-8", errors="replace")
     ).hexdigest()[:16]
     return f"NexumBrowserBroker-{digest}"
 
@@ -1130,6 +1132,7 @@ def _write_windows_task_environment() -> None:
         "NEXUM_BROWSER_IDLE_SECONDS",
         "NEXUM_BROWSER_REQUEST_TIMEOUT_SECONDS",
         "NEXUM_BROWSER_LOCK_STALE_SECONDS",
+        "NEXUM_BROWSER_SESSION",
     ):
         value = os.environ.get(name)
         if value:
@@ -1160,7 +1163,10 @@ def _spawn_windows_task() -> None:
     _remove_windows_task()
     _write_windows_task_environment()
 
-    argument = subprocess.list2cmdline([str(launcher)])
+    task_args = [str(launcher)]
+    if SESSION_NAME:
+        task_args.extend(["--session", SESSION_NAME])
+    argument = subprocess.list2cmdline(task_args)
     script = (
         "$ErrorActionPreference='Stop';"
         "$OutputEncoding=[Console]::OutputEncoding=[Text.UTF8Encoding]::new();"
@@ -1399,6 +1405,9 @@ def _unix_broker_pids(
         return None
 
     pids: list[int] = []
+    suffix = f"{entry} _broker"
+    if SESSION_NAME:
+        suffix += f" --session {SESSION_NAME}"
     for line in (result.stdout or "").splitlines():
         stripped = line.strip()
         if not stripped:
@@ -1408,7 +1417,7 @@ def _unix_broker_pids(
             pid = int(pid_text)
         except ValueError:
             continue
-        if command.rstrip().endswith(f"{entry} _broker"):
+        if command.rstrip().endswith(suffix):
             pids.append(pid)
     return pids
 
@@ -1511,8 +1520,11 @@ def _spawn() -> subprocess.Popen[Any] | None:
         "start_new_session": True,
     }
     try:
+        argv = [sys.executable, str(entry), "_broker"]
+        if SESSION_NAME:
+            argv.extend(["--session", SESSION_NAME])
         return subprocess.Popen(
-            [sys.executable, str(entry), "_broker"],
+            argv,
             **kwargs,
         )
     finally:

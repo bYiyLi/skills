@@ -39,7 +39,30 @@ def _load_environment() -> None:
 
 
 def main() -> int:
+    global ENV_PATH
+    args = sys.argv[1:]
+    if not args:
+        session = ""
+    elif len(args) == 2 and args[0] == "--session":
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from nexum_browser.launcher import validate_session
+
+        session = validate_session(args[1])
+        if not session:
+            raise RuntimeError("Windows broker task session cannot be empty")
+    else:
+        raise RuntimeError("Unsupported browser task arguments")
+
+    if session:
+        os.environ["NEXUM_BROWSER_SESSION"] = session
+        ENV_PATH = (
+            SKILL_ROOT / ".runtime" / "sessions" / session / "broker-task-env.json"
+        )
+    else:
+        os.environ.pop("NEXUM_BROWSER_SESSION", None)
     _load_environment()
+    if os.environ.get("NEXUM_BROWSER_SESSION", "") != session:
+        raise RuntimeError("Windows broker task environment session mismatch")
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from nexum_browser.broker import daemon_main
 

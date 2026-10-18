@@ -33,7 +33,9 @@ from nexum_browser.broker import (
     _compatible_ping,
     _request,
     _state_process_alive,
+    _spawn_windows_task,
     _unix_broker_pids,
+    _windows_task_name,
     _write_windows_task_environment,
     broker_status,
     ensure_broker,
@@ -50,6 +52,7 @@ from nexum_browser.cli import (
     main as cli_main,
 )
 from nexum_browser.common import codex_home, emit, operation_lock
+from nexum_browser.launcher import prepare_argv, select_session, validate_session
 from nexum_browser.doctor import (
     _failure_category,
     _read_windows_registry_default_value,
@@ -1123,6 +1126,57 @@ class BrokerTests(unittest.TestCase):
 
         def close(self):
             self.close_calls += 1
+
+    def test_paused_confirmation_in_one_broker_does_not_block_another(self) -> None:
+        class WaitingRuntime(self.FakeRuntime):
+            def __init__(self) -> None:
+                super().__init__()
+                self.finished = threading.Event()
+                self.elicitation = PendingElicitation(
+                    "elicitation-a", 1, {"message": "Confirm agent A"},
+                )
+
+            def run(self, code, *, title, timeout_ms):
+                self.finished.wait(2)
+                raise RuntimeError("confirmation cancelled")
+
+            def pending_elicitation(self):
+                return self.elicitation
+
+            def respond_elicitation(self, elicitation_id, *, action, content=None):
+                self.elicitation = None
+                self.finished.set()
+
+        first = Broker()
+        first.runtime = WaitingRuntime()
+        second = Broker()
+        second.runtime = self.FakeRuntime()
+
+        paused = first.handle({
+            "command": "run", "args": {"code": "await sideEffect()"},
+        })
+        self.assertEqual(paused["code"], "confirmation_required")
+        independent = second.handle({
+            "command": "run", "args": {"code": "nodeRepl.write('B')"},
+        })
+        self.assertEqual(independent["code"], "ok")
+        wrong_session = second.handle({
+            "command": "_resume",
+            "args": {
+                "operation": paused["data"]["operationId"],
+                "elicitation": paused["data"]["elicitationId"],
+                "decision": "accept",
+            },
+        })
+        self.assertEqual(wrong_session["code"], "operation_lost")
+        finished = first.handle({
+            "command": "_cancel",
+            "args": {
+                "operation": paused["data"]["operationId"],
+                "elicitation": paused["data"]["elicitationId"],
+            },
+        })
+        self.assertEqual(finished["code"], "operation_cancelled")
 
     def test_broker_reuses_one_runtime_and_passes_raw_content(self) -> None:
         runtime = self.FakeRuntime()
@@ -2434,7 +2488,200 @@ class BrokerTests(unittest.TestCase):
                 self.assertIsNone(broker.active_operation)
 
 
+class SessionRoutingTests(unittest.TestCase):
+    def test_windows_launcher_envelope_routes_session_before_imports(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / f"nexum-browser-argv-{uuid.uuid4().hex}.json"
+            path.write_text(
+                json.dumps(["status", "--session", "win-qa"]), encoding="utf-8",
+            )
+            env = dict(os.environ)
+            env["NEXUM_BROWSER_ARGV_ROOT"] = tmp
+            env.pop("NEXUM_BROWSER_SESSION", None)
+            env["PYTHONDONTWRITEBYTECODE"] = "1"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts" / "browser"),
+                    "__NEXUM_BROWSER_WINDOWS_ARGV__",
+                    str(path),
+                ],
+                env=env, capture_output=True, text=True, timeout=15,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout)["data"]["session"], "win-qa")
+            self.assertTrue(path.exists())
+
+    def test_explicit_session_is_scoped_to_one_command(self) -> None:
+        with patch.dict(os.environ, {"NEXUM_BROWSER_SESSION": "existing"}):
+            argv, session = select_session([
+                "run", "--session", "agent-a", "nodeRepl.write('ok')",
+            ])
+            self.assertEqual(argv, ["run", "nodeRepl.write('ok')"])
+            self.assertEqual(session, "agent-a")
+            self.assertEqual(os.environ["NEXUM_BROWSER_SESSION"], "existing")
+            self.assertEqual(select_session(["reset"]), (["reset"], "existing"))
+
+        with patch.dict(os.environ, {"NEXUM_BROWSER_SESSION": ""}):
+            self.assertEqual(select_session(["stop"]), (["stop"], ""))
+
+    def test_session_rejects_invalid_names_before_filesystem_access(self) -> None:
+        for bad in (
+            "../elsewhere", "/tmp/x", "a.b", "x" * 65,
+            "a b", "中文", "default",
+        ):
+            with self.subTest(session=bad), self.assertRaises(ValueError):
+                validate_session(bad)
+        with self.assertRaises(ValueError):
+            select_session(["run", "--session"])
+        self.assertEqual(validate_session("agent_A-9"), "agent_a-9")
+        self.assertEqual(validate_session("Agent-A"), validate_session("agent-a"))
+
+    def test_session_has_distinct_state_directory(self) -> None:
+        code = (
+            "import json;"
+            "from nexum_browser.common import RUNTIME_DIR,SESSION_NAME;"
+            "print(json.dumps([str(RUNTIME_DIR),SESSION_NAME]))"
+        )
+        env = dict(os.environ)
+        env["PYTHONPATH"] = str(ROOT / "scripts")
+        env.pop("NEXUM_BROWSER_SESSION", None)
+        default = subprocess.run(
+            [sys.executable, "-c", code],
+            env=env, capture_output=True, text=True, check=True,
+        )
+        env["NEXUM_BROWSER_SESSION"] = "agent-a"
+        named = subprocess.run(
+            [sys.executable, "-c", code],
+            env=env, capture_output=True, text=True, check=True,
+        )
+        default_dir, default_session = json.loads(default.stdout)
+        named_dir, named_session = json.loads(named.stdout)
+        self.assertEqual(default_session, "")
+        self.assertEqual(named_session, "agent-a")
+        self.assertEqual(Path(default_dir), ROOT / ".runtime")
+        self.assertEqual(
+            Path(named_dir), ROOT / ".runtime" / "sessions" / "agent-a",
+        )
+
+    @unittest.skipIf(os.name == "nt", "Unix process command matching")
+    def test_pid_lookup_only_matches_own_session(self) -> None:
+        listing = subprocess.CompletedProcess(
+            args=[], returncode=0,
+            stdout=(
+                "11 python /tmp/browser _broker\n"
+                "22 python /tmp/browser _broker --session agent-a\n"
+                "33 python /tmp/browser _broker --session agent-b\n"
+            ),
+        )
+        with patch(
+            "nexum_browser.broker.subprocess.run", return_value=listing,
+        ):
+            with patch("nexum_browser.broker.SESSION_NAME", ""):
+                self.assertEqual(_unix_broker_pids("/tmp/browser"), [11])
+            with patch("nexum_browser.broker.SESSION_NAME", "agent-a"):
+                self.assertEqual(_unix_broker_pids("/tmp/browser"), [22])
+            with patch("nexum_browser.broker.SESSION_NAME", "agent-b"):
+                self.assertEqual(_unix_broker_pids("/tmp/browser"), [33])
+
+    def test_windows_tasks_have_independent_identity_and_arguments(self) -> None:
+        with patch("nexum_browser.broker.SESSION_NAME", ""):
+            default = _windows_task_name()
+        with patch("nexum_browser.broker.SESSION_NAME", "agent-a"):
+            first = _windows_task_name()
+        with patch("nexum_browser.broker.SESSION_NAME", "agent-b"):
+            second = _windows_task_name()
+        self.assertEqual(len({default, first, second}), 3)
+
+        completed = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout="", stderr="",
+        )
+        with (
+            patch("nexum_browser.broker.SESSION_NAME", "agent-a"),
+            patch("nexum_browser.broker._remove_windows_task"),
+            patch("nexum_browser.broker._write_windows_task_environment"),
+            patch(
+                "nexum_browser.broker._run_windows_task_script",
+                return_value=completed,
+            ) as invoke,
+        ):
+            _spawn_windows_task()
+        self.assertIn("--session agent-a", invoke.call_args.args[0])
+
+    def test_windows_task_loader_selects_named_environment(self) -> None:
+        original = browser_task.ENV_PATH
+        with (
+            patch.object(sys, "argv", ["browser_task.py", "--session", "agent-a"]),
+            patch.dict(os.environ, {}, clear=False),
+            patch.object(browser_task, "_load_environment"),
+            patch("nexum_browser.broker.daemon_main", return_value=0),
+        ):
+            try:
+                self.assertEqual(browser_task.main(), 0)
+                self.assertEqual(
+                    browser_task.ENV_PATH,
+                    ROOT / ".runtime" / "sessions" / "agent-a" / "broker-task-env.json",
+                )
+            finally:
+                browser_task.ENV_PATH = original
+
+    def test_windows_task_rejects_environment_from_another_session(self) -> None:
+        original = browser_task.ENV_PATH
+        with (
+            patch.object(sys, "argv", ["browser_task.py", "--session", "agent-a"]),
+            patch.dict(os.environ, {}, clear=False),
+            patch.object(browser_task, "_load_environment") as load,
+            patch("nexum_browser.broker.daemon_main") as broker,
+        ):
+            load.side_effect = lambda: os.environ.__setitem__(
+                "NEXUM_BROWSER_SESSION", "agent-b",
+            )
+            try:
+                with self.assertRaisesRegex(RuntimeError, "session mismatch"):
+                    browser_task.main()
+            finally:
+                browser_task.ENV_PATH = original
+        broker.assert_not_called()
+
+
 class CliContractTests(unittest.TestCase):
+    def test_status_is_read_only_and_surfaces_active_operation(self) -> None:
+        output = io.StringIO()
+        current = {
+            "running": True,
+            "activeOperation": {
+                "id": "op-a",
+                "state": "awaiting_confirmation",
+            },
+        }
+        with (
+            patch("nexum_browser.cli.broker_status", return_value=current),
+            patch("nexum_browser.cli.send_request") as send,
+            contextlib.redirect_stdout(output),
+        ):
+            self.assertEqual(cli_main(["status"]), 0)
+        self.assertEqual(
+            json.loads(output.getvalue())["data"]["activeOperation"]["state"],
+            "awaiting_confirmation",
+        )
+        send.assert_not_called()
+
+    def test_status_unknown_is_not_reported_as_stopped(self) -> None:
+        output = io.StringIO()
+        with (
+            patch(
+                "nexum_browser.cli.broker_status",
+                return_value={"running": False, "stateUncertain": True},
+            ),
+            contextlib.redirect_stdout(output),
+            self.assertRaises(SystemExit) as raised,
+        ):
+            cli_main(["status"])
+        self.assertEqual(raised.exception.code, 1)
+        self.assertEqual(
+            json.loads(output.getvalue())["code"], "status_unknown",
+        )
+
     def test_lost_stop_reply_is_outcome_unknown(self) -> None:
         output = io.StringIO()
         with (
@@ -2797,10 +3044,11 @@ class CliContractTests(unittest.TestCase):
             self.assertEqual(prepared, ["run", str(path)])
             self.assertTrue(path.exists())
 
-    def test_public_cli_exposes_only_four_commands(self) -> None:
+    def test_public_cli_exposes_documented_commands(self) -> None:
         parser = build_parser()
         cases = [
             ["doctor"],
+            ["status"],
             ["run", "1 + 1"],
             ["reset"],
             ["stop"],
@@ -2820,7 +3068,6 @@ class CliContractTests(unittest.TestCase):
             "fill",
             "observe",
             "setup",
-            "status",
             "visible-dom",
         ):
             self.assertNotIn(old, help_text)

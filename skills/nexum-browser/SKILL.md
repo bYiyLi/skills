@@ -13,6 +13,7 @@ operations; it does not own the host task or authorize external side effects.
 | Command | Purpose |
 | --- | --- |
 | `browser run <JavaScript>` | Execute in persistent JavaScript; normal entry |
+| `browser status` | Inspect the selected session without starting Runtime |
 | `browser doctor` | Diagnose Chrome-extension and Runtime setup failures |
 | `browser reset` | Clear JS bindings; retain broker and do not proactively close tabs |
 | `browser stop` | End the Runtime turn, stop broker and clear runtime state |
@@ -23,6 +24,23 @@ On Windows, invoke `powershell.exe` directly with `-NoProfile -NonInteractive
 Pass arguments separately, with JavaScript as one argv element; never interpolate
 model-generated JavaScript into a shell command string. Doctor is not a prelude
 to every run, and reset/stop are not routine cleanup between actions.
+
+For simultaneous agents, pass `--session <name>` immediately after each
+subcommand (before JavaScript), using one distinct, stable name per agent:
+
+~~~text
+browser run --session agent-a <JavaScript>
+browser status --session agent-a
+browser stop --session agent-a
+~~~
+
+Without `--session`, commands retain the original shared default session.
+Each named session owns an independent broker, Runtime and JS bindings, but all
+sessions can see the same Chrome profile, logged-in sites and tabs. Keep each
+agent's actions on its own tabs unless the user explicitly requests shared-tab
+work; sessions do not enforce tab ownership or authorize cross-tab mutations.
+`reset` and `stop` affect only the selected session. A status result can show
+`activeOperation.state=awaiting_confirmation` without changing browser state.
 
 The bridge owns initialization and readiness recovery on all platforms; do not
 add bootstrap calls, alternate transports, or another browser DSL.
@@ -94,8 +112,8 @@ visible when the user asks to see it. Save an image only when the host needs a
 file artifact or local preview, not by default.
 
 `confirmation_required` means the same operation is paused, not failed. Retain
-both `data.operationId` and `data.elicitationId`, obtain the decision required
-by Runtime/host policy, and use:
+both `data.operationId` and `data.elicitationId`, retain the originating
+session name, obtain the decision required by Runtime/host policy, and use:
 
 ~~~text
 browser _resume --operation <operationId> --elicitation <elicitationId> --decision accept
@@ -104,8 +122,12 @@ browser _cancel --operation <operationId> --elicitation <elicitationId>
 ~~~
 
 These are internal continuation commands, not new browser operations. If the
-elicitation requests structured values, pass `--content-json` as one JSON-object
-argument matching its schema. Never invent acceptance or replay the original
+operation used `--session`, pass the same `--session <name>` immediately after
+`_resume` or `_cancel`. A pending confirmation in one session does not occupy
+another session's broker; host/Runtime-wide confirmation constraints may still
+apply and must not be bypassed. If the elicitation requests structured values,
+pass `--content-json` as one JSON-object argument matching its schema.
+Never invent acceptance or replay the original
 JavaScript to bypass a pause. Never reuse a continuation for a different pending
 elicitation. For `run_outcome_unknown`, `reset_outcome_unknown`,
 `reset_state_unknown`, `stop_outcome_unknown`, `operation_lost`, transport
@@ -121,7 +143,7 @@ to evade a restriction. A Skill invocation grants no publishing authority.
 
 ## Diagnose only when needed
 
-For startup, transport, proxy, sandbox or doctor failures, read
+For startup, transport, proxy, sandbox, named-session or doctor failures, read
 [references/runtime-diagnostics.md](references/runtime-diagnostics.md). `browser doctor`
 checks the Chrome-extension path plus shared Runtime plumbing; its Chrome-specific
 failures are not an IAB-only health verdict.
@@ -136,6 +158,7 @@ For bridge implementation inspection only, use
 [scripts/nexum_browser/runtime.py](scripts/nexum_browser/runtime.py),
 [scripts/nexum_browser/mcp.py](scripts/nexum_browser/mcp.py),
 [scripts/nexum_browser/doctor.py](scripts/nexum_browser/doctor.py),
-[scripts/nexum_browser/common.py](scripts/nexum_browser/common.py) and
+[scripts/nexum_browser/common.py](scripts/nexum_browser/common.py),
+[scripts/nexum_browser/launcher.py](scripts/nexum_browser/launcher.py) and
 [scripts/nexum_browser/__init__.py](scripts/nexum_browser/__init__.py).
 Execute launchers without preloading these implementation files.

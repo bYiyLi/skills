@@ -3,6 +3,28 @@
 Read for startup, transport, proxy, sandbox or doctor investigation, not ordinary
 browsing. The installed launch contract and implementation determine behavior.
 
+## Named sessions
+
+`browser <command> --session <name>` uses `.runtime/sessions/<name>/` for its
+broker state, lock and log. The unnamed default retains `.runtime/`.
+Each named session starts a separate `cua_repl` process and Node REPL context.
+On macOS/Linux its broker command includes the session name so process-liveness
+checks do not mistake another session's broker for its own; Windows uses a
+session-specific Scheduled Task and saved environment. Valid names use 1–64
+ASCII letters, digits, underscores or hyphens, starting with alphanumeric;
+names are normalized to lowercase and `default` is reserved for the unnamed
+session.
+
+For a busy session, run `browser status --session <name>` first; it does not
+start Runtime or create a tab. Resolve only that session's outstanding operation.
+`stop` may cancel its pending confirmation and report an unknown outcome; do
+not stop another session or replay an unknown operation to clear a blockage.
+Independent broker processes allow concurrent invocations but do not guarantee
+the underlying browser service can resolve all simultaneous operations or
+Runtime-wide confirmations. The same Chrome profile, login cookies and tabs
+remain shared; session names are routing keys, not access-control credentials
+or enforced tab locks.
+
 ## Runtime contract
 
 nexum-browser discovers Codex's generated
