@@ -1,0 +1,20 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "nexum-development",
+  "version": "0.1.1",
+  "description": "ChatGPT Web 的 Nexum 开发环境配套；软件开发时配合独立的通用开发规范插件。",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Nexum 开发助手",
+        "shortDescription": "ChatGPT Web 的 Nexum 开发配套",
+        "longDescription": "ChatGPT Web 的 Nexum 环境指导。软件开发时需配合独立的开发规范助手；默认不绑定私人应用，使用前核实当前账户的 Nexum 连接。",
+        "capabilities": [],
+        "defaultPrompt": [
+          "只读检查 Nexum 连接与可见项目，不执行命令。",
+          "使用 Nexum 开发环境前，先确认开发规范助手中的 develop-software 及所需资源可读。"
+        ]
+      }
+    }
+  }
+}

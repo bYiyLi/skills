@@ -25,6 +25,12 @@ Web 软件开发使用 `nexum-chatgpt-development` 与实际可读的 `develop-s
 只连接环境、查看原始状态或维护 Project Instructions 可以只用 Nexum 包。完整开发安装
 应验证两个包及当前任务所需资源；通用开发包本身不依赖 Nexum。包名不会触发自动安装。
 
+## 插件分发
+
+[plugins/](plugins/README.md) 提供通用开发规范与 Nexum 开发配套的独立构建入口。
+两个包从现有 Skill 源码生成，不重复维护通用规范；默认不包含私人应用绑定。
+许可、安装与验证边界见该目录说明。
+
 ## 维护验证
 
 在仓库根目录运行，Python 依赖仅用于维护测试，不进入 Skill 的运行环境：

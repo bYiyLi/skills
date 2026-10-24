@@ -1,0 +1,20 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "description": "通用软件开发、提示词与 Skill 编写规范，不绑定执行环境或应用。",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "capabilities": [],
+        "defaultPrompt": [
+          "使用 develop-software 只读评审项目，先确认范围并读取适用规范。",
+          "使用 prompt-authoring-spec 和 skill-authoring-spec 评审我提供的 Skill。"
+        ],
+        "displayName": "开发规范助手",
+        "longDescription": "包含 develop-software、prompt-authoring-spec、skill-authoring-spec 三个通用 Skill 及完整参考资源。适用于 ChatGPT、Work、Codex 中受支持且获授权的工作，不绑定 Nexum 或其他应用。",
+        "shortDescription": "软件开发与提示词、Skill 编写规范"
+      }
+    }
+  },
+  "name": "development-standards",
+  "version": "0.2.1"
+}
